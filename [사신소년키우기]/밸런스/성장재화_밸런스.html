@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>방치형 수집 RPG — 성장·재화 밸런스 시뮬레이터</title>
+<style>
+  :root { color-scheme: light; --bg:#f7f7f5; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb; --head:#f1f5f9; --input:#eaf2fd; --input-line:#9ec5f4; --ok:#e8f5e9; --ok-line:#7fc98a; --grid:#ececea;
+          --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; }
+  @media (prefers-color-scheme: dark) { :root { color-scheme: dark; --bg:#0f1115; --card:#181b21; --text:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --accent:#7aa2ff; --head:#20242c; --input:#1c2a40; --input-line:#2f5a99; --ok:#1b2e1f; --ok-line:#2f6b3a; --grid:#262a31;
+          --s1:#3987e5; --s2:#d95926; --s3:#199e70; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif; line-height:1.6; font-size:15px; }
+  main { max-width:1040px; margin:0 auto; padding:40px 20px 80px; }
+  .back { font-size:.88rem; color:var(--muted); text-decoration:none; }
+  .back:hover { color:var(--accent); }
+  header { margin:12px 0 24px; padding-bottom:18px; border-bottom:1px solid var(--line); }
+  h1 { font-size:1.75rem; margin:0 0 8px; letter-spacing:-.01em; }
+  .meta { color:var(--muted); font-size:.9rem; margin:0; }
+  .lead { margin:14px 0 0; max-width:760px; }
+  .tabs { display:flex; gap:4px; flex-wrap:wrap; border-bottom:1px solid var(--line); margin:0 0 24px; position:sticky; top:0; background:var(--bg); z-index:5; padding-top:6px; }
+  .tabs button { background:none; border:0; border-bottom:2px solid transparent; padding:8px 12px; font:inherit; font-size:.92rem; color:var(--muted); cursor:pointer; }
+  .tabs button.on { color:var(--text); border-bottom-color:var(--accent); font-weight:600; }
+  section.panel { display:none; } section.panel.on { display:block; }
+  h2 { font-size:1.3rem; margin:0 0 6px; }
+  h3 { font-size:1.05rem; margin:24px 0 8px; }
+  .sub { color:var(--muted); font-size:.92rem; margin:0 0 14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:18px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; } @media (max-width:760px){ .grid2 { grid-template-columns:1fr; } }
+  table { border-collapse:collapse; width:100%; font-size:.9rem; }
+  th, td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--head); font-weight:600; white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tbl-wrap { overflow-x:auto; }
+  input[type=number] { width:88px; font:inherit; font-size:.9rem; padding:3px 6px; border:1px solid var(--input-line); background:var(--input); color:var(--text); border-radius:6px; text-align:right; }
+  td.ok { background:var(--ok); } td.bad { background:#fdecec; } @media (prefers-color-scheme:dark){ td.bad{ background:#3a1f1f; } }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:.85rem; color:var(--muted); margin:4px 0 8px; }
+  .legend i { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:6px; border-radius:2px; }
+  .chart { position:relative; width:100%; }
+  .chart svg { width:100%; height:auto; display:block; }
+  .tip { position:absolute; pointer-events:none; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:.82rem; box-shadow:0 2px 8px rgba(0,0,0,.12); white-space:nowrap; display:none; z-index:3; }
+  .tip b { font-weight:600; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:0 0 18px; }
+  .kpi { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .kpi .l { font-size:.8rem; color:var(--muted); } .kpi .v { font-size:1.35rem; font-weight:600; }
+  .note { font-size:.86rem; color:var(--muted); }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:3px; vertical-align:middle; margin-right:6px; border:1px solid var(--input-line); background:var(--input); }
+  .swatch.ok { background:var(--ok); border-color:var(--ok-line); }
+  .more { font:inherit; font-size:.85rem; color:var(--accent); background:none; border:0; cursor:pointer; padding:6px 0; }
+  code { font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.88em; background:var(--head); padding:1px 5px; border-radius:4px; }
+  footer { color:var(--muted); font-size:.85rem; margin-top:40px; border-top:1px solid var(--line); padding-top:16px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>방치형 수집 RPG — 성장·재화 밸런스</h1>
+  <p class="meta">통합 시뮬레이터 · 원본 Excel의 수식을 그대로 옮긴 인터랙티브 버전</p>
+  <p class="lead">목표 도달일을 먼저 확정하고 일일 수급으로 비용을 역산한다 · 곡선 교체 시 누적 총량을 보존한다 · 모든 수치에 근거 데이터를 명시한다. 아래 <span class="swatch"></span>파란 입력칸을 바꾸면 일자 시뮬레이션과 검증 결과가 즉시 재계산됩니다.</p>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button data-t="p1" class="on">① 설정</button>
+  <button data-t="p2">② 성장 데이터</button>
+  <button data-t="p3">③ 일자 시뮬</button>
+  <button data-t="p4">④ 검증 요약</button>
+  <button data-t="p5">⑤ 곡선 재설계</button>
+  <button data-t="p6">⑥ 재화 환산표</button>
+</nav>
+
+<section class="panel on" id="p1">
+  <h2>유저 수급 파라미터</h2>
+  <p class="sub">과금 / 무과금 유저의 하루 샘플 수급과 조사 슬롯 캐파. 값을 바꾸면 ③④가 자동 재계산됩니다.</p>
+  <div class="grid2">
+  <div class="card">
+    <h3 style="margin-top:0">수급 파라미터</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>항목</th><th class="num">과금</th><th class="num">무과금</th><th>비고</th></tr>
+      <tr><td>일반 샘플/일</td><td class="num"><input type="number" id="pN" value="13"></td><td class="num"><input type="number" id="fN" value="12"></td><td>기본6 + 광고6 (+월정액1)</td></tr>
+      <tr><td>고급 샘플/일</td><td class="num"><input type="number" id="pP" value="13"></td><td class="num"><input type="number" id="fP" value="0"></td><td>상점10 + 월정액3</td></tr>
+      <tr><td>슬롯 보너스</td><td class="num"><input type="number" id="pS" value="1"></td><td class="num"><input type="number" id="fS" value="0"></td><td>월정액 +1 (최대 6)</td></tr>
+      <tr><td>슬롯 가동시간 (h/일)</td><td class="num"><input type="number" id="pH" value="8"></td><td class="num"><input type="number" id="fH" value="8"></td><td>조사 처리 캐파</td></tr>
+    </table></div>
+  </div>
+  <div class="card">
+    <h3 style="margin-top:0">샘플 스펙</h3>
+    <div class="tbl-wrap"><table>
+      <tr><th>등급</th><th class="num">조사 (h)</th><th class="num">디스크</th><th class="num">exp</th></tr>
+      <tr><td>일반</td><td class="num"><input type="number" id="nH" value="1"></td><td class="num"><input type="number" id="nD" value="100"></td><td class="num"><input type="number" id="nE" value="20"></td></tr>
+      <tr><td>고급</td><td class="num"><input type="number" id="gH" value="2"></td><td class="num"><input type="number" id="gD" value="300"></td><td class="num"><input type="number" id="gE" value="60"></td></tr>
+    </table></div>
+    <p class="note" style="margin:12px 0 0">일자 시뮬 규칙: 슬롯 = min(6, min(연구소Lv, 6) + 보너스) · 캐파(h) = 슬롯 × 가동시간 · 고급 샘플을 먼저 처리(캐파 ÷ 고급 조사시간)하고 남은 캐파로 일반 샘플 처리 · 미처리 샘플은 다음 날로 이월.</p>
+  </div>
+  </div>
+</section>
+
+<section class="panel" id="p2">
+  <h2>성장 곡선 데이터 (설계 확정안)</h2>
+  <p class="sub">연구소 60레벨 필요 exp 곡선과 동상 10레벨 디스크 비용. 누적값은 "해당 레벨 도달" 시점의 총량입니다.</p>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0">연구소 레벨</h3><div class="tbl-wrap" style="max-height:520px;overflow:auto"><table id="tLab"></table></div></div>
+    <div class="card"><h3 style="margin-top:0">동상 레벨</h3><div class="tbl-wrap"><table id="tStatue"></table></div>
+      <p class="note" style="margin-top:12px">동상 목표일은 설계 시 먼저 확정한 값이며, ④에서 시뮬 결과와 대조됩니다.</p></div>
+  </div>
+</section>
+
+<section class="panel" id="p3">
+  <h2>일자 시뮬 — 슬롯 캐파 × 재고 이월 모델</h2>
+  <p class="sub">Day 1부터 500일까지 하루 단위로 계산합니다. ①의 파라미터가 그대로 반영됩니다.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="card">
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <b>유저 유형</b>
+      <button class="more" data-u="p" style="font-weight:600">과금</button> <span class="note">|</span>
+      <button class="more" data-u="f">무과금</button>
+    </div>
+    <div class="tbl-wrap" style="max-height:560px;overflow:auto"><table id="tSim"></table></div>
+    <button class="more" id="moreSim">더 보기 (60일씩)</button>
+  </div>
+</section>
+
+<section class="panel" id="p4">
+  <h2>검증 요약 — 목표 도달일 vs 시뮬</h2>
+  <p class="sub">설계 시 확정한 목표일과 시뮬레이션 도달일을 자동 대조합니다. <span class="swatch ok"></span>녹색 = 목표 범위 이내.</p>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0">연구소 레벨</h3><div class="tbl-wrap"><table id="vLab"></table></div></div>
+    <div class="card"><h3 style="margin-top:0">동상 레벨</h3><div class="tbl-wrap"><table id="vStatue"></table></div></div>
+  </div>
+  <div class="card"><h3 style="margin-top:0">연구소 레벨 추이 (일)</h3>
+    <div class="legend"><span><i style="background:var(--s1)"></i>과금</span><span><i style="background:var(--s2)"></i>무과금</span></div>
+    <div class="chart" id="cLab"></div></div>
+  <div class="card"><h3 style="margin-top:0">동상 레벨 추이 (일)</h3>
+    <div class="legend"><span><i style="background:var(--s1)"></i>과금</span><span><i style="background:var(--s2)"></i>무과금</span></div>
+    <div class="chart" id="cStatue"></div></div>
+</section>
+
+<section class="panel" id="p5">
+  <h2>금화·잠재력 비용 곡선 교체안 (확정 V5)</h2>
+  <p class="sub">라이브 곡선의 굴곡을 매끈한 멱곡선으로 교체하되, 만렙까지의 누적 총량은 라이브와 동일하게 보존합니다.</p>
+  <div class="card">
+    <p style="margin:0 0 10px"><b>조정안 비용</b> = 시작 + (만렙 − 시작) × 진행률<sup>p</sup>, 진행률 = (Lv − 1) / (만렙 − 1). 파란 칸(p 등)을 바꾸면 "수식 데모" 곡선이 재계산되어 확정값과 비교됩니다.</p>
+    <div class="tbl-wrap"><table>
+      <tr><th>파라미터</th><th class="num">금화</th><th class="num">잠재력</th></tr>
+      <tr><td>시작 비용</td><td class="num"><input type="number" id="gS" value="300"></td><td class="num"><input type="number" id="qS" value="10"></td></tr>
+      <tr><td>만렙 비용</td><td class="num"><input type="number" id="gM" value="1712500"></td><td class="num"><input type="number" id="qM" value="30951"></td></tr>
+      <tr><td>지수 p</td><td class="num"><input type="number" id="gP" value="1.434" step="0.001"></td><td class="num"><input type="number" id="qP" value="1.749" step="0.001"></td></tr>
+      <tr><td>만렙 (레벨 수)</td><td class="num">4,000</td><td class="num">1,500</td></tr>
+      <tr><td>라이브 총량</td><td class="num">2,814,821,480</td><td class="num">16,905,150</td></tr>
+      <tr><td>조정안 총량 (확정)</td><td class="num ok">2,814,821,480</td><td class="num ok">16,905,150</td></tr>
+      <tr><td>총량 편차</td><td class="num ok">0</td><td class="num ok">0</td></tr>
+    </table></div>
+  </div>
+  <div class="card"><h3 style="margin-top:0">금화 — 레벨당 비용</h3>
+    <div class="legend"><span><i style="background:var(--s1)"></i>라이브</span><span><i style="background:var(--s2)"></i>조정안 (확정)</span><span><i style="background:repeating-linear-gradient(90deg,var(--s3) 0 5px,transparent 5px 8px)"></i>수식 데모 (점선)</span></div>
+    <div class="chart" id="cGold"></div></div>
+  <div class="card"><h3 style="margin-top:0">금화 — 누적 비용</h3>
+    <div class="legend"><span><i style="background:var(--s1)"></i>라이브</span><span><i style="background:var(--s2)"></i>조정안 (확정)</span></div>
+    <div class="chart" id="cGoldCum"></div></div>
+  <div class="card"><h3 style="margin-top:0">잠재력 — 레벨당 비용</h3>
+    <div class="legend"><span><i style="background:var(--s1)"></i>라이브</span><span><i style="background:var(--s2)"></i>조정안 (확정)</span><span><i style="background:repeating-linear-gradient(90deg,var(--s3) 0 5px,transparent 5px 8px)"></i>수식 데모 (점선)</span></div>
+    <div class="chart" id="cPot"></div></div>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0">금화 곡선 (50레벨 간격)</h3><div class="tbl-wrap" style="max-height:420px;overflow:auto"><table id="tGold"></table></div></div>
+    <div class="card"><h3 style="margin-top:0">잠재력 곡선 (50레벨 간격)</h3><div class="tbl-wrap" style="max-height:420px;overflow:auto"><table id="tPot"></table></div></div>
+  </div>
+</section>
+
+<section class="panel" id="p6">
+  <h2>재화 가치 좌표계 — 1다이아 = 5원</h2>
+  <p class="sub">월정액 가격을 역산해 다이아 단가를 앵커로 잡고, 모든 재화·아이템의 가치를 같은 좌표계 위에 놓습니다.</p>
+  <div class="card"><h3 style="margin-top:0">주요 아이템 다이아 가치</h3><div class="chart" id="cCur"></div></div>
+  <div class="card"><div class="tbl-wrap"><table id="tCur"></table></div></div>
+</section>
+
+<footer>© Kim Hyeon · 포트폴리오용 시뮬레이터. 수치는 설계 예시이며 원본 Excel(라이브 수식)과 동일한 계산 규칙을 사용합니다.</footer>
+</main>
+
+<script>
+const D = {"lab": [[1, 20], [2, 1000], [3, 4000], [4, 7250], [5, 7250], [6, 8210], [7, 8210], [8, 8220], [9, 8230], [10, 8240], [11, 8250], [12, 8260], [13, 8270], [14, 8280], [15, 8280], [16, 8290], [17, 8300], [18, 8320], [19, 8320], [20, 8320], [21, 8320], [22, 8320], [23, 8320], [24, 8320], [25, 8320], [26, 8320], [27, 8320], [28, 8320], [29, 8320], [30, 9700], [31, 9700], [32, 9700], [33, 9700], [34, 9700], [35, 9700], [36, 9700], [37, 9700], [38, 9700], [39, 9700], [40, 9700], [41, 9700], [42, 9700], [43, 9700], [44, 9700], [45, 9700], [46, 9700], [47, 9700], [48, 9700], [49, 9700], [50, 9700], [51, 9700], [52, 9700], [53, 9700], [54, 9700], [55, 9700], [56, 9700], [57, 9700], [58, 9800], [59, 9800], [60, 0]], "statue": [[1, 2400, null], [2, 13200, 0], [3, 36400, 3], [4, 104000, 10], [5, 156000, 30], [6, 208000, 60], [7, 260000, 100], [8, 312000, 150], [9, 468000, 210], [10, 0, 300]], "gold": [[1, 3600, 3600, 300, 300], [50, 55670, 1664790, 3400, 78990], [100, 90430, 5364510, 8810, 380250], [150, 120110, 10657920, 15590, 988630], [200, 146910, 17356370, 23460, 1964630], [250, 171740, 25341890, 32240, 3357780], [300, 195120, 34530380, 41820, 5210830], [350, 217350, 44857520, 52130, 7561830], [400, 238650, 56271600, 63100, 10445430], [450, 259160, 68729900, 74690, 13893450], [500, 278990, 82196060, 86850, 17935680], [550, 298240, 96638710, 99550, 22599890], [600, 316970, 112030270, 112770, 27912420], [650, 335230, 128346280, 126470, 33898320], [700, 353080, 145564820, 140640, 40581390], [750, 370550, 163665960, 155260, 47984440], [800, 387680, 182631720, 170310, 56129450], [850, 404480, 202445440, 185770, 65037520], [900, 421000, 223091840, 201640, 74728960], [950, 437230, 244556770, 217890, 85223520], [1000, 453220, 266827130, 234510, 96540270], [1050, 468960, 289890500, 251510, 108697830], [1100, 484490, 313735410, 268850, 121714050], [1150, 499800, 338351060, 286550, 135606590], [1200, 514910, 363727210, 304580, 150392460], [1250, 529840, 389854200, 322940, 166088370], [1300, 544590, 416722910, 341630, 182710590], [1350, 559170, 444324660, 360620, 200275080], [1400, 573580, 472651180, 379930, 218797360], [1450, 587850, 501694650, 399540, 238292700], [1500, 601960, 531447530, 419440, 258776000], [1550, 615940, 561902670, 439640, 280262000], [1600, 629780, 593053180, 460120, 302765020], [1650, 643490, 624892440, 480880, 326299220], [1700, 657080, 657414160, 501910, 350878430], [1750, 670550, 690612260, 523220, 376516340], [1800, 683910, 724480830, 544790, 403226330], [1850, 697150, 759014320, 566630, 431021620], [1900, 710290, 794207190, 588720, 459915170], [1950, 723320, 830054260, 611060, 489919830], [2000, 736250, 866550410, 633660, 521048110], [2050, 749090, 903690730, 656500, 553312530], [2100, 761830, 941470500, 679590, 586725280], [2150, 774480, 979885080, 702910, 621298460], [2200, 787050, 1018930030, 726480, 657044040], [2250, 799530, 1058601000, 750270, 693973720], [2300, 811920, 1098893760, 774300, 732099150], [2350, 824240, 1139804280, 798560, 771431740], [2400, 836480, 1181328560, 823040, 811982870], [2450, 848640, 1223462710, 847740, 853763700], [2500, 860720, 1266203010, 872660, 896785300], [2550, 872740, 1309545830, 897800, 941058590], [2600, 884680, 1353487510, 923160, 986594410], [2650, 896560, 1398024620, 948730, 1033403500], [2700, 908360, 1443153780, 974510, 1081496320], [2750, 920110, 1488871650, 1000490, 1130883360], [2800, 931780, 1535174990, 1026690, 1181575050], [2850, 943400, 1582060690, 1053080, 1233581550], [2900, 954960, 1629525620, 1079680, 1286913050], [2950, 966450, 1677566810, 1106480, 1341579620], [3000, 977890, 1726181290, 1133480, 1397591150], [3050, 989270, 1775366190, 1160670, 1454957540], [3100, 1000590, 1825118680, 1188060, 1513688550], [3150, 1011860, 1875435950, 1215640, 1573793850], [3200, 1023080, 1926315380, 1243410, 1635282980], [3250, 1034240, 1977754270, 1271370, 1698165460], [3300, 1045360, 2029750050, 1299510, 1762450680], [3350, 1056420, 2082300150, 1327840, 1828148010], [3400, 1067430, 2135402050, 1356360, 1895266660], [3450, 1078400, 2189053410, 1385060, 1963815830], [3500, 1089310, 2243251720, 1413940, 2033804600], [3550, 1100180, 2297994670, 1443000, 2105242000], [3600, 1111010, 2353279960, 1472240, 2178137030], [3650, 1121780, 2409105270, 1501660, 2252498520], [3700, 1132520, 2465468400, 1531250, 2328335270], [3750, 1143210, 2522367180, 1561010, 2405656030], [3800, 1153860, 2579799430, 1590950, 2484469450], [3850, 1164470, 2637763030, 1621060, 2564784190], [3900, 1175030, 2696255930, 1651340, 2646608780], [3950, 1185560, 2755276080, 1681790, 2729951700], [4000, 1196040, 2814821480, 1712500, 2814821480]], "pot": [[1, 30, 30, 10, 10], [50, 1060, 28520, 88, 1929], [100, 1950, 104440, 277, 10742], [150, 2790, 223460, 556, 31342], [200, 3590, 383480, 915, 67962], [250, 4370, 583080, 1349, 124492], [300, 5130, 821190, 1855, 204562], [350, 5880, 1096940, 2428, 311640], [400, 6620, 1409770, 3066, 449034], [450, 7340, 1758990, 3767, 619946], [500, 8050, 2144120, 4529, 827467], [550, 8760, 2564700, 5350, 1074614], [600, 9450, 3020320, 6230, 1364327], [650, 10140, 3510620, 7166, 1699475], [700, 10830, 4035260, 8159, 2082865], [750, 11510, 4593960, 9205, 2517256], [800, 12180, 5186400, 10306, 3005360], [850, 12850, 5812400, 11459, 3549837], [900, 13510, 6471630, 12664, 4153311], [950, 14170, 7163870, 13921, 4818364], [1000, 14820, 7888950, 15228, 5547542], [1050, 15470, 8646640, 16586, 6343361], [1100, 16120, 9436760, 17992, 7208302], [1150, 16760, 10259130, 19448, 8144823], [1200, 17400, 11113570, 20951, 9155341], [1250, 18040, 11999930, 22503, 10242261], [1300, 18670, 12918030, 24101, 11407954], [1350, 19300, 13867750, 25746, 12654775], [1400, 19930, 14848940, 27438, 13985048], [1450, 20560, 15861440, 29176, 15401081], [1500, 21180, 16905150, 30951, 16905150]], "cur": [["소환권 (위인/동료)", 20, "소환 비용 테이블 직접가"], ["소환권 (유산)", 15, "소환 비용 테이블 직접가"], ["SR 확정권", 317, "가챠 기대비용 역산"], ["SR-SSR 확정권", 1344.48, "0.81×SR + 0.19×SSR (박스 구성비 혼합)"], ["일반 샘플", 15, "기대 디스크 225 × 1/15D"], ["고급 샘플", 44, "기대 디스크 660 × 1/15D"], ["희귀 샘플", 80, "기대 디스크 1,200 × 1/15D"], ["연구 가속 60분", 20, "상시 상점가"], ["강화 스크롤", 10, "상시 상점가"], ["던전 입장권", 50, "프리미엄 티어 (성장 상한 재화)"], ["길드 재화 1개", 0.18, "다이아 기부 환율 1/5.5"], ["모루 1개", 0.049, "상시 상점가 (수급가 병기 관리)"], ["불꽃가루 1개", 0.1, "판매 앵커 (수급가와 이원 관리)"], ["연구 디스크 1개", 0.0667, "희귀 샘플 80D ÷ 1,200"]], "labT": [[2, "1"], [6, "20~30"], [10, "-"], [20, "130"], [30, "210"], [60, "490"]]};
+const $ = id => document.getElementById(id);
+const fmt = n => (typeof n==='number') ? n.toLocaleString('ko-KR', {maximumFractionDigits: Number.isInteger(n)?0:3}) : n;
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* ---------- tabs ---------- */
+$('tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x===b));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('on', p.id===b.dataset.t));
+  drawAll();
+});
+
+/* ---------- growth data ---------- */
+const labCum = []; { let c=0; D.lab.forEach(([lv,need]) => { labCum.push(c); c+=need; }); }
+const stCum = []; { let c=0; D.statue.forEach(([lv,cost]) => { stCum.push(c); c+=cost; }); }
+const matchLE = (v, arr) => { let i=0; while (i+1<arr.length && arr[i+1]<=v) i++; return i+1; }; // Excel MATCH(...,1)
+
+$('tLab').innerHTML = '<tr><th class="num">연구소Lv</th><th class="num">필요 exp</th><th class="num">누적 exp (도달)</th><th class="num">슬롯</th></tr>' +
+  D.lab.map(([lv,need],i)=>`<tr><td class="num">${lv}</td><td class="num">${fmt(need)}</td><td class="num">${fmt(labCum[i])}</td><td class="num">${Math.min(lv,6)}</td></tr>`).join('');
+$('tStatue').innerHTML = '<tr><th class="num">동상Lv</th><th class="num">비용 (디스크)</th><th class="num">누적 (도달)</th><th class="num">목표일</th></tr>' +
+  D.statue.map(([lv,cost,t],i)=>`<tr><td class="num">${lv}</td><td class="num">${fmt(cost)}</td><td class="num">${fmt(stCum[i])}</td><td class="num">${t==null?'—':t}</td></tr>`).join('');
+
+/* ---------- daily sim ---------- */
+function params(u){ const k = u==='p'?'p':'f';
+  return { N:+$(k+'N').value, P:+$(k+'P').value, S:+$(k+'S').value, H:+$(k+'H').value,
+           nH:+$('nH').value, nD:+$('nD').value, nE:+$('nE').value, gH:+$('gH').value, gD:+$('gD').value, gE:+$('gE').value }; }
+function simulate(u){
+  const p = params(u), rows=[]; let lv=1, invN=0, invP=0, exp=0, disc=0;
+  for (let d=1; d<=500; d++){
+    const slots = Math.min(6, Math.min(lv,6)+p.S), cap = slots*p.H;
+    const E = invN + p.N, F = invP + p.P;
+    const G = Math.min(F, Math.floor(cap/p.gH));
+    const Hn = Math.min(E, cap - p.gH*G);
+    invN = E-Hn; invP = F-G;
+    exp += G*p.gE + Hn*p.nE; disc += G*p.gD + Hn*p.nD;
+    const endLv = matchLE(exp, labCum), stLv = matchLE(disc, stCum);
+    rows.push({d, lv, slots, cap, E, F, G, Hn, invN, invP, exp, endLv, disc, stLv});
+    lv = endLv;
+  }
+  return rows;
+}
+let SIM = {p:[], f:[]}, simU='p', simShown=60;
+function reachDay(rows, key, threshold){ const i = rows.findIndex(r => r[key] >= threshold); return i<0 ? '-' : i+1; }
+
+function renderSim(){
+  const rows = SIM[simU];
+  $('tSim').innerHTML = '<tr><th class="num">일</th><th class="num">시작Lv</th><th class="num">슬롯</th><th class="num">캐파h</th><th class="num">일반 재고+충전</th><th class="num">고급 재고+충전</th><th class="num">고급 처리</th><th class="num">일반 처리</th><th class="num">잔여 일반</th><th class="num">잔여 고급</th><th class="num">누적 exp</th><th class="num">종료 연구소Lv</th><th class="num">누적 디스크</th><th class="num">동상Lv</th></tr>' +
+    rows.slice(0, simShown).map(r=>`<tr><td class="num">${r.d}</td><td class="num">${r.lv}</td><td class="num">${r.slots}</td><td class="num">${r.cap}</td><td class="num">${r.E}</td><td class="num">${r.F}</td><td class="num">${r.G}</td><td class="num">${r.Hn}</td><td class="num">${r.invN}</td><td class="num">${r.invP}</td><td class="num">${fmt(r.exp)}</td><td class="num">${r.endLv}</td><td class="num">${fmt(r.disc)}</td><td class="num">${r.stLv}</td></tr>`).join('');
+  $('moreSim').style.display = simShown>=500 ? 'none' : '';
+  document.querySelectorAll('[data-u]').forEach(b => b.style.fontWeight = b.dataset.u===simU ? '600':'400');
+  const P=SIM.p, F=SIM.f;
+  $('kpis').innerHTML = [
+    ['과금 · 연구소 Lv20 도달', reachDay(P,'exp',labCum[19])+'일'], ['과금 · 연구소 Lv60 도달', reachDay(P,'exp',labCum[59])+'일'],
+    ['무과금 · 연구소 Lv10 도달', reachDay(F,'exp',labCum[9])+'일'], ['과금 · 동상 Lv10 도달', reachDay(P,'disc',stCum[9])+'일'],
+    ['500일 종료 Lv (과금/무과금)', P[499].endLv+' / '+F[499].endLv],
+  ].map(([l,v])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+}
+$('moreSim').onclick = () => { simShown = Math.min(500, simShown+60); renderSim(); };
+document.querySelectorAll('[data-u]').forEach(b => b.onclick = () => { simU=b.dataset.u; simShown=60; renderSim(); });
+
+function inRange(target, day){
+  if (target==null || target==='-' || day==='-') return null;
+  const s = String(target); if (s.includes('~')) { const [a,b]=s.split('~').map(Number); return day>=a && day<=b; }
+  return day <= Number(s);
+}
+function renderVerify(){
+  const P=SIM.p, F=SIM.f;
+  const cell = (t, d) => { const ok = inRange(t,d); return `<td class="num ${ok===null?'':ok?'ok':'bad'}">${d}</td>`; };
+  $('vLab').innerHTML = '<tr><th class="num">연구소 Lv</th><th class="num">목표일</th><th class="num">과금 도달일</th><th class="num">무과금 도달일</th></tr>' +
+    D.labT.map(([lv,t]) => { const th = labCum[lv-1]; return `<tr><td class="num">${lv}</td><td class="num">${t}</td>${cell(t,reachDay(P,'exp',th))}<td class="num">${reachDay(F,'exp',th)}</td></tr>`; }).join('');
+  $('vStatue').innerHTML = '<tr><th class="num">동상 Lv</th><th class="num">목표일</th><th class="num">과금 도달일</th><th class="num">무과금 도달일</th></tr>' +
+    D.statue.slice(1).map(([lv,c,t]) => { if (lv===3) return ''; const th = stCum[lv-1]; return `<tr><td class="num">${lv}</td><td class="num">${t}</td>${cell(t,reachDay(P,'disc',th))}<td class="num">${reachDay(F,'disc',th)}</td></tr>`; }).join('');
+}
+
+/* ---------- charts ---------- */
+function lineChart(el, {x, series, xLabel, yLabel, xFmt=fmt, yFmt=fmt}){
+  el.innerHTML='';
+  const W=900, H=320, m={l:96, r:20, t:14, b:40};
+  const xs=x, xmin=Math.min(...xs), xmax=Math.max(...xs);
+  let ymax=0; series.forEach(s => s.v.forEach(v => { if (v!=null && v>ymax) ymax=v; }));
+  const niceStep = r => { const p=Math.pow(10,Math.floor(Math.log10(r/5))); const c=r/5/p; return (c<=1?1:c<=2?2:c<=5?5:10)*p; };
+  const step=niceStep(ymax||1); ymax = Math.ceil(ymax/step)*step || 1;
+  const X = v => m.l + (v-xmin)/(xmax-xmin||1)*(W-m.l-m.r), Y = v => H-m.b - v/ymax*(H-m.t-m.b);
+  let g='';
+  for (let v=0; v<=ymax+1e-9; v+=step) g += `<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${css('--grid')}"/><text x="${m.l-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="${css('--muted')}">${yFmt(v)}</text>`;
+  const xstep=niceStep(xmax-xmin), xt=[xmin]; for (let v=Math.ceil(xmin/xstep)*xstep; v<=xmax; v+=xstep) if (X(v)-X(xt[xt.length-1])>30) xt.push(v);
+  xt.forEach(v => { g += `<text x="${X(v)}" y="${H-m.b+18}" text-anchor="middle" font-size="11" fill="${css('--muted')}">${xFmt(v)}</text>`; });
+  g += `<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" stroke="${css('--line')}"/>`;
+  g += `<text x="${(m.l+W-m.r)/2}" y="${H-4}" text-anchor="middle" font-size="11" fill="${css('--muted')}">${xLabel}</text>`;
+  g += `<text transform="translate(14,${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle" font-size="11" fill="${css('--muted')}">${yLabel}</text>`;
+  series.forEach(s => { const d = s.v.map((v,i)=> v==null?null:`${X(xs[i]).toFixed(1)},${Y(v).toFixed(1)}`).filter(Boolean).join(' L');
+    g += `<path d="M${d}" fill="none" stroke="${css(s.c)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"${s.dash?' stroke-dasharray="6 5"':''}/>`;
+    const li = s.v.length-1; g += `<circle cx="${X(xs[li])}" cy="${Y(s.v[li])}" r="4" fill="${css(s.c)}" stroke="${css('--card')}" stroke-width="2"/>`; });
+  g += `<line id="cross" x1="0" x2="0" y1="${m.t}" y2="${H-m.b}" stroke="${css('--muted')}" stroke-width="1" style="display:none"/>`;
+  series.forEach((s,i)=> g += `<circle class="hp" data-i="${i}" r="4" fill="${css(s.c)}" stroke="${css('--card')}" stroke-width="2" style="display:none"/>`);
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg><div class="tip"></div>`;
+  const svg=el.querySelector('svg'), tip=el.querySelector('.tip'), cross=el.querySelector('#cross'), hps=[...el.querySelectorAll('.hp')];
+  svg.addEventListener('mousemove', ev => {
+    const r=svg.getBoundingClientRect(); const px=(ev.clientX-r.left)*W/r.width; if (px<m.l||px>W-m.r) return;
+    const xv = xmin + (px-m.l)/(W-m.l-m.r)*(xmax-xmin); let i=0, best=1e18; xs.forEach((v,k)=>{ const dd=Math.abs(v-xv); if (dd<best){best=dd;i=k;} });
+    cross.style.display=''; cross.setAttribute('x1',X(xs[i])); cross.setAttribute('x2',X(xs[i]));
+    series.forEach((s,k)=>{ const v=s.v[i]; if (v==null){hps[k].style.display='none';return;} hps[k].style.display=''; hps[k].setAttribute('cx',X(xs[i])); hps[k].setAttribute('cy',Y(v)); });
+    tip.style.display='block'; tip.innerHTML = `<b>${xLabel} ${xFmt(xs[i])}</b><br>` + series.map(s=>`<span style="display:inline-block;width:10px;height:3px;background:${css(s.c)};vertical-align:middle;margin-right:5px"></span>${s.n}: <b>${s.v[i]==null?'—':yFmt(s.v[i])}</b>`).join('<br>');
+    const lx=(ev.clientX-r.left), ly=(ev.clientY-r.top); tip.style.left=(lx+14+tip.offsetWidth > r.width ? lx-tip.offsetWidth-10 : lx+14)+'px'; tip.style.top=(ly-10)+'px';
+  });
+  svg.addEventListener('mouseleave', ()=>{ tip.style.display='none'; cross.style.display='none'; hps.forEach(h=>h.style.display='none'); });
+}
+function barChart(el, {labels, values, valueFmt=fmt}){
+  el.innerHTML='';
+  const W=900, rowH=30, m={l:170, r:80, t:8, b:28}, H=m.t+m.b+labels.length*rowH;
+  const vmax=Math.max(...values); const niceStep = r => { const p=Math.pow(10,Math.floor(Math.log10(r/4))); const c=r/4/p; return (c<=1?1:c<=2?2:c<=5?5:10)*p; };
+  const step=niceStep(vmax), xmax=Math.ceil(vmax/step)*step; const X=v=>m.l+v/xmax*(W-m.l-m.r);
+  let g='';
+  for (let v=0; v<=xmax+1e-9; v+=step) g += `<line x1="${X(v)}" x2="${X(v)}" y1="${m.t}" y2="${H-m.b}" stroke="${css('--grid')}"/><text x="${X(v)}" y="${H-m.b+16}" text-anchor="middle" font-size="11" fill="${css('--muted')}">${fmt(v)}</text>`;
+  labels.forEach((l,i)=>{ const y=m.t+i*rowH+4, h=rowH-8, w=Math.max(0,X(values[i])-m.l);
+    g += `<text x="${m.l-10}" y="${y+h/2+4}" text-anchor="end" font-size="12" fill="${css('--text')}">${l}</text>`;
+    g += `<path class="bar" data-i="${i}" d="M${m.l},${y} h${Math.max(w-4,0)} a4,4 0 0 1 4,4 v${h-8} a4,4 0 0 1 -4,4 h-${Math.max(w-4,0)} z" fill="${css('--s1')}"/>`;
+    g += `<text x="${X(values[i])+6}" y="${y+h/2+4}" font-size="11" fill="${css('--text')}">${valueFmt(values[i])}</text>`; });
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}">${g}</svg>`;
+}
+
+/* ---------- curve redesign ---------- */
+function curveDemo(S,M,p,max,lv){ return S + (M-S)*Math.pow((lv-1)/(max-1), p); }
+function renderCurves(){
+  const gS=+$('gS').value,gM=+$('gM').value,gP=+$('gP').value, qS=+$('qS').value,qM=+$('qM').value,qP=+$('qP').value;
+  const gx=D.gold.map(r=>r[0]), px=D.pot.map(r=>r[0]);
+  const gDemo=gx.map(l=>Math.round(curveDemo(gS,gM,gP,4000,l))), pDemo=px.map(l=>Math.round(curveDemo(qS,qM,qP,1500,l)));
+  if ($('p5').classList.contains('on')) {
+    lineChart($('cGold'), {x:gx, xLabel:'금화 Lv', yLabel:'비용', series:[{n:'라이브',v:D.gold.map(r=>r[1]),c:'--s1'},{n:'조정안 (확정)',v:D.gold.map(r=>r[3]),c:'--s2'},{n:'수식 데모',v:gDemo,c:'--s3',dash:1}]});
+    lineChart($('cGoldCum'), {x:gx, xLabel:'금화 Lv', yLabel:'누적 비용', yFmt:v=>v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?(v/1e6).toFixed(0)+'M':fmt(v), series:[{n:'라이브',v:D.gold.map(r=>r[2]),c:'--s1'},{n:'조정안 (확정)',v:D.gold.map(r=>r[4]),c:'--s2'}]});
+    lineChart($('cPot'), {x:px, xLabel:'잠재력 Lv', yLabel:'비용', series:[{n:'라이브',v:D.pot.map(r=>r[1]),c:'--s1'},{n:'조정안 (확정)',v:D.pot.map(r=>r[3]),c:'--s2'},{n:'수식 데모',v:pDemo,c:'--s3',dash:1}]});
+  }
+  const hdr='<tr><th class="num">Lv</th><th class="num">라이브 비용</th><th class="num">라이브 누적</th><th class="num">조정안 비용</th><th class="num">조정안 누적</th><th class="num">수식 데모</th></tr>';
+  $('tGold').innerHTML = hdr + D.gold.map((r,i)=>`<tr><td class="num">${fmt(r[0])}</td><td class="num">${fmt(r[1])}</td><td class="num">${fmt(r[2])}</td><td class="num">${fmt(r[3])}</td><td class="num">${fmt(r[4])}</td><td class="num">${fmt(gDemo[i])}</td></tr>`).join('');
+  $('tPot').innerHTML = hdr + D.pot.map((r,i)=>`<tr><td class="num">${fmt(r[0])}</td><td class="num">${fmt(r[1])}</td><td class="num">${fmt(r[2])}</td><td class="num">${fmt(r[3])}</td><td class="num">${fmt(r[4])}</td><td class="num">${fmt(pDemo[i])}</td></tr>`).join('');
+}
+
+/* ---------- currency ---------- */
+$('tCur').innerHTML = '<tr><th>재화 / 아이템</th><th class="num">다이아 가치</th><th class="num">현금 환산 (원)</th><th>산정 근거</th></tr>' +
+  D.cur.map(([n,v,b])=>`<tr><td>${n}</td><td class="num">${fmt(v)}</td><td class="num">${fmt(Math.round(v*5*1000)/1000)}</td><td>${b}</td></tr>`).join('');
+
+/* ---------- orchestration ---------- */
+function drawAll(){
+  if ($('p4').classList.contains('on')) {
+    const x = SIM.p.map(r=>r.d);
+    lineChart($('cLab'), {x, xLabel:'일', yLabel:'연구소 Lv', series:[{n:'과금',v:SIM.p.map(r=>r.endLv),c:'--s1'},{n:'무과금',v:SIM.f.map(r=>r.endLv),c:'--s2'}]});
+    lineChart($('cStatue'), {x, xLabel:'일', yLabel:'동상 Lv', series:[{n:'과금',v:SIM.p.map(r=>r.stLv),c:'--s1'},{n:'무과금',v:SIM.f.map(r=>r.stLv),c:'--s2'}]});
+  }
+  if ($('p6').classList.contains('on')) barChart($('cCur'), {labels:D.cur.slice(0,10).map(r=>r[0]), values:D.cur.slice(0,10).map(r=>r[1])});
+  renderCurves();
+}
+function recompute(){ SIM.p=simulate('p'); SIM.f=simulate('f'); renderSim(); renderVerify(); drawAll(); }
+document.querySelectorAll('#p1 input').forEach(i => i.addEventListener('input', recompute));
+document.querySelectorAll('#p5 input').forEach(i => i.addEventListener('input', renderCurves));
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawAll);
+recompute();
+</script>
+</body>
+</html>
