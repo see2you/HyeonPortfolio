@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>김현 포트폴리오 — 게임 시스템·콘텐츠 기획</title>
+<style>
+  :root { --bg:#f7f7f5; --card:#fff; --text:#1f2328; --muted:#6b7280; --line:#e5e7eb; --accent:#2563eb; --head:#f1f5f9; --chip:#eef2f7; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --card:#181b21; --text:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --accent:#7aa2ff; --head:#20242c; --chip:#22262e; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif; line-height:1.6; font-size:15px; }
+  main { max-width:860px; margin:0 auto; padding:56px 20px 80px; }
+  header { margin-bottom:28px; }
+  h1 { font-size:1.9rem; margin:0 0 6px; letter-spacing:-.01em; }
+  .tagline { color:var(--muted); margin:0; }
+  .intro { margin:16px 0 0; font-size:.97rem; }
+  .toolbar { display:flex; justify-content:space-between; align-items:center; margin:22px 0 10px; font-size:.85rem; color:var(--muted); }
+  .toolbar button { font:inherit; color:var(--accent); background:none; border:1px solid var(--line); border-radius:6px; padding:3px 10px; cursor:pointer; margin-left:6px; }
+  details.proj { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
+  details.proj > summary { list-style:none; cursor:pointer; padding:16px 20px 14px 44px; position:relative; }
+  details.proj > summary::-webkit-details-marker { display:none; }
+  details.proj > summary::before { content:""; position:absolute; left:20px; top:24px; width:8px; height:8px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(-45deg); transition:transform .15s; }
+  details.proj[open] > summary::before { transform:rotate(45deg); top:21px; }
+  .pt { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .pname { font-size:1.2rem; font-weight:700; }
+  .genre { color:var(--muted); font-size:.9rem; }
+  .pm { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:4px; font-size:.85rem; color:var(--muted); }
+  .period { font-weight:600; color:var(--text); background:var(--chip); border-radius:6px; padding:1px 8px; font-variant-numeric:tabular-nums; }
+  .company::after, .role::after { content:""; }
+  .company::before { content:"·"; margin-right:8px; }
+  .role::before { content:"·"; margin-right:8px; }
+  .cnt { font-size:.75rem; font-weight:500; color:var(--muted); background:var(--bg); border:1px solid var(--line); border-radius:999px; padding:0 7px; margin-left:4px; }
+  .body { padding:0 20px 14px 44px; border-top:1px solid var(--line); }
+  details.grp { margin-top:12px; }
+  details.grp > summary, details.sub > summary { cursor:pointer; font-weight:600; font-size:.95rem; padding:4px 0; list-style:none; }
+  details.grp > summary::-webkit-details-marker, details.sub > summary::-webkit-details-marker { display:none; }
+  details.grp > summary::before, details.sub > summary::before { content:"▸"; display:inline-block; width:14px; color:var(--muted); font-size:.8rem; transition:transform .15s; }
+  details.grp[open] > summary::before, details.sub[open] > summary::before { transform:rotate(90deg); }
+  details.sub { margin:2px 0 6px 0; }
+  details.sub > summary { font-weight:500; color:var(--text); }
+  ul { list-style:none; margin:2px 0 4px 14px; padding:0; }
+  li { border-top:1px solid var(--line); }
+  li:first-child { border-top:0; }
+  details.sub ul { margin-left:14px; }
+  li a { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 4px; color:var(--text); text-decoration:none; word-break:keep-all; }
+  li a:hover { color:var(--accent); }
+  .ext { font-size:.72rem; color:var(--muted); background:var(--chip); border-radius:4px; padding:0 6px; text-transform:uppercase; white-space:nowrap; }
+  footer { color:var(--muted); font-size:.85rem; margin-top:32px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>김현 포트폴리오</h1>
+  <p class="tagline">게임 시스템·콘텐츠 기획자 — 결과로 말하는 기획자</p>
+  <p class="intro">2012년부터 참여한 프로젝트를 최신순으로 정리했습니다. 각 항목을 클릭하면 실무에서 작성한 기획 문서가 열립니다.</p>
+</header>
+
+<div class="toolbar"><span>프로젝트 4개 · 문서 43건</span><span><button id="openAll">모두 펼치기</button><button id="closeAll">모두 접기</button></span></div>
+
+<details class="proj" open>
+  <summary>
+    <div class="pt"><span class="pname">사신소년 키우기</span><span class="genre">방치형 액션 RPG</span></div>
+    <div class="pm"><span class="period">2025.04 ~ 현재</span><span class="company">빌리네어게임즈</span><span class="role">밸런스 · 시스템/콘텐츠 기획</span><span class="cnt">9</span></div>
+  </summary>
+  <div class="body"><details class="grp" open><summary>밸런스 <span class="cnt">3</span></summary><ul><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EB%B0%B8%EB%9F%B0%EC%8A%A4/%EC%84%B1%EC%9E%A5%EC%9E%AC%ED%99%94_%EB%B0%B8%EB%9F%B0%EC%8A%A4.html">성장재화_밸런스</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EB%B0%B8%EB%9F%B0%EC%8A%A4/%EC%8B%9C%EA%B0%84%EB%B3%B4%EC%83%81.html">시간보상</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EB%B0%B8%EB%9F%B0%EC%8A%A4/%EC%BD%98%ED%85%90%EC%B8%A0Power%EB%B0%8F%EB%8D%B0%EB%AF%B8%EC%A7%80%EA%B3%84%EC%82%B0.html">콘텐츠Power및데미지계산</a></li></ul></details><details class="grp" open><summary>시스템 및 콘텐츠 <span class="cnt">6</span></summary><ul><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EB%B0%8F%20%EC%BD%98%ED%85%90%EC%B8%A0/1.%20%EC%9E%A5%EB%B9%84%20%EB%B0%8F%20%EC%9D%B8%EB%B2%A4%ED%86%A0%EB%A6%AC.html">1. 장비 및 인벤토리</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EB%B0%8F%20%EC%BD%98%ED%85%90%EC%B8%A0/2.%20%EA%B2%9C%EB%B8%94%EC%BD%98%ED%85%90%EC%B8%A0.html">2. 겜블콘텐츠</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EB%B0%8F%20%EC%BD%98%ED%85%90%EC%B8%A0/3.%20%EC%84%9C%EB%B8%8C%EC%BD%98%ED%85%90%EC%B8%A0.html">3. 서브콘텐츠</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EB%B0%8F%20%EC%BD%98%ED%85%90%EC%B8%A0/4.%20%EA%B8%B0%ED%83%80%EC%9E%A5%EB%B9%84.html">4. 기타장비</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EB%B0%8F%20%EC%BD%98%ED%85%90%EC%B8%A0/5.%20%EA%B8%B0%ED%83%80%EC%9E%A5%EB%B9%84%20%EB%8D%B0%EC%9D%B4%ED%84%B0.html">5. 기타장비 데이터</a></li><li><a href="%5B%EC%82%AC%EC%8B%A0%EC%86%8C%EB%85%84%ED%82%A4%EC%9A%B0%EA%B8%B0%5D/%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EB%B0%8F%20%EC%BD%98%ED%85%90%EC%B8%A0/6.%20PVP.html">6. PVP</a></li></ul></details></div>
+</details><details class="proj" open>
+  <summary>
+    <div class="pt"><span class="pname">변신 키우기</span><span class="genre">방치형 RPG · TF팀</span></div>
+    <div class="pm"><span class="period">2024.09 ~ 2025.04</span><span class="company">빌리네어게임즈</span><span class="role">시스템 기획</span><span class="cnt">5</span></div>
+  </summary>
+  <div class="body"><details class="grp" open><summary>UI / UX <span class="cnt">4</span></summary><ul><li><a href="%5B%EB%B3%80%EC%8B%A0%ED%82%A4%EC%9A%B0%EA%B8%B0%5D%20UI-UX/UI_Event.pdf">UI_Event<span class="ext">pdf</span></a></li><li><a href="%5B%EB%B3%80%EC%8B%A0%ED%82%A4%EC%9A%B0%EA%B8%B0%5D%20UI-UX/UI_Event_Roulette.pdf">UI_Event_Roulette<span class="ext">pdf</span></a></li><li><a href="%5B%EB%B3%80%EC%8B%A0%ED%82%A4%EC%9A%B0%EA%B8%B0%5D%20UI-UX/UI_Profile.pdf">UI_Profile<span class="ext">pdf</span></a></li><li><a href="%5B%EB%B3%80%EC%8B%A0%ED%82%A4%EC%9A%B0%EA%B8%B0%5D%20UI-UX/UI_SpiritUI.pdf">UI_SpiritUI<span class="ext">pdf</span></a></li></ul></details><details class="grp" open><summary>외부 링크 <span class="cnt">1</span></summary><ul><li><a href="https://docs.google.com/spreadsheets/d/1hCYjNGyeUwj-tLMbu6rW6N12DaTDt-WN/edit?usp=drive_link&amp;ouid=100704936995556555042&amp;rtpof=true&amp;sd=true" target="_blank" rel="noopener">이벤트기획<span class="ext">Google Sheets ↗</span></a></li></ul></details></div>
+</details><details class="proj" open>
+  <summary>
+    <div class="pt"><span class="pname">빌딩앤파이터</span><span class="genre">GPS 기반 액션 게임</span></div>
+    <div class="pm"><span class="period">2019.05 ~ 2024.04</span><span class="company">에이스톰</span><span class="role">시스템 파트장 · 콘텐츠/시스템 기획 · 퍼블리셔 커뮤니케이션</span><span class="cnt">28</span></div>
+  </summary>
+  <div class="body"><details class="grp" open><summary>GPS 시스템 <span class="cnt">3</span></summary><ul><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/GPS%20%EC%8B%9C%EC%8A%A4%ED%85%9C/1.%20GPS%EC%BB%A8%ED%85%90%EC%B8%A0%20%EA%B0%9C%EB%B0%9C%20%ED%9A%8C%EC%9D%98.html">1. GPS컨텐츠 개발 회의</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/GPS%20%EC%8B%9C%EC%8A%A4%ED%85%9C/2.%20%EA%B5%AC%ED%98%84%20%EB%AC%B8%EC%84%9C.html">2. 구현 문서</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/GPS%20%EC%8B%9C%EC%8A%A4%ED%85%9C/3.%20GPS%20%EC%BD%98%ED%85%90%EC%B8%A0%26%EC%8B%9C%EC%8A%A4%ED%85%9C%20%EC%A0%95%EB%A6%AC%EB%AC%B8%EC%84%9C.html">3. GPS 콘텐츠&amp;시스템 정리문서</a></li></ul></details><details class="grp" open><summary>상점 기획 <span class="cnt">11</span></summary><ul><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/1.%20%EC%9D%B8%EC%95%B1%EC%83%81%EC%A0%90.html">1. 인앱상점</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/2.%20%EC%9D%B8%EC%95%B1%EC%83%81%EC%A0%90%20%EA%B8%B0%EB%8A%A5.html">2. 인앱상점 기능</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/3.%20%EB%8B%A4%EC%9D%B4%EC%95%84%20%EC%83%81%EC%A0%90.html">3. 다이아 상점</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/4.%20%EB%8B%A8%EC%9D%BC%20%ED%8C%A8%ED%82%A4%EC%A7%80.html">4. 단일 패키지</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/5.%20%EB%8F%8C%EB%B0%9C%ED%8C%A8%ED%82%A4%EC%A7%80.html">5. 돌발패키지</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/6.%20%EB%A0%88%EB%B2%A8%EC%97%85%20%ED%8C%A8%ED%82%A4%EC%A7%80.html">6. 레벨업 패키지</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/7.%20%EB%A6%AC%EC%8A%A4%ED%8A%B8%ED%98%95%20%ED%8C%A8%ED%82%A4%EC%A7%80.html">7. 리스트형 패키지</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/8.%20%EB%A7%A4%EC%9D%BC%20%EB%8B%A4%EC%9D%B4%EC%95%84%20%EC%B6%A9%EC%A0%84%20%EC%84%A0%EB%AC%BC.html">8. 매일 다이아 충전 선물</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/9.%20%EC%8A%A4%ED%83%AD%EC%97%85.html">9. 스탭업</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/10.%20%EC%A0%95%EC%95%A1%EC%83%81%ED%92%88.html">10. 정액상품</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%83%81%EC%A0%90%20%EA%B8%B0%ED%9A%8D/11.%20%ED%95%98%EB%A3%A8%20%ED%8A%B9%EA%B0%80%20%EC%83%81%ED%92%88.html">11. 하루 특가 상품</a></li></ul></details><details class="grp" open><summary>콘텐츠 및 기능 <span class="cnt">14</span></summary><ul><details class="sub" open><summary>채굴 <span class="cnt">5</span></summary><ul><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%EC%B1%84%EA%B5%B4/%5B%EC%BD%98%ED%85%90%EC%B8%A0%26%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%ED%81%B4%EB%9E%9C%20%EC%B1%84%EA%B5%B4.html">[콘텐츠&amp;시스템] 클랜 채굴</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%EC%B1%84%EA%B5%B4/%5B%EC%BD%98%ED%85%90%EC%B8%A0%26%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%EA%B2%BD%EC%9F%81%20%EC%B1%84%EA%B5%B4.html">[콘텐츠&amp;시스템] 경쟁 채굴</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%EC%B1%84%EA%B5%B4/%5B%EC%BD%98%ED%85%90%EC%B8%A0%26%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%EC%B1%84%EA%B5%B4%20%EB%B9%A0%EB%A5%B8%20%EC%9D%BC%EA%B4%84%20%EB%B0%B0%EC%B9%98.html">[콘텐츠&amp;시스템] 채굴 빠른 일괄 배치</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%EC%B1%84%EA%B5%B4/%5B%EC%9E%91%EC%97%85%EC%9A%A9%5D%20%EC%B1%84%EA%B5%B4%20UI%EB%94%94%EC%9E%90%EC%9D%B8.html">[작업용] 채굴 UI디자인</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%EC%B1%84%EA%B5%B4/%5B%EC%9E%91%EC%97%85%EC%9A%A9%5D%20UX_UI%20%EC%88%98%EC%A0%95%EC%9A%94%EC%B2%AD.html">[작업용] UX_UI 수정요청</a></li></ul></details><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%BD%98%ED%85%90%EC%B8%A0%26%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%EA%B1%B0%EB%9E%98%EC%86%8C.html">[콘텐츠&amp;시스템] 거래소</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%EC%95%84%EC%9D%B4%ED%85%9C%20%EC%A0%9C%EC%9E%91.html">[시스템] 아이템 제작</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%EC%95%84%EC%9D%B4%ED%85%9C%20%EB%B6%84%ED%95%B4%26%ED%8C%90%EB%A7%A4.html">[시스템] 아이템 분해&amp;판매</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%20%EC%BB%AC%EB%A0%89%EC%85%98.html">[시스템] 컬렉션</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%20%26%20UI%5D%20%EC%BA%90%EB%A6%AD%ED%84%B0%20%EC%84%B1%EC%9E%A5%EC%97%B0%EC%B6%9C.html">[시스템 &amp; UI] 캐릭터 성장연출</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%20%26%20UI%5D%20%EC%84%B1%EC%9E%A5%EC%97%B0%EC%B6%9C_.html">[시스템 &amp; UI] 성장연출_</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%20%26%20UX%5D%20%EA%B3%84%EC%A0%95%20%ED%83%88%ED%87%B4%20%ED%91%9C%EC%8B%9C.html">[시스템 &amp; UX] 계정 탈퇴 표시</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5BUX%20%EC%A0%95%EB%A6%AC%5D%20%EC%B1%84%ED%8C%85%20%EB%B0%8F%20%EC%9C%A0%EC%A0%80%EC%B0%A8%EB%8B%A8%EA%B8%B0%EB%8A%A5.html">[UX 정리] 채팅 및 유저차단기능</a></li><li><a href="%5B%EB%B9%8C%EB%94%A9%EC%95%A4%ED%8C%8C%EC%9D%B4%ED%84%B0%5D/%EC%BD%98%ED%85%90%EC%B8%A0%20%EB%B0%8F%20%EA%B8%B0%EB%8A%A5/%5B%EC%8B%9C%EC%8A%A4%ED%85%9C%5D%EA%B3%A0%EA%B0%9D%EC%84%BC%ED%84%B0%20%EB%8B%B5%EB%B3%80%20%EC%95%8C%EB%A6%BC.html">[시스템]고객센터 답변 알림</a></li></ul></details></div>
+</details><details class="proj" open>
+  <summary>
+    <div class="pt"><span class="pname">HOUNDS</span><span class="genre">TPS RPG</span></div>
+    <div class="pm"><span class="period">2012.10 ~ 2015.05</span><span class="company">넷마블 네오</span><span class="role">레벨 디자인 · AI 디자인</span><span class="cnt">1</span></div>
+  </summary>
+  <div class="body"><details class="grp" open><summary>레벨 디자인 <span class="cnt">1</span></summary><ul><li><a href="%5BHOUNDS%5D%20%EB%A0%88%EB%B2%A8%EB%94%94%EC%9E%90%EC%9D%B8/HOUNDS_%EB%A0%88%EB%B2%A8%EB%94%94%EC%9E%90%EC%9D%B8.html">HOUNDS_레벨디자인</a></li></ul></details></div>
+</details>
+
+<footer>© Kim Hyeon · 문서는 열람용이며 무단 전재를 금합니다.</footer>
+</main>
+<script>
+  const all = () => document.querySelectorAll('details');
+  document.getElementById('openAll').onclick = () => all().forEach(d => d.open = true);
+  document.getElementById('closeAll').onclick = () => document.querySelectorAll('details.proj').forEach(d => d.open = false);
+</script>
+</body>
+</html>
