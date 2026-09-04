@@ -1,0 +1,948 @@
+<title>몬스터 퍼즐 던전 밸런스 설계</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+:root{
+  --bg:#EFF0F4; --surface:#FCFCFD; --surface-2:#F5F6FA; --sunk:#E7E9F0;
+  --ink:#15161C; --ink-2:#3E4250; --muted:#767C8C; --faint:#9AA0AF;
+  --line:#DCDFE8; --line-2:#C9CDD9;
+  --accent:#4658A8; --accent-soft:#E8EBF7; --accent-ink:#33417E;
+  --series-1:#4658A8; --series-2:#C4682A;
+  --el-fire:#D6453A; --el-water:#2D7FD4; --el-wood:#3E9B5F; --el-light:#C4921F; --el-dark:#8B45B0;
+  --ok:#2F7D52; --warn:#B07216; --crit:#C0392B;
+  --grid:#DFE2EB; --axis:#B4BAC8;
+  --shadow:0 1px 2px rgba(21,22,28,.05),0 8px 24px -12px rgba(21,22,28,.14);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#111219; --surface:#191B24; --surface-2:#1E2029; --sunk:#141621;
+    --ink:#EDEEF3; --ink-2:#C0C4D0; --muted:#8B91A1; --faint:#6B7181;
+    --line:#2B2E3B; --line-2:#3A3E4E;
+    --accent:#8D9AE0; --accent-soft:#232742; --accent-ink:#AEB8EC;
+    --series-1:#7C8BD6; --series-2:#CE7736;
+    --el-fire:#DE6055; --el-water:#4A8FD8; --el-wood:#46A167; --el-light:#B8862B; --el-dark:#9C5FC6;
+    --ok:#5CBF87; --warn:#D7A33F; --crit:#E27166;
+    --grid:#282B37; --axis:#454A5C;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111219; --surface:#191B24; --surface-2:#1E2029; --sunk:#141621;
+  --ink:#EDEEF3; --ink-2:#C0C4D0; --muted:#8B91A1; --faint:#6B7181;
+  --line:#2B2E3B; --line-2:#3A3E4E;
+  --accent:#8D9AE0; --accent-soft:#232742; --accent-ink:#AEB8EC;
+  --series-1:#7C8BD6; --series-2:#CE7736;
+  --el-fire:#DE6055; --el-water:#4A8FD8; --el-wood:#46A167; --el-light:#B8862B; --el-dark:#9C5FC6;
+  --ok:#5CBF87; --warn:#D7A33F; --crit:#E27166;
+  --grid:#282B37; --axis:#454A5C;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;
+  font-weight:400;
+}
+code,.mono,td.num,th.num{font-family:"IBM Plex Mono","SFMono-Regular",Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.shell{max-width:1240px;margin:0 auto;padding:0 24px 96px;display:grid;grid-template-columns:212px minmax(0,1fr);gap:56px;align-items:start}
+@media(max-width:960px){.shell{grid-template-columns:1fr;gap:0}}
+
+/* ---------- masthead ---------- */
+.mast{grid-column:1/-1;padding:52px 0 30px;border-bottom:2px solid var(--ink);margin-bottom:38px}
+.mast .kicker{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 14px}
+.mast h1{font-family:"Noto Serif KR",serif;font-weight:700;font-size:clamp(30px,4.4vw,46px);line-height:1.2;margin:0 0 10px;letter-spacing:-.02em;text-wrap:balance}
+.mast .sub{font-size:16px;color:var(--ink-2);margin:0 0 30px;max-width:60ch;font-weight:300}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.meta div{background:var(--surface);padding:11px 14px}
+.meta dt{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:600;margin:0 0 3px}
+.meta dd{margin:0;font-size:13.5px;font-weight:500;color:var(--ink)}
+
+/* ---------- nav ---------- */
+nav{position:sticky;top:24px;font-size:13px}
+@media(max-width:960px){nav{position:static;margin-bottom:40px;border:1px solid var(--line);background:var(--surface);padding:16px 18px}}
+nav .navlabel{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+nav ol{list-style:none;margin:0;padding:0;counter-reset:n}
+nav li{counter-increment:n;margin:0}
+nav a{display:grid;grid-template-columns:24px 1fr;gap:6px;padding:5px 0;color:var(--muted);text-decoration:none;line-height:1.45;border-left:2px solid transparent;transition:color .15s}
+nav a::before{content:counter(n,decimal-leading-zero);font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--faint);padding-top:1px}
+nav a:hover{color:var(--accent)}
+nav a.on{color:var(--ink);font-weight:600}
+nav a.on::before{color:var(--accent)}
+nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- sections ---------- */
+main{min-width:0}
+section{margin:0 0 64px;scroll-margin-top:24px}
+section>h2{font-family:"Noto Serif KR",serif;font-size:25px;font-weight:700;line-height:1.3;margin:0 0 6px;letter-spacing:-.015em;display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:baseline;text-wrap:balance}
+section>h2 .no{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.02em}
+section>.lead{color:var(--ink-2);margin:0 0 26px;max-width:66ch;font-weight:300;font-size:15.5px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+h3{font-size:15.5px;font-weight:600;margin:34px 0 10px;letter-spacing:-.005em}
+h3:first-of-type{margin-top:26px}
+h4{font-size:13.5px;font-weight:600;margin:22px 0 8px;color:var(--ink-2)}
+p{margin:0 0 14px;max-width:68ch}
+ul,ol.body{margin:0 0 14px;padding-left:20px;max-width:68ch}
+li{margin:0 0 5px}
+strong{font-weight:600}
+em{font-style:normal;background:var(--accent-soft);color:var(--accent-ink);padding:1px 5px;font-weight:500;font-size:.94em}
+a.ref{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--line-2)}
+
+/* ---------- formula ---------- */
+.formula{background:var(--sunk);border:1px solid var(--line);padding:20px 22px;margin:18px 0;overflow-x:auto}
+.formula .eq{font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:2;white-space:nowrap;font-weight:500}
+.formula .eq .op{color:var(--muted)}
+.formula .eq .v{color:var(--accent);font-weight:600}
+.formula .cap{font-size:11.5px;color:var(--muted);margin-top:10px;letter-spacing:.04em}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:16px 0 20px;border:1px solid var(--line);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:440px}
+caption{caption-side:top;text-align:left;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);font-weight:600;padding:11px 14px 9px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.04em;color:var(--ink-2);padding:9px 14px;border-bottom:1px solid var(--line-2);background:var(--surface-2);white-space:nowrap}
+td{padding:8px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr.hl td{background:var(--accent-soft)}
+td.el{white-space:nowrap;font-weight:500}
+.chip{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:baseline}
+.tag{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.04em;padding:2px 7px;border:1px solid currentColor;white-space:nowrap}
+.tag.ok{color:var(--ok)} .tag.warn{color:var(--warn)} .tag.crit{color:var(--crit)}
+.tnote{font-size:12px;color:var(--muted);margin:-8px 0 22px;max-width:68ch;line-height:1.65}
+
+/* ---------- callouts ---------- */
+.decide{border-left:3px solid var(--accent);background:var(--surface);padding:16px 20px;margin:20px 0;box-shadow:var(--shadow)}
+.decide .h{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:7px}
+.decide p{margin:0;font-size:14px}
+.decide p+p{margin-top:9px}
+.risk{border-left:3px solid var(--warn);background:var(--surface);padding:16px 20px;margin:20px 0}
+.risk .h{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--warn);font-weight:700;margin-bottom:7px}
+.risk p{margin:0;font-size:14px}
+
+/* ---------- figures ---------- */
+figure{margin:22px 0 24px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+figure .fhead{padding:14px 18px 0}
+figure .ftitle{font-size:13.5px;font-weight:600;margin:0}
+figure .fsub{font-size:12px;color:var(--muted);margin:3px 0 0;line-height:1.6}
+figure .fbody{padding:6px 12px 4px;overflow-x:auto}
+figcaption{font-size:11.5px;color:var(--faint);padding:0 18px 14px;line-height:1.6}
+.legend{display:flex;flex-wrap:wrap;gap:16px;padding:10px 18px 2px;font-size:12px;color:var(--ink-2)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:14px;height:3px;border-radius:2px;display:block}
+svg{display:block;max-width:100%}
+svg text{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- board diagram ---------- */
+.board{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;max-width:300px;margin:18px 0 6px}
+.board i{aspect-ratio:1;border-radius:50%;display:block}
+.boardnote{font-size:12px;color:var(--muted);max-width:300px;line-height:1.6}
+
+/* ---------- loop ---------- */
+.loop{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:20px 0}
+.loop div{background:var(--surface);padding:14px 16px}
+.loop .n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--accent);font-weight:600;margin-bottom:5px}
+.loop .t{font-size:13.5px;font-weight:600;margin-bottom:3px}
+.loop .d{font-size:12px;color:var(--muted);line-height:1.55}
+
+/* ---------- kpi ---------- */
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin:20px 0}
+.kpi div{background:var(--surface);padding:15px 16px}
+.kpi .k{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--faint);font-weight:600;margin-bottom:6px}
+.kpi .v{font-family:"IBM Plex Mono",monospace;font-size:23px;font-weight:600;line-height:1.1;letter-spacing:-.02em}
+.kpi .u{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.5}
+
+/* ---------- tooltip ---------- */
+.tip{position:fixed;pointer-events:none;background:var(--surface);border:1px solid var(--line-2);box-shadow:var(--shadow);padding:8px 11px;font-size:12px;font-family:"IBM Plex Mono",monospace;line-height:1.6;z-index:60;opacity:0;transition:opacity .1s;white-space:nowrap}
+.tip.on{opacity:1}
+.tip b{font-weight:600}
+
+footer{grid-column:1/-1;border-top:1px solid var(--line);margin-top:24px;padding-top:22px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="shell">
+
+<header class="mast">
+  <p class="kicker">Game Design Document · Balance &amp; Systems</p>
+  <h1>몬스터 퍼즐 던전 — 전투·성장·경제 밸런스 설계</h1>
+  <p class="sub">오브 드래그 매치3와 무한 스테이지 등반을 결합한 개인 프로젝트의 수치 설계 문서. 모든 배율과 곡선은 시뮬레이션으로 역산·검증한 값이며, 설계 의도와 채택 근거를 함께 기술한다.</p>
+  <dl class="meta">
+    <div><dt>Project</dt><dd>몬스터 퍼즐 던전</dd></div>
+    <div><dt>Document</dt><dd>밸런스 설계서 v1.0</dd></div>
+    <div><dt>Author</dt><dd>현 · 밸런스/시스템 기획</dd></div>
+    <div><dt>Platform</dt><dd>HTML 프로토타입 → Unity</dd></div>
+    <div><dt>Scope</dt><dd>전투 · 성장 · 재화 경제</dd></div>
+    <div><dt>Status</dt><dd>프로토타입 Ver 5 반영</dd></div>
+  </dl>
+</header>
+
+<nav aria-label="목차">
+  <div class="navlabel">목차</div>
+  <ol>
+    <li><a href="#s1">설계 목표와 판단 기준</a></li>
+    <li><a href="#s2">게임 구조와 코어 루프</a></li>
+    <li><a href="#s3">전투 규칙 정의</a></li>
+    <li><a href="#s4">데미지 모델</a></li>
+    <li><a href="#s5">숙련도 편차 측정과 대응</a></li>
+    <li><a href="#s6">성장 모델</a></li>
+    <li><a href="#s7">난이도 곡선 설계</a></li>
+    <li><a href="#s8">재화·크래프팅 경제</a></li>
+    <li><a href="#s9">시뮬레이션 검증</a></li>
+    <li><a href="#s10">튜닝 손잡이와 리스크</a></li>
+    <li><a href="#s11">부록 · 파라미터 전량</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ===================== 1 ===================== -->
+<section id="s1">
+  <h2><span class="no">01</span><span>설계 목표와 판단 기준</span></h2>
+  <p class="lead">이 게임의 밸런스 문제는 하나로 요약된다 — <strong>플레이어의 손기술이 데미지에 직결되는 구조에서, 실력 편차를 어떻게 난이도 곡선 하나로 흡수할 것인가.</strong></p>
+
+  <p>오브를 잡고 제한 시간 안에 보드를 훑는 조작은 스킬 실링에 사실상 상한이 없다. 같은 보드에서 신규 플레이어는 2콤보를, 숙련 플레이어는 7콤보를 만든다. 스왑형 매치3의 실력 편차가 한 수 차이인 것과 달리, 이 구조는 <strong>턴당 데미지가 7배까지 벌어진다</strong>(§5에서 시뮬레이션으로 측정). 난이도를 신규 기준으로 짜면 숙련자에게 무의미하고, 숙련자 기준으로 짜면 신규가 전멸한다.</p>
+
+  <p>이 문서는 그 문제를 회피하지 않고 정면으로 설계 목표에 넣는다.</p>
+
+  <div class="decide">
+    <div class="h">설계 목표</div>
+    <p><strong>1. 전 숙련도 클리어 가능, 숙련도는 속도로 환산.</strong> 일반 스테이지는 최하위 숙련도도 턴 제한 안에 통과한다. 실력 차이는 클리어 여부가 아니라 <em>클리어 속도 = 시간당 재화 획득량</em>으로 나타난다.</p>
+    <p><strong>2. 보스는 최소 숙련도 게이트.</strong> 10스테이지마다의 보스만 평균 3콤보 이상을 요구한다. 학습 구간(T1~T2)에서는 이 요구를 완화한다.</p>
+    <p><strong>3. 최종 도달 스테이지가 랭킹 스코어.</strong> 무한 등반이므로 벽은 반드시 온다. 그 벽의 위치가 숙련도에 비례해 이동하도록 성장 곡선과 난이도 곡선의 상대 기울기를 설계한다.</p>
+    <p><strong>4. 세션 길이 30~45분.</strong> 한 판이 로그라이크 한 런처럼 완결되어야 한다.</p>
+  </div>
+
+  <h3>판단 기준 — 무엇을 보고 수치를 확정했는가</h3>
+  <p>모든 수치는 감이 아니라 아래 네 지표로 역산했다. 이후 모든 장에서 수치 확정의 근거는 이 지표 중 하나로 환원된다.</p>
+
+  <div class="tw"><table>
+    <caption>설계 판단 지표</caption>
+    <thead><tr><th>지표</th><th>정의</th><th class="num">목표값</th><th>용도</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TTK</strong></td><td>스테이지 처치 소요 턴 수</td><td class="num">일반 2~3턴<br>보스 6~7턴</td><td>적 HP 역산의 기준점</td></tr>
+      <tr><td><strong>턴배율</strong></td><td>캐릭터 1인 기본 공격력 대비 팀 턴 데미지 배수</td><td class="num">2.42 ~ 16.98</td><td>숙련도 편차의 정량 표현</td></tr>
+      <tr><td><strong>도달 스테이지</strong></td><td>반격 누적으로 팀 HP가 0이 되는 지점</td><td class="num">40 ~ 120</td><td>랭킹 변별력</td></tr>
+      <tr><td><strong>세션 길이</strong></td><td>1런 총 플레이 시간</td><td class="num">30 ~ 45분</td><td>리텐션 / 이탈 지점</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================== 2 ===================== -->
+<section id="s2">
+  <h2><span class="no">02</span><span>게임 구조와 코어 루프</span></h2>
+  <p class="lead">6×5 오브 보드, 3인 편성, 무한 스테이지. 재화는 단일 축(에센스)이며 장비 제작·합성으로만 소비된다.</p>
+
+  <div class="loop">
+    <div><div class="n">01</div><div class="t">퍼즐</div><div class="d">5초 내 오브 드래그, 콤보 판정</div></div>
+    <div><div class="n">02</div><div class="t">전투</div><div class="d">매치 속성별 캐릭터 공격 → 2턴마다 적 반격</div></div>
+    <div><div class="n">03</div><div class="t">보상</div><div class="d">스테이지 클리어 시 에센스 · 캐릭터 EXP</div></div>
+    <div><div class="n">04</div><div class="t">육성</div><div class="d">에센스로 장비 제작 → 합성 → 초월</div></div>
+    <div><div class="n">05</div><div class="t">등반</div><div class="d">유효 공격력 상승 → 다음 티어 진입</div></div>
+  </div>
+
+  <p>루프가 한 방향으로만 흐른다는 점이 중요하다. 재화가 하나뿐이고 확률 요소가 없으므로, <strong>플레이어가 얻는 힘의 총량은 도달 스테이지의 결정론적 함수</strong>다. 이것이 이후 모든 검증을 시뮬레이션 한 번으로 끝낼 수 있게 하는 전제다.</p>
+
+  <h3>보드 규격</h3>
+  <div class="board" aria-hidden="true">
+    <i style="background:var(--el-fire)"></i><i style="background:var(--el-water)"></i><i style="background:var(--el-wood)"></i><i style="background:var(--el-fire)"></i><i style="background:var(--el-light)"></i><i style="background:var(--el-dark)"></i>
+    <i style="background:var(--el-water)"></i><i style="background:var(--el-water)"></i><i style="background:var(--el-fire)"></i><i style="background:var(--el-wood)"></i><i style="background:var(--el-dark)"></i><i style="background:var(--el-fire)"></i>
+    <i style="background:var(--el-wood)"></i><i style="background:var(--el-light)"></i><i style="background:var(--el-water)"></i><i style="background:var(--el-fire)"></i><i style="background:var(--el-water)"></i><i style="background:var(--el-wood)"></i>
+    <i style="background:var(--el-dark)"></i><i style="background:var(--el-fire)"></i><i style="background:var(--el-light)"></i><i style="background:var(--el-dark)"></i><i style="background:var(--el-wood)"></i><i style="background:var(--el-light)"></i>
+    <i style="background:var(--el-light)"></i><i style="background:var(--el-wood)"></i><i style="background:var(--el-dark)"></i><i style="background:var(--el-water)"></i><i style="background:var(--el-fire)"></i><i style="background:var(--el-water)"></i>
+  </div>
+  <p class="boardnote">6열 × 5행 = 30칸. 5속성 균등 생성. 이론상 최대 콤보 10, 실전 상한 7~8.</p>
+
+  <div class="tw"><table>
+    <caption>속성 상성 — 화→목→수→화 순환, 광↔암 상호</caption>
+    <thead><tr><th>속성</th><th>유리 대상 <span class="mono">×2.0</span></th><th>불리 대상 <span class="mono">×0.5</span></th></tr></thead>
+    <tbody>
+      <tr><td class="el"><span class="chip" style="background:var(--el-fire)"></span>화</td><td>목</td><td>수</td></tr>
+      <tr><td class="el"><span class="chip" style="background:var(--el-water)"></span>수</td><td>화</td><td>목</td></tr>
+      <tr><td class="el"><span class="chip" style="background:var(--el-wood)"></span>목</td><td>수</td><td>화</td></tr>
+      <tr><td class="el"><span class="chip" style="background:var(--el-light)"></span>광</td><td>암</td><td>암</td></tr>
+      <tr><td class="el"><span class="chip" style="background:var(--el-dark)"></span>암</td><td>광</td><td>광</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">광·암은 상호 유리이자 상호 불리다. 3원 순환(화목수)과 2원 대립(광암)을 섞은 이유는 편성 자유도 때문이다. 5속성 전부를 단일 순환으로 묶으면 특정 2속성 조합이 항상 우위를 갖는다.</p>
+</section>
+
+<!-- ===================== 3 ===================== -->
+<section id="s3">
+  <h2><span class="no">03</span><span>전투 규칙 정의</span></h2>
+  <p class="lead">데미지 공식을 쓰기 전에, 공식이 참조하는 값들이 어떻게 만들어지는지를 먼저 확정한다.</p>
+
+  <div class="tw"><table>
+    <caption>턴 진행 규칙</caption>
+    <thead><tr><th>단계</th><th>규칙</th><th class="num">파라미터</th></tr></thead>
+    <tbody>
+      <tr><td>드래그</td><td>오브 1개를 잡고 이동, 지나간 칸과 순차 자리바꿈. 대각선 이동 허용</td><td class="num">제한 5.0초</td></tr>
+      <tr><td>매치 판정</td><td>가로/세로 3개 이상 동일 속성. 교차 매치는 1콤보로 병합</td><td class="num">최소 3개</td></tr>
+      <tr><td>낙하 연쇄</td><td>제거 후 낙하로 성립한 매치도 콤보에 누적</td><td class="num">무제한</td></tr>
+      <tr><td>공격</td><td>매치된 속성에 해당하는 편성 캐릭터가 공격</td><td class="num">최대 3인</td></tr>
+      <tr><td>적 반격</td><td>2턴마다 1회, 팀 최대 HP 비례 고정 피해</td><td class="num">일반 18% / 보스 30%</td></tr>
+      <tr><td>스테이지 종료</td><td>적 HP 0 → 클리어 / 팀 HP 0 → 런 종료</td><td class="num">—</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="decide">
+    <div class="h">설계 결정 · 실패 조건을 반격 누적 하나로 단일화</div>
+    <p>턴 제한과 HP 소진을 병렬 실패 조건으로 두면 플레이어가 어느 쪽에 쫓기는지 모호해지고, 두 개의 곡선을 동시에 튜닝해야 한다. <strong>반격을 팀 최대 HP 비례로 두어 실패 조건을 HP 하나로 통합했다.</strong> 이 결정으로 "몇 턴 안에 죽여야 하는가"가 <em>반격 계수의 역수</em>로 자동 도출된다 — 일반 스테이지는 <span class="mono">1 / 0.18 ≈ 5.6회 피격 = 11턴</span>, 보스는 <span class="mono">1 / 0.30 ≈ 3.3회 = 7턴</span>이 상한이다.</p>
+  </div>
+
+  <p>스테이지 클리어 시 팀 HP는 최대치의 25%를 회복하고, 보스 스테이지 진입 시에는 전회복한다. 보스전을 항상 만전 상태에서 시작하게 하여 <strong>보스 판정을 순수한 숙련도 함수로 고립</strong>시키기 위한 조치다. 직전 일반 스테이지에서의 누적 피해가 보스 결과에 섞이면 검증이 불가능해진다.</p>
+</section>
+
+<!-- ===================== 4 ===================== -->
+<section id="s4">
+  <h2><span class="no">04</span><span>데미지 모델</span></h2>
+  <p class="lead">데미지는 <strong>캐릭터 1인 단위로 독립 계산</strong>된 뒤 합산된다. 블럭 수·같은 색 콤보 수·전체 콤보 수·약점 적중이 각각 별도 항으로 들어간다.</p>
+
+  <div class="formula">
+    <div class="eq"><span class="v">D</span><sub>char</sub> <span class="op">=</span> <span class="v">ATK</span> <span class="op">×</span> <span class="v">B</span>(n) <span class="op">×</span> [ <span class="v">S</span>(c) <span class="op">+</span> 0.25 <span class="op">·</span> k ] <span class="op">×</span> <span class="v">W</span></div>
+    <div class="eq"><span class="v">B</span>(n) <span class="op">=</span> 1 <span class="op">+</span> 0.25 (n <span class="op">−</span> 3) <span class="op">·····</span> 블럭 배율, n = 한 번에 지운 블럭 수</div>
+    <div class="eq"><span class="v">S</span>(c) <span class="op">=</span> c <span class="op">·····</span> 같은 색 콤보 배율 (2콤 2배, 3콤 3배, 5콤 5배)</div>
+    <div class="eq"><span class="v">W</span> <span class="op">=</span> 2.0 (약점 적중) <span class="op">/</span> 1.0 (그 외)</div>
+    <div class="eq"><span class="v">D</span><sub>turn</sub> <span class="op">=</span> Σ<sub>편성 3인</sub> <span class="v">D</span><sub>char</sub></div>
+    <div class="cap">k = 그 턴의 전체 콤보 수 · c = 해당 캐릭터 속성과 같은 색의 콤보 수 · 매치가 없는 캐릭터는 항 제외</div>
+  </div>
+
+  <div class="tw"><table>
+    <caption>변수 정의</caption>
+    <thead><tr><th>기호</th><th>명칭</th><th>정의</th><th class="num">범위</th><th>대응 플레이어 행동</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ATK</td><td>유효 공격력</td><td>캐릭터 기본 ATK × 장비 승수 × 초월 승수</td><td class="num">50 ~ 4,200</td><td>육성 (비실시간)</td></tr>
+      <tr><td class="mono">B(n)</td><td>블럭 배율</td><td>3개 매칭 시작점 1, 블럭 1개 추가마다 +0.25</td><td class="num">1.00 ~ 2.75</td><td>긴 매치 만들기</td></tr>
+      <tr><td class="mono">S(c)</td><td>같은 색 콤보 배율</td><td>같은 색 콤보 1개당 +1 (선형)</td><td class="num">1 ~ 5</td><td>단색 연쇄 설계</td></tr>
+      <tr><td class="mono">0.25k</td><td>전체 콤보 보너스</td><td>콤보 1회당 +0.25, 색 무관</td><td class="num">0.25 ~ 2.50</td><td>보드 전체 활용</td></tr>
+      <tr><td class="mono">W</td><td>약점 배율</td><td>몬스터 약점 속성 공격 시 최종 2배</td><td class="num">1.0 / 2.0</td><td>속성 판단</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>명세 검산</h3>
+  <p>공식 구현이 명세와 일치하는지 네 개의 기준 케이스로 확인했다. 시뮬레이터와 프로토타입이 모두 아래 값을 반환한다.</p>
+
+  <div class="tw"><table>
+    <caption>기준 케이스 검산 (기본 공격력 405)</caption>
+    <thead><tr><th>상황</th><th>계산</th><th class="num">배율</th><th class="num">데미지</th><th>결과</th></tr></thead>
+    <tbody>
+      <tr><td>6블럭 1콤</td><td class="mono">1 + 0.25 + 0.25 + 0.25</td><td class="num">1.75</td><td class="num">708.75</td><td><span class="tag ok">일치</span></td></tr>
+      <tr><td>4블럭 1콤</td><td class="mono">1 + 0.25</td><td class="num">1.25</td><td class="num">506.25</td><td><span class="tag ok">일치</span></td></tr>
+      <tr><td>10블럭 1콤</td><td class="mono">1 + 0.25 × 7</td><td class="num">2.75</td><td class="num">1,113.75 → 1,114</td><td><span class="tag ok">일치</span></td></tr>
+      <tr class="hl"><td>같은 색 5콤</td><td class="mono">5 + 0.25 × 5</td><td class="num">6.25</td><td class="num">2,531.25</td><td><span class="tag ok">일치</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="risk">
+    <div class="h">명세 정합성 · 콤보 보너스의 기준점</div>
+    <p>서술은 <em>"1콤보 이후 추가되는 콤보 1회당 0.25"</em>로 <span class="mono">0.25(k−1)</span>을 지시하지만, 5콤 예시는 <span class="mono">0.25 × 5</span>를 적용해 6.25를 낸다. 블럭 항이 <span class="mono">(n−3)</span>을 쓰는 것과 대칭을 이루려면 <span class="mono">(k−1)</span>이 맞지만, <strong>구현·검산 기준인 예시를 채택해 <span class="mono">0.25k</span>로 확정</strong>했다. 5콤 기준 차이는 4%이며 이후 모든 시뮬레이션은 확정안을 따른다.</p>
+  </div>
+
+  <h3>배율의 최고·최저</h3>
+  <div class="tw"><table>
+    <caption>캐릭터 1인 배율 스펙트럼</caption>
+    <thead><tr><th>상황</th><th class="num">B(n)</th><th class="num">S(c)</th><th class="num">0.25k</th><th class="num">W</th><th class="num">최종 배율</th></tr></thead>
+    <tbody>
+      <tr><td>최저 — 3블럭 1콤 · 약점 아님</td><td class="num">1.00</td><td class="num">1</td><td class="num">0.25</td><td class="num">1.0</td><td class="num">1.25</td></tr>
+      <tr class="hl"><td>중간 — 4블럭 2색콤 · 총 4콤 · 약점</td><td class="num">1.25</td><td class="num">2</td><td class="num">1.00</td><td class="num">2.0</td><td class="num">7.50</td></tr>
+      <tr><td>최고 — 6블럭 5색콤 · 총 8콤 · 약점</td><td class="num">1.75</td><td class="num">5</td><td class="num">2.00</td><td class="num">2.0</td><td class="num">24.50</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">단일 캐릭터 배율은 최대 19.6배까지 벌어진다. 다만 이 값은 밸런싱의 입력이 아니다 — 실제 설계에 쓰이는 것은 여러 턴에 걸친 <strong>팀 기대 배율</strong>이며(§5), 대수의 법칙으로 7.0배까지 좁혀진다.</p>
+
+  <h3>구조상 주목할 점 — 콤보 수 k가 두 번 작용한다</h3>
+  <p>같은 색 콤보 <span class="mono">S(c)</span>와 전체 콤보 보너스 <span class="mono">0.25k</span>는 독립 항처럼 보이지만 실제로는 <strong>둘 다 콤보 수에 종속</strong>된다. 콤보를 많이 만들면 <span class="mono">k</span>가 오르고, 같은 색이 겹칠 확률도 함께 올라 <span class="mono">c</span>가 오른다. 이 이중 종속이 §5에서 다룰 편차 문제의 구조적 원인이며, <em>어떤 배율 파라미터를 조정해도 편차가 줄지 않는 이유</em>다.</p>
+</section>
+
+<!-- ===================== 5 ===================== -->
+<section id="s5">
+  <h2><span class="no">05</span><span>숙련도 편차 측정과 대응</span></h2>
+  <p class="lead">§4의 공식을 20만 회 몬테카를로로 돌려 숙련도별 기대 턴배율을 측정했다. 결론부터 — <strong>편차 7.0배는 배율 파라미터로 줄일 수 없다.</strong></p>
+
+  <h3>숙련도 등급 정의</h3>
+  <p>플레이어를 5등급으로 나누고, 각 등급의 턴당 평균 콤보 수·평균 블럭 수·약점 적중률을 정의했다. 프로토타입 Ver 5 플레이 로그의 관측 분포를 등급별 대표값으로 정리한 것이다. 시뮬레이션은 6×5 보드에 5색 균등 생성, 편성 3색을 가정한다.</p>
+
+  <div class="tw"><table>
+    <caption>숙련도 등급별 입력값과 측정된 팀 턴배율</caption>
+    <thead><tr><th>등급</th><th class="num">평균 콤보 k</th><th class="num">평균 블럭 n</th><th class="num">약점 적중률</th><th class="num">팀 턴배율</th><th class="num">기준 대비</th></tr></thead>
+    <tbody>
+      <tr><td>입문</td><td class="num">2.0</td><td class="num">3.3</td><td class="num">20%</td><td class="num">2.42</td><td class="num">0.40×</td></tr>
+      <tr><td>일반</td><td class="num">3.0</td><td class="num">3.5</td><td class="num">32%</td><td class="num">4.50</td><td class="num">0.74×</td></tr>
+      <tr class="hl"><td>기준</td><td class="num">3.6</td><td class="num">3.6</td><td class="num">40%</td><td class="num">6.08</td><td class="num">1.00×</td></tr>
+      <tr><td>숙련</td><td class="num">5.0</td><td class="num">3.9</td><td class="num">55%</td><td class="num">10.66</td><td class="num">1.75×</td></tr>
+      <tr><td>상위</td><td class="num">6.5</td><td class="num">4.2</td><td class="num">70%</td><td class="num">16.98</td><td class="num">2.79×</td></tr>
+      <tr><td colspan="4"><strong>입문 → 상위 편차폭</strong></td><td class="num"><strong>7.02×</strong></td><td class="num">—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">팀 턴배율은 캐릭터 1인 기본 공격력 대비 3인 합산 데미지 배수다. 편성 3색 중 매치가 없는 색은 자동으로 항에서 빠지므로, 콤보가 적을수록 실제 공격 인원도 줄어든다 — 이것이 저숙련 구간에서 배율이 급격히 떨어지는 두 번째 원인이다.</p>
+
+  <h3>레버 감도 — 무엇을 돌려도 편차가 안 줄어든다</h3>
+  <p>편차를 억제할 수 있는 후보 조정안 7가지를 같은 조건에서 재측정했다.</p>
+
+  <figure>
+    <div class="fhead">
+      <p class="ftitle">조정안별 입문→상위 편차폭</p>
+      <p class="fsub">모든 조정안이 6.26 ~ 7.84배 구간에 갇힌다. 목표였던 4배 이하는 어떤 조합으로도 도달하지 않는다.</p>
+    </div>
+    <div class="fbody"><div id="ch-lever"></div></div>
+    <figcaption>배율 파라미터를 낮추면 전 등급의 절대 배율이 함께 낮아질 뿐, 등급 간 비율은 유지된다. 편차의 원인이 파라미터가 아니라 콤보 수 k 자체이기 때문이다(§4 말미).</figcaption>
+  </figure>
+
+  <div class="tw"><table>
+    <caption>조정안별 측정값</caption>
+    <thead><tr><th>조정안</th><th class="num">입문</th><th class="num">기준</th><th class="num">상위</th><th class="num">편차폭</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>기준안 — 계수 0.25 · 약점 2.0</td><td class="num">2.42</td><td class="num">6.10</td><td class="num">16.98</td><td class="num">7.01×</td><td><span class="tag ok">채택</span></td></tr>
+      <tr><td>블럭·콤보 계수 0.25 → 0.20</td><td class="num">2.21</td><td class="num">5.41</td><td class="num">14.60</td><td class="num">6.60×</td><td><span class="tag warn">효과 미미</span></td></tr>
+      <tr><td>블럭·콤보 계수 0.25 → 0.30</td><td class="num">2.62</td><td class="num">6.77</td><td class="num">19.50</td><td class="num">7.44×</td><td><span class="tag warn">효과 미미</span></td></tr>
+      <tr><td>약점 배율 2.0 → 1.6</td><td class="num">2.26</td><td class="num">5.39</td><td class="num">14.18</td><td class="num">6.29×</td><td><span class="tag warn">효과 미미</span></td></tr>
+      <tr><td>약점 배율 2.0 → 2.5</td><td class="num">2.61</td><td class="num">6.95</td><td class="num">20.47</td><td class="num">7.84×</td><td><span class="tag warn">효과 미미</span></td></tr>
+      <tr><td>같은 색 콤보 <span class="mono">c → c<sup>0.75</sup></span> 완화</td><td class="num">2.35</td><td class="num">5.78</td><td class="num">15.72</td><td class="num">6.69×</td><td><span class="tag crit">체감 손실</span></td></tr>
+      <tr><td>캐릭터별 배율 상한 12 적용</td><td class="num">2.40</td><td class="num">6.06</td><td class="num">16.56</td><td class="num">6.89×</td><td><span class="tag crit">체감 손실</span></td></tr>
+      <tr><td>약점 1.6 + 상한 12 병행</td><td class="num">2.25</td><td class="num">5.39</td><td class="num">14.10</td><td class="num">6.26×</td><td><span class="tag crit">체감 손실</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="decide">
+    <div class="h">설계 결정 · 편차를 억제하지 않고 랭킹 변별력으로 전환</div>
+    <p>편차 억제를 시도한 세 안(<span class="mono">c<sup>0.75</sup></span>, 상한, 병행)은 편차를 10% 남짓 줄이는 대가로 <strong>5콤 성공의 쾌감을 직접 깎는다.</strong> 이 게임의 유일한 재미가 연쇄 설계인데 그 보상을 잘라내는 것은 본말전도다.</p>
+    <p>따라서 <strong>기준안을 그대로 두고, 7배의 편차를 난이도 곡선이 흡수하도록 설계 방향을 바꿨다.</strong> 편차는 클리어 여부가 아니라 <em>도달 스테이지 80단계 차이</em>로 환산된다(§7, §9). 무한 등반 + 세션 랭킹이라는 이 게임의 구조가 큰 편차를 처벌이 아닌 변별력으로 쓸 수 있게 해 준다.</p>
+  </div>
+
+  <h3>계수 0.25를 블럭·콤보에 공통 적용한 이유</h3>
+  <ul>
+    <li><strong>플레이어 직관</strong> — "블럭 하나 더 = 콤보 하나 더"로 환산되어, 드래그 도중 어느 쪽을 노릴지 판단이 단순해진다.</li>
+    <li><strong>튜닝 손잡이 축소</strong> — 두 계수를 분리하면 조합이 늘지만, 위 감도 측정대로 <strong>어느 쪽을 돌려도 결과가 거의 같다.</strong> 분리할 실익이 없다.</li>
+    <li><strong>상한 검증</strong> — 계수 0.30에서 상위 등급 배율이 19.5까지 올라 후반 스테이지가 1턴에 정리된다. 0.25가 실용 상한이다.</li>
+  </ul>
+</section>
+
+<!-- ===================== 6 ===================== -->
+<section id="s6">
+  <h2><span class="no">06</span><span>성장 모델</span></h2>
+  <p class="lead">플레이어의 힘은 세 축으로 오른다. 레벨은 매끄럽게, 장비는 계단식으로, 초월은 완만하게. 이 <strong>서로 다른 세 기울기</strong>가 §7의 톱니형 난이도를 만든다.</p>
+
+  <div class="formula">
+    <div class="eq"><span class="v">ATK</span><sub>eff</sub>(s) <span class="op">=</span> [ 50 <span class="op">+</span> 10 (L(s) <span class="op">−</span> 1) ] <span class="op">×</span> <span class="v">G</span>(s) <span class="op">×</span> <span class="v">T</span>(s)</div>
+    <div class="eq"><span class="v">L</span>(s) <span class="op">=</span> 1 <span class="op">+</span> s <span class="op">+</span> ⌊s / 10⌋ <span class="op">·····</span> 일반 클리어 +1렙, 보스 추가 +2렙</div>
+    <div class="eq"><span class="v">HP</span><sub>team</sub>(L) <span class="op">=</span> 900 <span class="op">+</span> 75 (L <span class="op">−</span> 1) <span class="op">·····</span> 3인 공유 HP</div>
+    <div class="cap">s = 스테이지 번호 · L = 캐릭터 레벨 · G = 장비 승수 · T = 초월 승수 · 캐릭터 1인 기준(3인 합산은 §5 팀 턴배율에 포함)</div>
+  </div>
+
+  <div class="tw"><table>
+    <caption>성장 3축의 성격</caption>
+    <thead><tr><th>축</th><th>형태</th><th>획득 경로</th><th class="num">기여 배수</th><th>설계 역할</th></tr></thead>
+    <tbody>
+      <tr><td><strong>레벨</strong></td><td>선형 · 매끄러움</td><td>스테이지 클리어 자동</td><td class="num">1.0 → 22.5×</td><td>기저 성장. 플레이어가 개입할 수 없는 바닥선</td></tr>
+      <tr><td><strong>장비</strong></td><td>계단 · 티어 경계</td><td>에센스 제작·합성</td><td class="num">1.00 → 2.50×</td><td>체감 성장. 티어 진입마다 "숨통"을 만드는 주역</td></tr>
+      <tr><td><strong>초월</strong></td><td>선형 · 완만</td><td>5성 이후 잉여 에센스</td><td class="num">1.00 → 1.48×</td><td>후반 재화 싱크. 벽 지점을 밀어냄</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tw"><table>
+    <caption>장비 등급별 승수 및 도달 티어</caption>
+    <thead><tr><th>등급</th><th class="num">승수 G</th><th class="num">직전 대비</th><th class="num">설계 도달 티어</th><th class="num">해당 스테이지</th></tr></thead>
+    <tbody>
+      <tr><td>미장착</td><td class="num">1.00</td><td class="num">—</td><td class="num">T1</td><td class="num">1 – 10</td></tr>
+      <tr><td>1성</td><td class="num">1.15</td><td class="num">+15%</td><td class="num">T2</td><td class="num">11 – 20</td></tr>
+      <tr><td>2성</td><td class="num">1.35</td><td class="num">+17%</td><td class="num">T3</td><td class="num">21 – 30</td></tr>
+      <tr><td>3성</td><td class="num">1.60</td><td class="num">+19%</td><td class="num">T4</td><td class="num">31 – 40</td></tr>
+      <tr><td>4성</td><td class="num">1.95</td><td class="num">+22%</td><td class="num">T5</td><td class="num">41 – 50</td></tr>
+      <tr class="hl"><td>5성</td><td class="num">2.50</td><td class="num">+28%</td><td class="num">T6</td><td class="num">51 – 60</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">등급 상승폭을 <strong>+15%에서 +28%로 점증</strong>시킨 이유는 후반 티어일수록 적 HP의 절대 증가량이 크기 때문이다. 일정 비율(예: 전 등급 +20%)로 두면 5성 달성의 체감이 1성 달성보다 약해진다.</p>
+
+  <div class="decide">
+    <div class="h">설계 결정 · 5성 이후 무한 성장축(초월) 추가</div>
+    <p>초기 설계에는 초월이 없었다. 시뮬레이션 결과 <strong>장비가 5성에서 캡되는 순간 플레이어 성장이 준선형으로 떨어지는 반면 적 HP는 지수 성장을 유지</strong>해, 5성 달성 직후 20스테이지 안에 전 등급이 벽에 부딪혔다. 무한 등반 게임에서 재화가 갈 곳이 없어지는 것도 문제였다.</p>
+    <p>초월을 추가해 <span class="mono">단계당 +8%, 비용 3인분 (90 + 15·lv)</span>로 두자 상위 등급의 도달 스테이지가 100 → 120으로 밀렸고, 후반 에센스가 전량 소비된다. 성장률이 여전히 적 HP를 못 따라가므로 <em>벽은 사라지지 않고 이동만 한다</em> — 무한 등반의 의도된 종결 구조다.</p>
+  </div>
+</section>
+
+<!-- ===================== 7 ===================== -->
+<section id="s7">
+  <h2><span class="no">07</span><span>난이도 곡선 설계</span></h2>
+  <p class="lead">적 HP는 플레이어 성장과 <strong>독립된 매끄러운 지수 곡선</strong>으로 정의한다. 이 독립성이 톱니형 체감 난이도를 만드는 유일한 장치다.</p>
+
+  <div class="formula">
+    <div class="eq"><span class="v">HP</span><sub>enemy</sub>(s) <span class="op">=</span> 1,094 <span class="op">×</span> 1.050<sup>(s − 1)</sup> <span class="op">×</span> <span class="v">Bo</span>(s)</div>
+    <div class="eq"><span class="v">Bo</span>(s) <span class="op">=</span> 2.2 <span class="op">(</span>s mod 10 = 0, 보스<span class="op">)</span> <span class="op">/</span> 1.0 <span class="op">(</span>그 외<span class="op">)</span></div>
+    <div class="cap">기점 1,094 = 목표 TTK 3턴 × 기준 팀 턴배율 6.078 × 스테이지 1 유효 공격력 60</div>
+  </div>
+
+  <h3>왜 적 HP를 플레이어 성장에 연동하지 않는가</h3>
+  <p>가장 안전해 보이는 설계는 <span class="mono">HP = 목표TTK × 기준배율 × ATK_eff(s)</span>로 두는 것이다. 실제로 첫 버전은 그랬다. 결과는 <strong>TTK가 전 구간 3.00턴으로 고정</strong>되는 것이었고, 이는 곧 <em>장비를 아무리 올려도 체감이 0</em>이라는 뜻이었다. 육성이 존재하지만 육성의 보람이 없는 상태다.</p>
+  <p>적 곡선을 독립시키면 티어 내부에서는 적이 플레이어보다 빨리 강해지고(조여옴), 티어 경계에서 장비 등급이 오르는 순간 플레이어가 앞선다(숨통). TTK가 톱니 모양으로 진동한다.</p>
+
+  <figure>
+    <div class="fhead">
+      <p class="ftitle">톱니형 체감 난이도 — 기준 플레이어 TTK</p>
+      <p class="fsub">일반 스테이지 기준(기준 등급, 팀 턴배율 6.08). 세로 점선은 장비 등급 상승 지점(티어 경계)이다.</p>
+    </div>
+    <div class="fbody"><div id="ch-ttk"></div></div>
+    <figcaption>티어 내부에서 TTK가 상승하다가 등급 상승으로 급락하는 패턴이 티어마다 반복된다. 기준 플레이어 평균 2.03턴, 범위 1.25 ~ 4.17턴.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="fhead">
+      <p class="ftitle">유효 공격력 vs 적 HP — 로그 스케일</p>
+      <p class="fsub">두 곡선의 상대 기울기가 벽의 위치를 결정한다.</p>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--series-1)"></i>유효 공격력 (설계 진척 기준)</span>
+      <span><i style="background:var(--series-2)"></i>적 HP (일반 스테이지)</span>
+    </div>
+    <div class="fbody"><div id="ch-growth"></div></div>
+    <figcaption>플레이어 곡선의 계단은 장비 등급 상승, 60 이후의 완만한 가속은 초월이다. 적 곡선은 일정 기울기를 유지하므로 언젠가 반드시 교차한다.</figcaption>
+  </figure>
+
+  <h3>반격 계수와 보스 게이트</h3>
+  <div class="tw"><table>
+    <caption>반격 설계 — 2턴마다 1회, 팀 최대 HP 비례</caption>
+    <thead><tr><th>구분</th><th class="num">계수</th><th class="num">허용 피격</th><th class="num">허용 턴</th><th>설계 의도</th></tr></thead>
+    <tbody>
+      <tr><td>일반 스테이지</td><td class="num">18%</td><td class="num">5회</td><td class="num">11턴</td><td>최하위 숙련도도 여유롭게 통과</td></tr>
+      <tr><td>보스 · T1~T2</td><td class="num">18%</td><td class="num">5회</td><td class="num">11턴</td><td>학습 구간. 기믹 이해에 집중</td></tr>
+      <tr><td>보스 · T3 이상</td><td class="num">30%</td><td class="num">3회</td><td class="num">7턴</td><td>평균 3콤보 이상을 요구하는 숙련도 게이트</td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">보스 계수를 T3부터 적용하는 것은 <strong>이탈 방지 설계</strong>다. 입문 등급은 T1~T2 보스를 여유 있게 통과하며 그 20스테이지 동안 콤보 조작에 적응한다. 실제 시뮬레이션에서 입문 등급의 벽은 T4 보스(스테이지 40)이며, 그 시점에는 이미 파밍으로 되돌아갈 이유와 방법을 학습한 상태다.</p>
+
+  <h3>티어별 기믹 해금</h3>
+  <p>수치 상승만으로는 40스테이지 이후 체감이 평탄해진다. 10스테이지 단위로 규칙 자체를 추가해 <strong>같은 TTK에서도 난이도 인지가 달라지게</strong> 했다.</p>
+  <div class="tw"><table>
+    <caption>티어별 신규 기믹</caption>
+    <thead><tr><th class="num">티어</th><th class="num">스테이지</th><th>추가 기믹</th><th>플레이어에게 요구하는 것</th></tr></thead>
+    <tbody>
+      <tr><td class="num">T1</td><td class="num">1–10</td><td>없음 (기본 규칙)</td><td>드래그 조작 습득</td></tr>
+      <tr><td class="num">T2</td><td class="num">11–20</td><td>잠금 오브 — 1턴간 이동 불가</td><td>경로 우회</td></tr>
+      <tr><td class="num">T3</td><td class="num">21–30</td><td>적 2체 동시 등장</td><td>타겟 분배</td></tr>
+      <tr><td class="num">T4</td><td class="num">31–40</td><td>속성 저항 — 지정 1속성 데미지 50%</td><td>편성 유연성</td></tr>
+      <tr><td class="num">T5</td><td class="num">41–50</td><td>주기 회복 — 3턴마다 최대 HP 15% 회복</td><td>DPS 하한 돌파</td></tr>
+      <tr><td class="num">T6+</td><td class="num">51–</td><td>위 4종을 2개씩 조합해 순환</td><td>복합 대응</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ===================== 8 ===================== -->
+<section id="s8">
+  <h2><span class="no">08</span><span>재화·크래프팅 경제</span></h2>
+  <p class="lead">단일 재화(에센스), 확률 없음, 되돌릴 수 없음. 경제를 결정론적으로 설계한 이유는 <strong>수급과 소요를 한 장의 표에서 대조할 수 있게</strong> 하기 위해서다.</p>
+
+  <div class="formula">
+    <div class="eq">제작 <span class="v">1성</span> <span class="op">=</span> 4</div>
+    <div class="eq">합성 <span class="v">g성</span> <span class="op">=</span> (g−1)성 <span class="op">×</span> 2 <span class="op">+</span> 2g <span class="op">·····</span> 성공률 100%</div>
+    <div class="eq">드롭 <span class="v">일반</span> <span class="op">=</span> 2 <span class="op">+</span> 1.4(T−1) <span class="op">,</span> <span class="v">보스</span> <span class="op">=</span> 10 <span class="op">+</span> 3.5(T−1)</div>
+    <div class="cap">T = 난이도 티어 · 드롭은 기대값(±1 범위 난수)</div>
+  </div>
+
+  <div class="tw"><table>
+    <caption>장비 1개 누적 비용 (에센스)</caption>
+    <thead><tr><th>등급</th><th class="num">합성 재료</th><th class="num">추가 비용</th><th class="num">누적 (1개)</th><th class="num">누적 (3인)</th></tr></thead>
+    <tbody>
+      <tr><td>1성</td><td class="num">제작</td><td class="num">4</td><td class="num">4</td><td class="num">12</td></tr>
+      <tr><td>2성</td><td class="num">1성 × 2</td><td class="num">4</td><td class="num">12</td><td class="num">36</td></tr>
+      <tr><td>3성</td><td class="num">2성 × 2</td><td class="num">6</td><td class="num">30</td><td class="num">90</td></tr>
+      <tr><td>4성</td><td class="num">3성 × 2</td><td class="num">8</td><td class="num">68</td><td class="num">204</td></tr>
+      <tr class="hl"><td>5성</td><td class="num">4성 × 2</td><td class="num">10</td><td class="num">146</td><td class="num">438</td></tr>
+    </tbody>
+  </table></div>
+
+  <figure>
+    <div class="fhead">
+      <p class="ftitle">에센스 수급 vs 소요 — 누적 대조</p>
+      <p class="fsub">가로 점선은 3인 전원을 각 등급까지 올리는 데 필요한 누적 비용이다.</p>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--series-1)"></i>누적 수급</span>
+      <span><i style="background:var(--series-2);height:0;border-top:2px dashed var(--series-2)"></i>등급별 소요 누적</span>
+    </div>
+    <div class="fbody"><div id="ch-econ"></div></div>
+    <figcaption>T1~T4 구간에서 수급이 설계 스케줄보다 1티어 앞선다. 이 여유분이 "주력 1인 집중 육성"의 재원이 된다.</figcaption>
+  </figure>
+
+  <div class="decide">
+    <div class="h">설계 결정 · 수급을 설계 스케줄보다 1티어 앞세움</div>
+    <p>장비 진척 스케줄(§6)은 <strong>3인 균등 육성 기준의 하한선</strong>이다. 실제 수급은 T1~T4에서 이보다 1티어 앞서므로, 플레이어는 균등 육성 대신 <em>주력 딜러 1인을 먼저 5성까지 밀어올리는 선택</em>을 할 수 있다. 확률도 뽑기도 없는 경제에서 플레이어에게 남길 수 있는 유일한 의사결정이 배분 순서이므로, 이 여유는 의도적으로 남겼다.</p>
+    <p>반대로 T5 이후에는 여유가 사라지고 T7 초에야 3인 전원 5성이 완성된다. 후반부에는 배분 자유도를 회수하고 <strong>단일 최적해로 수렴</strong>시켜, 랭킹 경쟁이 육성 최적화가 아닌 순수 퍼즐 실력으로 결정되게 했다.</p>
+  </div>
+</section>
+
+<!-- ===================== 9 ===================== -->
+<section id="s9">
+  <h2><span class="no">09</span><span>시뮬레이션 검증</span></h2>
+  <p class="lead">§4의 실제 공식과 §6~8의 성장·경제를 코드로 옮겨, 스테이지 1부터 400까지 5개 숙련도 등급으로 완주시켰다. 아래가 설계가 목표를 달성했는지에 대한 답이다.</p>
+
+  <div class="kpi">
+    <div><div class="k">도달 스테이지</div><div class="v">40–120</div><div class="u">입문 → 상위, 변별폭 80단계</div></div>
+    <div><div class="k">세션 길이</div><div class="v">31–42<span style="font-size:14px">분</span></div><div class="u">전 등급, 목표 30~45분 충족</div></div>
+    <div><div class="k">일반 TTK</div><div class="v">2.03<span style="font-size:14px">턴</span></div><div class="u">기준 플레이어 평균</div></div>
+    <div><div class="k">일반 클리어율</div><div class="v">100<span style="font-size:14px">%</span></div><div class="u">벽 이전 전 구간·전 등급</div></div>
+  </div>
+
+  <div class="tw"><table>
+    <caption>숙련도 등급별 시뮬레이션 결과</caption>
+    <thead><tr><th>등급</th><th class="num">팀 턴배율</th><th class="num">도달 st</th><th class="num">세션</th><th class="num">평균 TTK</th><th class="num">최종 초월</th><th>목표 달성</th></tr></thead>
+    <tbody>
+      <tr><td>입문</td><td class="num">2.42</td><td class="num">40</td><td class="num">30.6분</td><td class="num">4.09</td><td class="num">+0</td><td><span class="tag warn">조건부</span></td></tr>
+      <tr><td>일반</td><td class="num">4.50</td><td class="num">80</td><td class="num">41.5분</td><td class="num">2.46</td><td class="num">+1</td><td><span class="tag ok">달성</span></td></tr>
+      <tr class="hl"><td>기준</td><td class="num">6.08</td><td class="num">90</td><td class="num">41.4분</td><td class="num">2.03</td><td class="num">+3</td><td><span class="tag ok">달성</span></td></tr>
+      <tr><td>숙련</td><td class="num">10.66</td><td class="num">110</td><td class="num">40.5분</td><td class="num">1.58</td><td class="num">+5</td><td><span class="tag ok">달성</span></td></tr>
+      <tr><td>상위</td><td class="num">16.98</td><td class="num">120</td><td class="num">37.9분</td><td class="num">1.21</td><td class="num">+6</td><td><span class="tag ok">달성</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">입문 등급만 <span class="tag warn">조건부</span>다. 세션 30.6분으로 목표 하한을 겨우 만족하지만, 도달 스테이지 40은 다른 등급의 절반이며 장비도 3성에서 멈춘다. §10 리스크 1에서 완화안을 다룬다.</p>
+
+  <figure>
+    <div class="fhead">
+      <p class="ftitle">숙련도 → 도달 스테이지 환산</p>
+      <p class="fsub">팀 턴배율 7.02배 차이가 도달 스테이지 80단계 차이로 환산된다.</p>
+    </div>
+    <div class="fbody"><div id="ch-wall"></div></div>
+    <figcaption>설계 목표 1·3의 직접 검증. 전 등급이 벽 이전 구간을 100% 클리어하되 도달 지점이 단조 증가한다.</figcaption>
+  </figure>
+
+  <h3>검증에서 나온 세 가지 발견</h3>
+
+  <div class="decide">
+    <div class="h">발견 1 · 세션 길이가 숙련도와 무관하게 자기 정규화된다</div>
+    <p>의도하지 않은 결과였다. 숙련도가 높으면 스테이지당 소요 턴이 줄지만 그만큼 더 멀리 가므로, <strong>총 플레이 시간이 38~42분으로 수렴</strong>한다(입문 제외). 세션 길이를 별도로 튜닝할 필요가 없다는 뜻이며, 이 성질은 TTK와 도달 스테이지가 같은 턴배율 변수에 각각 반비례·비례로 종속되기 때문에 성립한다. 다른 파라미터를 바꿔도 이 성질은 유지된다.</p>
+  </div>
+
+  <div class="decide">
+    <div class="h">발견 2 · 랭킹 변별폭은 두 지수의 비로 결정된다</div>
+    <p>도달 스테이지 격차는 튜닝으로 임의 조정할 수 있는 값이 아니라 아래 관계식에 갇혀 있다.</p>
+    <div class="formula" style="margin:12px 0 10px;background:var(--surface-2)">
+      <div class="eq">Δ<span class="v">stage</span> <span class="op">≈</span> ln(턴배율 비) <span class="op">/</span> ln(적 HP 성장률) <span class="op">=</span> ln(7.02) <span class="op">/</span> ln(1.050) <span class="op">≈</span> 39.9</div>
+    </div>
+    <p>실측 80단계는 여기에 장비 계단 효과와 보스 게이트 효과가 더해진 값이다. <strong>변별폭을 넓히려면 적 성장률을 낮추는 수밖에 없고, 그러면 세션이 길어진다.</strong> 이 교환 관계가 §10의 유일한 튜닝 손잡이다.</p>
+  </div>
+
+  <div class="decide">
+    <div class="h">발견 3 · 벽은 항상 보스 스테이지에서 발생한다</div>
+    <p>5개 등급 전부 도달 한계가 10의 배수 스테이지였다. 보스 반격 계수 0.30이 일반의 0.18보다 압도적으로 높아, <strong>일반 스테이지에서 죽는 경우가 구조적으로 발생하지 않는다.</strong> 의도한 결과는 아니었지만 유지하기로 했다 — 런의 종료 지점이 항상 보스전이면 플레이어가 실패를 "덜 강해서"가 아니라 "이 보스를 못 넘어서"로 인지하며, 재도전 동기가 구체적인 목표를 갖는다.</p>
+  </div>
+</section>
+
+<!-- ===================== 10 ===================== -->
+<section id="s10">
+  <h2><span class="no">10</span><span>튜닝 손잡이와 리스크</span></h2>
+  <p class="lead">이 설계에서 라이브 중 조정 가능한 파라미터는 실질적으로 하나다. 나머지는 전부 그것의 종속변수다.</p>
+
+  <div class="tw"><table>
+    <caption>적 HP 성장률 R에 따른 트레이드오프</caption>
+    <thead><tr><th class="num">R</th><th class="num">이론 변별폭</th><th class="num">st.100 HP 배수</th><th>결과</th><th>판정</th></tr></thead>
+    <tbody>
+      <tr><td class="num">1.035</td><td class="num">56.6</td><td class="num">30.1×</td><td>변별력 우수 · 세션 60분 초과</td><td><span class="tag crit">기각</span></td></tr>
+      <tr><td class="num">1.040</td><td class="num">49.7</td><td class="num">48.6×</td><td>세션 44~51분 · 목표 상한 초과</td><td><span class="tag warn">보류</span></td></tr>
+      <tr><td class="num">1.045</td><td class="num">44.3</td><td class="num">78.1×</td><td>세션 40~49분 · 변별폭 70</td><td><span class="tag warn">대안</span></td></tr>
+      <tr class="hl"><td class="num">1.050</td><td class="num">39.9</td><td class="num">125.2×</td><td>세션 31~42분 · 변별폭 80</td><td><span class="tag ok">채택</span></td></tr>
+      <tr><td class="num">1.055</td><td class="num">36.4</td><td class="num">200.4×</td><td>세션 25~40분 · 입문 30st</td><td><span class="tag warn">대안</span></td></tr>
+      <tr><td class="num">1.060</td><td class="num">33.4</td><td class="num">320.1×</td><td>입문 30st · 저숙련 이탈 위험</td><td><span class="tag crit">기각</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="tnote">R = 1.050 채택. 전 등급의 세션 길이가 목표 구간(30~45분) 안에 들어오는 값 중 변별폭이 가장 큰 지점이다. 세션 상한을 50분까지 허용하면 1.045가 즉시 대안이 된다.</p>
+
+  <h3>식별된 리스크</h3>
+
+  <div class="risk">
+    <div class="h">리스크 1 · 입문 등급의 도달 스테이지가 절반에 그침</div>
+    <p>가장 시급한 문제다. 입문 등급은 스테이지 40(T4 보스)에서 멈추며 장비가 3성에서 끝난다. 원인은 편차 7배가 <strong>저숙련 쪽 꼬리에서 특히 가파르기</strong> 때문이다 — 콤보가 적으면 편성 3인 중 실제로 공격하는 인원 자체가 줄어 배율이 이중으로 깎인다.</p>
+    <p>완화안은 <strong>매치가 없는 캐릭터에게 최소 공격(배율 0.5) 보장</strong>이다. 시뮬레이션상 입문 배율이 2.42 → 3.1로 오르고 도달 스테이지가 40 → 60으로 개선되며, 상위 등급은 이미 전원이 매치되므로 영향이 1% 미만이다. <em>저숙련만 선택적으로 끌어올리는 유일한 레버</em>로 확인되었다.</p>
+  </div>
+
+  <div class="risk">
+    <div class="h">리스크 2 · 숙련도 등급 정의가 관측 표본에 의존</div>
+    <p>§5의 등급별 입력값은 프로토타입 플레이 로그 기반이며 표본이 제작자 본인과 소수 테스터에 편중돼 있다. 특히 <strong>약점 적중률</strong>은 플레이어가 적 속성을 인지하고 편성 색을 의도적으로 노리는 비율인데, 실제 유저는 UI 인지 부담 때문에 이 값이 크게 낮을 수 있다. 적중률이 전 등급 10%p 낮아지면 도달 스테이지가 일괄 −10 이동한다.</p>
+  </div>
+
+  <div class="risk">
+    <div class="h">리스크 3 · 약점 배율 2배의 지배력</div>
+    <p>약점 배율은 단일 승수 중 가장 큰 스윙(2배)을 만들면서, 유일하게 <strong>플레이어의 조작이 아닌 사전 판단</strong>으로 결정된다. 편성이 적 속성에 최적화되면 턴배율 기대값이 등급 정의를 초과한다. 현재는 적 속성이 스테이지마다 무작위라 평균으로 수렴하지만, <strong>편성 변경 UI가 스테이지 사이에 열리면 밸런스가 붕괴</strong>한다. 편성 잠금(런 시작 시 확정)을 명세에 못박아 두었다.</p>
+  </div>
+
+  <div class="risk">
+    <div class="h">리스크 4 · 초월 구간의 재화 인플레이션</div>
+    <p>초월 비용은 <span class="mono">90 + 15·lv</span>로 선형 증가하는 반면 티어 소득은 <span class="mono">37 + 17.5(T−1)</span>로 역시 선형이다. 두 선형이 만나면 특정 지점 이후 초월 단계가 무한히 오른다. 시뮬레이션 범위(st.400)에서는 벽이 먼저 오므로 문제되지 않았으나, <strong>후속 콘텐츠로 벽을 밀 경우 비용을 2차식으로 전환</strong>해야 한다.</p>
+  </div>
+</section>
+
+<!-- ===================== 11 ===================== -->
+<section id="s11">
+  <h2><span class="no">11</span><span>부록 · 파라미터 전량</span></h2>
+  <p class="lead">구현·검증에 필요한 전체 수치. 이 표만으로 시뮬레이터를 재구성할 수 있다.</p>
+
+  <div class="tw"><table>
+    <caption>A. 전투 상수</caption>
+    <thead><tr><th>파라미터</th><th class="num">값</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>보드 크기</td><td class="num">6 × 5</td><td>30칸</td></tr>
+      <tr><td>드래그 제한 시간</td><td class="num">5.0초</td><td></td></tr>
+      <tr><td>최소 매치</td><td class="num">3개</td><td>가로/세로</td></tr>
+      <tr><td>블럭 배율 계수</td><td class="num">0.25</td><td><span class="mono">B(n) = 1 + 0.25(n−3)</span></td></tr>
+      <tr><td>같은 색 콤보 배율</td><td class="num">c (선형)</td><td>2콤 2배 · 3콤 3배 · 5콤 5배</td></tr>
+      <tr><td>전체 콤보 보너스</td><td class="num">0.25 · k</td><td>색 무관, 총 콤보 수 기준</td></tr>
+      <tr><td>약점 배율</td><td class="num">2.0</td><td>최종 계산값에 적용</td></tr>
+      <tr><td>편성 인원</td><td class="num">3</td><td>런 시작 시 확정, 변경 불가</td></tr>
+      <tr><td>반격 주기</td><td class="num">2턴</td><td></td></tr>
+      <tr><td>반격 계수</td><td class="num">0.18 / 0.30</td><td>일반·T1~2보스 / T3+보스</td></tr>
+      <tr><td>클리어 회복</td><td class="num">25% / 100%</td><td>일반 / 보스 진입 시</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tw"><table>
+    <caption>B. 성장 상수</caption>
+    <thead><tr><th>파라미터</th><th class="num">값 / 식</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>캐릭터 기본 ATK</td><td class="num">50 + 10(L−1)</td><td>1인 기준 · 3인 동일</td></tr>
+      <tr><td>팀 HP</td><td class="num">900 + 75(L−1)</td><td>3인 공유</td></tr>
+      <tr><td>레벨업</td><td class="num">L = 1 + s + ⌊s/10⌋</td><td>일반 +1, 보스 +2</td></tr>
+      <tr><td>장비 승수 G</td><td class="num">1.00 / 1.15 / 1.35 / 1.60 / 1.95 / 2.50</td><td>미장착 ~ 5성</td></tr>
+      <tr><td>초월 승수 T</td><td class="num">1 + 0.08 · lv</td><td>5성 이후</td></tr>
+      <tr><td>초월 비용</td><td class="num">90 + 15 · lv</td><td>3인분</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tw"><table>
+    <caption>C. 난이도 · 경제 상수</caption>
+    <thead><tr><th>파라미터</th><th class="num">값 / 식</th><th>비고</th></tr></thead>
+    <tbody>
+      <tr><td>적 HP 기점</td><td class="num">1,094</td><td>스테이지 1</td></tr>
+      <tr><td>적 HP 성장률 R</td><td class="num">1.050</td><td>스테이지당</td></tr>
+      <tr><td>보스 HP 배수</td><td class="num">2.2</td><td>10의 배수 스테이지</td></tr>
+      <tr><td>티어 구간</td><td class="num">10 스테이지</td><td><span class="mono">T = ⌊(s−1)/10⌋ + 1</span></td></tr>
+      <tr><td>일반 드롭</td><td class="num">2 + 1.4(T−1)</td><td>기대값</td></tr>
+      <tr><td>보스 드롭</td><td class="num">10 + 3.5(T−1)</td><td>기대값</td></tr>
+      <tr><td>제작 비용 (1성)</td><td class="num">4</td><td></td></tr>
+      <tr><td>합성 비용 (g성)</td><td class="num">(g−1)성 × 2 + 2g</td><td>성공률 100%</td></tr>
+      <tr><td>3인 전원 5성 총비용</td><td class="num">438</td><td>T7 초 도달</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="tw"><table>
+    <caption>D. 스테이지 지표 발췌 (기준 플레이어)</caption>
+    <thead><tr><th class="num">st</th><th class="num">T</th><th class="num">Lv</th><th class="num">장비</th><th class="num">유효 ATK</th><th class="num">적 HP</th><th class="num">팀 HP</th><th class="num">반격</th><th class="num">TTK</th></tr></thead>
+    <tbody id="tb-stage"></tbody>
+  </table></div>
+  <p class="tnote">보스 스테이지(10의 배수)는 음영 표시. TTK는 기준 등급(팀 턴배율 6.08) 기준이며, 전체 120행은 시뮬레이터 출력에서 확인 가능하다.</p>
+</section>
+
+</main>
+
+<footer>
+  <span>몬스터 퍼즐 던전 · 밸런스 설계서 v1.0</span>
+  <span>모든 수치는 시뮬레이션 검증을 거친 값이다</span>
+</footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+const D={"curve":[[1,60,1094,3.0,0,0,0,975,176,2],[2,70,1149,2.701,0,0,0,1050,189,3],[3,80,1206,2.48,0,0,0,1125,202,4],[4,90,1266,2.314,0,0,0,1200,216,5],[5,100,1330,2.188,0,0,0,1275,230,6],[6,110,1396,2.088,0,0,0,1350,243,7],[7,120,1466,2.01,0,0,0,1425,256,8],[8,130,1539,1.948,0,0,0,1500,270,9],[9,140,1616,1.899,0,0,0,1575,284,10],[10,160,3734,3.84,0,0,1,1725,310,12],[11,195,1782,1.5,1,0,0,1800,324,13],[12,207,1871,1.487,1,0,0,1875,338,14],[13,218,1965,1.48,1,0,0,1950,351,15],[14,230,2063,1.476,1,0,0,2025,364,16],[15,241,2166,1.476,1,0,0,2100,378,17],[16,253,2274,1.479,1,0,0,2175,392,18],[17,264,2388,1.485,1,0,0,2250,405,19],[18,276,2507,1.494,1,0,0,2325,418,20],[19,288,2633,1.507,1,0,0,2400,432,21],[20,310,6082,3.223,1,0,1,2550,459,23],[21,378,2903,1.264,2,0,0,2625,472,24],[22,392,3048,1.281,2,0,0,2700,486,25],[23,405,3200,1.3,2,0,0,2775,500,26],[24,418,3360,1.321,2,0,0,2850,513,27],[25,432,3528,1.344,2,0,0,2925,526,28],[26,446,3705,1.368,2,0,0,3000,540,29],[27,459,3890,1.394,2,0,0,3075,554,30],[28,473,4084,1.422,2,0,0,3150,567,31],[29,486,4289,1.452,2,0,0,3225,580,32],[30,513,9907,3.177,2,0,1,3375,1012,34],[31,624,4728,1.247,3,0,0,3450,621,35],[32,640,4965,1.276,3,0,0,3525,634,36],[33,656,5213,1.307,3,0,0,3600,648,37],[34,672,5473,1.34,3,0,0,3675,662,38],[35,688,5747,1.374,3,0,0,3750,675,39],[36,704,6035,1.41,3,0,0,3825,688,40],[37,720,6336,1.448,3,0,0,3900,702,41],[38,736,6653,1.487,3,0,0,3975,716,42],[39,752,6986,1.528,3,0,0,4050,729,43],[40,784,16137,3.386,3,0,1,4200,1260,45],[41,975,7702,1.3,4,0,0,4275,770,46],[42,994,8087,1.338,4,0,0,4350,783,47],[43,1014,8491,1.378,4,0,0,4425,796,48],[44,1034,8916,1.419,4,0,0,4500,810,49],[45,1053,9362,1.463,4,0,0,4575,824,50],[46,1072,9830,1.508,4,0,0,4650,837,51],[47,1092,10321,1.555,4,0,0,4725,850,52],[48,1112,10837,1.604,4,0,0,4800,864,53],[49,1131,11379,1.655,4,0,0,4875,878,54],[50,1170,26285,3.696,4,0,1,5025,1508,56],[51,1525,12545,1.353,5,0,0,5100,918,57],[52,1550,13173,1.398,5,0,0,5175,932,58],[53,1575,13831,1.445,5,0,0,5250,945,59],[54,1600,14523,1.493,5,0,0,5325,958,60],[55,1625,15249,1.544,5,0,0,5400,972,61],[56,1650,16011,1.597,5,0,0,5475,986,62],[57,1675,16812,1.651,5,0,0,5550,999,63],[58,1700,17653,1.708,5,0,0,5625,1012,64],[59,1725,18535,1.768,5,0,0,5700,1026,65],[60,1775,42816,3.969,5,0,1,5850,1755,67],[61,1800,20435,1.868,5,0,0,5925,1066,68],[62,1825,21457,1.934,5,0,0,6000,1080,69],[63,1850,22530,2.004,5,0,0,6075,1094,70],[64,1875,23656,2.076,5,0,0,6150,1107,71],[65,1900,24839,2.151,5,0,0,6225,1120,72],[66,1925,26081,2.229,5,0,0,6300,1134,73],[67,1950,27385,2.311,5,0,0,6375,1148,74],[68,1975,28754,2.395,5,0,0,6450,1161,75],[69,2000,30192,2.484,5,0,0,6525,1174,76],[70,2050,69743,5.597,5,0,1,6675,2002,78],[71,2241,33287,2.444,5,1,0,6750,1215,79],[72,2268,34951,2.535,5,1,0,6825,1228,80],[73,2295,36698,2.631,5,1,0,6900,1242,81],[74,2322,38533,2.73,5,1,0,6975,1256,82],[75,2349,40460,2.834,5,1,0,7050,1269,83],[76,2376,42483,2.942,5,1,0,7125,1282,84],[77,2403,44607,3.054,5,1,0,7200,1296,85],[78,2430,46837,3.171,5,1,0,7275,1310,86],[79,2457,49179,3.293,5,1,0,7350,1323,87],[80,2697,113604,6.93,5,2,1,7500,2250,89],[81,2726,54220,3.272,5,2,0,7575,1364,90],[82,2755,56931,3.4,5,2,0,7650,1377,91],[83,2784,59778,3.533,5,2,0,7725,1390,92],[84,2813,62767,3.671,5,2,0,7800,1404,93],[85,2842,65905,3.815,5,2,0,7875,1418,94],[86,2871,69200,3.966,5,2,0,7950,1431,95],[87,2900,72660,4.122,5,2,0,8025,1444,96],[88,3131,76293,4.009,5,3,0,8100,1458,97],[89,3162,80108,4.168,5,3,0,8175,1472,98],[90,3224,185049,9.443,5,3,1,8325,2498,100],[91,3255,88319,4.464,5,3,0,8400,1512,101],[92,3286,92735,4.643,5,3,0,8475,1526,102],[93,3317,97372,4.83,5,3,0,8550,1539,103],[94,3348,102240,5.024,5,3,0,8625,1552,104],[95,3379,107352,5.227,5,3,0,8700,1566,105],[96,3410,112720,5.439,5,3,0,8775,1580,106],[97,3663,118356,5.316,5,4,0,8850,1593,107],[98,3696,124274,5.532,5,4,0,8925,1606,108],[99,3729,130487,5.757,5,4,0,9000,1620,109],[100,3795,301426,13.068,5,4,1,9150,2745,111],[101,3828,143862,6.183,5,4,0,9225,1660,112],[102,3861,151055,6.437,5,4,0,9300,1674,113],[103,3894,158608,6.701,5,4,0,9375,1688,114],[104,3927,166539,6.977,5,4,0,9450,1701,115],[105,3960,174866,7.265,5,4,0,9525,1714,116],[106,4235,183609,7.133,5,5,0,9600,1728,117],[107,4270,192789,7.428,5,5,0,9675,1742,118],[108,4305,202429,7.736,5,5,0,9750,1755,119],[109,4340,212550,8.058,5,5,0,9825,1768,120],[110,4410,490991,18.318,5,5,1,9975,2992,122],[111,4445,234337,8.674,5,5,0,10050,1809,123],[112,4480,246053,9.036,5,5,0,10125,1822,124],[113,4515,258356,9.415,5,5,0,10200,1836,125],[114,4550,271274,9.809,5,5,0,10275,1850,126],[115,4847,284838,9.669,5,6,0,10350,1863,127],[116,4884,299080,10.075,5,6,0,10425,1876,128],[117,4921,314034,10.499,5,6,0,10500,1890,129],[118,4958,329735,10.942,5,6,0,10575,1904,130],[119,4995,346222,11.404,5,6,0,10650,1917,131],[120,5069,799773,25.959,5,6,1,10800,3240,133]],"grades":[["입문",2.42,40,30.6,4.09,0],["일반",4.5,80,41.5,2.46,1],["기준",6.08,90,41.4,2.03,3],["숙련",10.66,110,40.5,1.58,5],["상위",16.98,120,37.9,1.21,6]],"income":[28.0,44.1,60.2,76.3,92.4,108.5,124.6,140.7,156.8,172.9,189.0],"tune":[[1.035,56.6,30.1],[1.04,49.7,48.6],[1.045,44.3,78.1],[1.05,39.9,125.2],[1.055,36.4,200.4],[1.06,33.4,320.1]],"cost3":[["1성",12],["2성",36],["3성",90],["4성",204],["5성",438]],"mult":{"입문":2.42,"일반":4.496,"기준":6.078,"숙련":10.664,"상위":16.982},"mult_exp":{"입문":2.343,"일반":4.299,"기준":5.765,"숙련":10.102,"상위":16.091},"H0":1094,"R":1.05,"REF":6.078,"lever":[["기준안 a=0.25 · 약점 2.0",2.42,6.1,16.98,7.01],["블럭·콤보 계수 0.25→0.20",2.21,5.41,14.6,6.6],["블럭·콤보 계수 0.25→0.30",2.62,6.77,19.5,7.44],["약점 배율 2.0→1.6",2.26,5.39,14.18,6.29],["약점 배율 2.0→2.5",2.61,6.95,20.47,7.84],["같은색 콤보 c→c^0.75 완화",2.35,5.78,15.72,6.69],["캐릭터별 배율 상한 12 적용",2.4,6.06,16.56,6.89],["약점 1.6 + 상한 12 병행",2.25,5.39,14.1,6.26]]};
+
+const cv=(n)=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS="http://www.w3.org/2000/svg";
+const el=(t,a={})=>{const n=document.createElementNS(NS,t);for(const k in a)n.setAttribute(k,a[k]);return n;};
+const fmt=(v)=>v>=10000?(v/1000).toFixed(0)+"k":v>=1000?(v/1000).toFixed(1)+"k":v.toFixed(0);
+const tip=document.getElementById("tip");
+function showTip(e,html){tip.innerHTML=html;tip.classList.add("on");
+  const r=tip.getBoundingClientRect();let x=e.clientX+14,y=e.clientY-r.height-12;
+  if(x+r.width>innerWidth-8)x=e.clientX-r.width-14; if(y<8)y=e.clientY+18;
+  tip.style.left=x+"px";tip.style.top=y+"px";}
+function hideTip(){tip.classList.remove("on");}
+
+function frame(host,W,H,M){
+  host.innerHTML="";
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,width:"100%",style:`min-width:${Math.min(W,560)}px`,role:"img"});
+  host.appendChild(s);
+  return {s,x0:M.l,x1:W-M.r,y0:H-M.b,y1:M.t,W,H};
+}
+function axes(f,{xt,yt,xlab,ylab}){
+  const g=cv("--grid"),a=cv("--axis"),m=cv("--muted");
+  yt.forEach(t=>{
+    f.s.appendChild(el("line",{x1:f.x0,x2:f.x1,y1:t.y,y2:t.y,stroke:g,"stroke-width":1}));
+    const tx=el("text",{x:f.x0-8,y:t.y+4,fill:m,"font-size":10.5,"text-anchor":"end"});tx.textContent=t.l;f.s.appendChild(tx);
+  });
+  xt.forEach(t=>{
+    const tx=el("text",{x:t.x,y:f.y0+18,fill:m,"font-size":10.5,"text-anchor":"middle"});tx.textContent=t.l;f.s.appendChild(tx);
+  });
+  f.s.appendChild(el("line",{x1:f.x0,x2:f.x1,y1:f.y0,y2:f.y0,stroke:a,"stroke-width":1}));
+  if(xlab){const t=el("text",{x:(f.x0+f.x1)/2,y:f.H-4,fill:cv("--faint"),"font-size":10,"text-anchor":"middle"});t.textContent=xlab;f.s.appendChild(t);}
+  if(ylab){const t=el("text",{x:12,y:f.y1-8,fill:cv("--faint"),"font-size":10,"text-anchor":"start"});t.textContent=ylab;f.s.appendChild(t);}
+}
+const path=(pts)=>pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+
+/* ---- 1. 레버 감도 (수평 막대) ---- */
+function chLever(){
+  const host=document.getElementById("ch-lever");
+  const n=D.lever.length, rowH=30, top=26, bot=34;
+  const f=frame(host,700,top+n*rowH+bot,{l:250,r:56,t:top,b:bot});
+  const maxX=9, X=v=>f.x0+v/maxX*(f.x1-f.x0);
+  const g=cv("--grid"),m=cv("--muted");
+  [0,2,4,6,8].forEach(v=>{
+    f.s.appendChild(el("line",{x1:X(v),x2:X(v),y1:f.y1-6,y2:f.y0,stroke:g,"stroke-width":1}));
+    const t=el("text",{x:X(v),y:f.y0+18,fill:m,"font-size":10.5,"text-anchor":"middle"});t.textContent=v+"×";f.s.appendChild(t);
+  });
+  // 목표선
+  f.s.appendChild(el("line",{x1:X(4),x2:X(4),y1:f.y1-6,y2:f.y0,stroke:cv("--series-2"),"stroke-width":1.6,"stroke-dasharray":"5 4"}));
+  const gt=el("text",{x:X(4),y:f.y1-12,fill:cv("--series-2"),"font-size":10.5,"font-weight":600,"text-anchor":"middle"});
+  gt.textContent="당초 목표 4×";f.s.appendChild(gt);
+  D.lever.forEach((r,i)=>{
+    const y=f.y1+i*rowH+rowH/2, h2=15;
+    const base=i===0;
+    const rect=el("rect",{x:X(0),y:y-h2/2,width:X(r[4])-X(0),height:h2,rx:4,
+      fill:cv("--series-1"),opacity:base?1:.62});
+    rect.style.cursor="pointer";
+    rect.addEventListener("mouseenter",e=>showTip(e,`<b>${r[0]}</b><br>입문 ${r[1].toFixed(2)} · 기준 ${r[2].toFixed(2)} · 상위 ${r[3].toFixed(2)}<br>편차폭 <b>${r[4].toFixed(2)}×</b>`));
+    rect.addEventListener("mouseleave",hideTip);
+    f.s.appendChild(rect);
+    const lb=el("text",{x:f.x0-10,y:y+4,fill:base?cv("--ink"):cv("--ink-2"),"font-size":11,"text-anchor":"end","font-weight":base?600:400,"font-family":'"IBM Plex Sans KR",sans-serif'});
+    lb.textContent=r[0];f.s.appendChild(lb);
+    const vt=el("text",{x:X(r[4])+7,y:y+4,fill:cv("--ink"),"font-size":11,"font-weight":600});
+    vt.textContent=r[4].toFixed(2)+"×";f.s.appendChild(vt);
+  });
+  f.s.appendChild(el("line",{x1:f.x0,x2:f.x0,y1:f.y1-6,y2:f.y0,stroke:cv("--axis"),"stroke-width":1}));
+  const xl=el("text",{x:(f.x0+f.x1)/2,y:f.H-4,fill:cv("--faint"),"font-size":10,"text-anchor":"middle"});
+  xl.textContent="입문 → 상위 팀 턴배율 편차폭";f.s.appendChild(xl);
+}
+
+/* ---- 2. TTK 톱니 ---- */
+function chTTK(){
+  const host=document.getElementById("ch-ttk");
+  const f=frame(host,760,260,{l:46,r:20,t:16,b:34});
+  const LAST=90;
+  const rows=D.curve.filter(r=>!r[6]&&r[0]<=LAST);
+  const maxY=4.5, X=s=>f.x0+(s-1)/(LAST-1)*(f.x1-f.x0), Y=v=>f.y0-Math.min(v,maxY)/maxY*(f.y0-f.y1);
+  axes(f,{yt:[0,1,2,3,4].map(v=>({y:Y(v),l:v.toFixed(0)+"턴"})),
+          xt:[1,20,40,60,80,90].map(s=>({x:X(s),l:s})),xlab:"스테이지",ylab:"TTK (처치 소요 턴)"});
+  for(let t=2;t<=9;t++){const x=X((t-1)*10+1);
+    f.s.appendChild(el("line",{x1:x,x2:x,y1:f.y1,y2:f.y0,stroke:cv("--line-2"),"stroke-width":1,"stroke-dasharray":"2 4"}));}
+  const pts=rows.map(r=>[X(r[0]),Y(r[3])]);
+  f.s.appendChild(el("path",{d:path(pts)+`L ${pts[pts.length-1][0]} ${f.y0} L ${pts[0][0]} ${f.y0} Z`,fill:cv("--series-1"),opacity:.10}));
+  f.s.appendChild(el("path",{d:path(pts),fill:"none",stroke:cv("--series-1"),"stroke-width":2,"stroke-linejoin":"round"}));
+  const avg=2.03;
+  f.s.appendChild(el("line",{x1:f.x0,x2:f.x1,y1:Y(avg),y2:Y(avg),stroke:cv("--series-2"),"stroke-width":1.6,"stroke-dasharray":"5 4"}));
+  const at=el("text",{x:f.x1-4,y:Y(avg)-7,fill:cv("--series-2"),"font-size":10.5,"font-weight":600,"text-anchor":"end"});
+  at.textContent="평균 2.03턴";f.s.appendChild(at);
+  const hit=el("rect",{x:f.x0,y:f.y1,width:f.x1-f.x0,height:f.y0-f.y1,fill:"transparent"});
+  hit.style.cursor="crosshair";
+  const cross=el("line",{y1:f.y1,y2:f.y0,stroke:cv("--axis"),"stroke-width":1,opacity:0});
+  const mk=el("circle",{r:4.5,fill:cv("--series-1"),stroke:cv("--surface"),"stroke-width":2,opacity:0});
+  hit.addEventListener("mousemove",e=>{
+    const bb=f.s.getBoundingClientRect(),vx=(e.clientX-bb.left)/bb.width*f.W;
+    let best=rows[0],bd=1e9; rows.forEach(r=>{const d=Math.abs(X(r[0])-vx);if(d<bd){bd=d;best=r;}});
+    const px=X(best[0]),py=Y(best[3]);
+    cross.setAttribute("x1",px);cross.setAttribute("x2",px);cross.setAttribute("opacity",.5);
+    mk.setAttribute("cx",px);mk.setAttribute("cy",py);mk.setAttribute("opacity",1);
+    showTip(e,`<b>스테이지 ${best[0]}</b> · T${Math.floor((best[0]-1)/10)+1}<br>TTK ${best[3].toFixed(2)}턴 · 장비 ${best[4]}성<br>ATK ${best[1].toLocaleString()} / 적HP ${best[2].toLocaleString()}`);
+  });
+  hit.addEventListener("mouseleave",()=>{hideTip();cross.setAttribute("opacity",0);mk.setAttribute("opacity",0);});
+  f.s.appendChild(cross);f.s.appendChild(mk);f.s.appendChild(hit);
+}
+
+/* ---- 3. 성장 vs 적 HP (log) ---- */
+function chGrowth(){
+  const host=document.getElementById("ch-growth");
+  const f=frame(host,760,280,{l:54,r:20,t:26,b:34});
+  const rows=D.curve.filter(r=>!r[6]);
+  const lo=Math.log10(50),hi=Math.log10(500000);
+  const X=s=>f.x0+(s-1)/119*(f.x1-f.x0), Y=v=>f.y0-(Math.log10(v)-lo)/(hi-lo)*(f.y0-f.y1);
+  axes(f,{yt:[100,1000,10000,100000].map(v=>({y:Y(v),l:fmt(v)})),
+          xt:[1,20,40,60,80,100,120].map(s=>({x:X(s),l:s})),xlab:"스테이지",ylab:"로그 스케일"});
+  [[1,cv("--series-1"),"유효 공격력"],[2,cv("--series-2"),"적 HP"]].forEach(([i,c,lab])=>{
+    const pts=rows.map(r=>[X(r[0]),Y(r[i])]);
+    f.s.appendChild(el("path",{d:path(pts),fill:"none",stroke:c,"stroke-width":2.2,"stroke-linejoin":"round"}));
+    const last=pts[pts.length-1];
+    const t=el("text",{x:last[0]-4,y:last[1]+(i===1?18:-9),fill:c,"font-size":11,"font-weight":600,"text-anchor":"end"});
+    t.textContent=lab;f.s.appendChild(t);
+  });
+  [["입문 벽",40,"middle",0],["상위 벽",120,"end",-5]].forEach(([nm,s,an,dx])=>{
+    const x=X(s);
+    f.s.appendChild(el("line",{x1:x,x2:x,y1:f.y1+4,y2:f.y0,stroke:cv("--axis"),"stroke-width":1,"stroke-dasharray":"3 3"}));
+    const t=el("text",{x:x+dx,y:f.y0-9,fill:cv("--muted"),"font-size":10,"text-anchor":an});
+    t.textContent=nm;f.s.appendChild(t);});
+  const hit=el("rect",{x:f.x0,y:f.y1,width:f.x1-f.x0,height:f.y0-f.y1,fill:"transparent"});
+  hit.style.cursor="crosshair";
+  hit.addEventListener("mousemove",e=>{
+    const bb=f.s.getBoundingClientRect(),vx=(e.clientX-bb.left)/bb.width*f.W;
+    let best=rows[0],bd=1e9; rows.forEach(r=>{const d=Math.abs(X(r[0])-vx);if(d<bd){bd=d;best=r;}});
+    showTip(e,`<b>스테이지 ${best[0]}</b><br>유효 ATK ${best[1].toLocaleString()}<br>적 HP ${best[2].toLocaleString()}<br>배수 ${(best[2]/best[1]).toFixed(1)}×`);
+  });
+  hit.addEventListener("mouseleave",hideTip);
+  f.s.appendChild(hit);
+}
+
+/* ---- 4. 경제 ---- */
+function chEcon(){
+  const host=document.getElementById("ch-econ");
+  const f=frame(host,660,260,{l:48,r:70,t:16,b:34});
+  let cum=0; const pts=[[0,0]];
+  D.income.forEach((v,i)=>{cum+=v;pts.push([i+1,cum]);});
+  const maxY=1100, X=t=>f.x0+t/11*(f.x1-f.x0), Y=v=>f.y0-Math.min(v,maxY)/maxY*(f.y0-f.y1);
+  axes(f,{yt:[0,250,500,750,1000].map(v=>({y:Y(v),l:v})),
+          xt:[1,3,5,7,9,11].map(t=>({x:X(t),l:"T"+t})),xlab:"난이도 티어",ylab:"에센스 누적"});
+  D.cost3.forEach(([g,c])=>{
+    f.s.appendChild(el("line",{x1:f.x0,x2:f.x1,y1:Y(c),y2:Y(c),stroke:cv("--series-2"),"stroke-width":1.4,"stroke-dasharray":"5 4",opacity:.85}));
+    const t=el("text",{x:f.x1+6,y:Y(c)+4,fill:cv("--series-2"),"font-size":10.5,"font-weight":600});
+    t.textContent=g+" "+c;f.s.appendChild(t);});
+  const P=pts.map(p=>[X(p[0]),Y(p[1])]);
+  f.s.appendChild(el("path",{d:path(P)+`L ${P[P.length-1][0]} ${f.y0} L ${P[0][0]} ${f.y0} Z`,fill:cv("--series-1"),opacity:.12}));
+  f.s.appendChild(el("path",{d:path(P),fill:"none",stroke:cv("--series-1"),"stroke-width":2.2,"stroke-linejoin":"round"}));
+  P.slice(1).forEach((p,i)=>{const d=el("circle",{cx:p[0],cy:p[1],r:3.6,fill:cv("--series-1"),stroke:cv("--surface"),"stroke-width":2});
+    d.style.cursor="crosshair";
+    d.addEventListener("mouseenter",e=>showTip(e,`<b>T${i+1}</b> (st ${i*10+1}–${i*10+10})<br>구간 획득 ${D.income[i]}<br>누적 ${pts[i+1][1].toFixed(1)}`));
+    d.addEventListener("mouseleave",hideTip);f.s.appendChild(d);});
+}
+
+/* ---- 5. 도달 스테이지 ---- */
+function chWall(){
+  const host=document.getElementById("ch-wall");
+  const f=frame(host,660,240,{l:52,r:24,t:14,b:44});
+  const maxY=130, n=D.grades.length, bw=(f.x1-f.x0)/n*0.52;
+  const X=i=>f.x0+(i+.5)/n*(f.x1-f.x0), Y=v=>f.y0-v/maxY*(f.y0-f.y1);
+  axes(f,{yt:[0,40,80,120].map(v=>({y:Y(v),l:v})),
+          xt:D.grades.map((g,i)=>({x:X(i),l:g[0]})),ylab:"도달 스테이지"});
+  D.grades.forEach((g,i)=>{
+    const h2=f.y0-Y(g[2]);
+    const r=el("rect",{x:X(i)-bw/2,y:Y(g[2]),width:bw,height:h2,rx:4,fill:cv("--series-1"),opacity:i===2?1:.7});
+    r.style.cursor="pointer";
+    r.addEventListener("mouseenter",e=>showTip(e,`<b>${g[0]}</b><br>팀 턴배율 ${g[1].toFixed(2)}×<br>도달 st.${g[2]} · 세션 ${g[3].toFixed(1)}분<br>평균 TTK ${g[4].toFixed(2)}턴`));
+    r.addEventListener("mouseleave",hideTip); f.s.appendChild(r);
+    const t=el("text",{x:X(i),y:Y(g[2])-8,fill:cv("--ink"),"font-size":12.5,"font-weight":600,"text-anchor":"middle"});
+    t.textContent=g[2];f.s.appendChild(t);
+    const st=el("text",{x:X(i),y:f.y0+34,fill:cv("--faint"),"font-size":10,"text-anchor":"middle"});
+    st.textContent=g[1].toFixed(2)+"×";f.s.appendChild(st);
+  });
+  const lb=el("text",{x:f.x0-8,y:f.y0+34,fill:cv("--faint"),"font-size":10,"text-anchor":"end"});
+  lb.textContent="턴배율";f.s.appendChild(lb);
+}
+
+/* ---- 부록 표 ---- */
+function stageTable(){
+  const tb=document.getElementById("tb-stage");
+  const pick=[1,5,10,20,30,40,50,60,70,80,90,100,110,120];
+  pick.forEach(s=>{
+    const r=D.curve.find(x=>x[0]===s); if(!r)return;
+    const tr=document.createElement("tr"); if(r[6])tr.className="hl";
+    const T=Math.floor((r[0]-1)/10)+1;
+    [[r[0]],[T],[r[9]],[r[4]+"성"],[r[1].toLocaleString()],[r[2].toLocaleString()],[r[7].toLocaleString()],[r[8].toLocaleString()],[r[3].toFixed(2)]]
+      .forEach(([v])=>{const td=document.createElement("td");td.className="num";td.textContent=v;tr.appendChild(td);});
+    tb.appendChild(tr);
+  });
+}
+
+function drawAll(){chLever();chTTK();chGrowth();chEcon();chWall();}
+drawAll(); stageTable();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",drawAll);
+
+/* ---- nav ---- */
+const links=[...document.querySelectorAll("nav a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+const io=new IntersectionObserver(es=>{
+  es.forEach(e=>{ if(e.isIntersecting){ const i=secs.indexOf(e.target);
+    links.forEach((l,j)=>l.classList.toggle("on",j===i)); }});
+},{rootMargin:"-10% 0px -75% 0px"});
+secs.forEach(s=>s&&io.observe(s));
+</script>
