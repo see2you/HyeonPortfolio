@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sekiro Stickman — 30 Rounds</title>
+<style>
+  html,body{margin:0;height:100%;background:#0b0c10;color:#ddd;font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;overflow:hidden}
+  #wrap{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
+  canvas{background:#000;max-width:100%;max-height:calc(100vh - 70px);aspect-ratio:16/9;box-shadow:0 0 40px #000}
+  #panel{position:absolute;right:12px;top:12px;width:250px;background:rgba(10,10,14,.9);border:1px solid #333;border-radius:8px;padding:10px 12px;font-size:12px;display:none}
+  #panel h3{margin:0 0 6px;font-size:13px;color:#e8c170}
+  #panel label{display:flex;justify-content:space-between;margin-top:6px}
+  #panel input[type=range]{width:100%;margin:2px 0 0}
+  #help{font-size:12px;color:#9a9a9a;line-height:1.7;text-align:center;max-width:960px;padding:0 8px}
+  #help b{display:inline-block;padding:0 6px;border:1px solid #6a5a3a;border-radius:4px;color:#e8c170;font-size:11px;margin:0 2px 0 6px;line-height:1.5}
+  #help .g{margin:0 10px;white-space:nowrap}
+  /* 스킬 트리 */
+  #tree{position:absolute;inset:0;background:rgba(6,6,10,.92);display:none;overflow:auto;padding:24px 32px;box-sizing:border-box}
+  #tree.open{display:block}
+  #tree h2{margin:0 0 4px;color:#e8c170;font-size:20px}
+  #tree .sp{color:#fff;font-size:14px;margin-bottom:16px}
+  #tree .sp b{color:#ffd36b;font-size:18px}
+  .branches{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+  .branch h3{margin:0 0 10px;font-size:14px;color:#c9b27a;border-bottom:1px solid #333;padding-bottom:6px}
+  .node{border:1px solid #333;border-radius:8px;padding:8px 10px;margin-bottom:8px;background:#15161c;cursor:pointer;transition:border-color .1s}
+  .node:hover{border-color:#e8c170}
+  .node.locked{opacity:.45;cursor:not-allowed}
+  .node.maxed{border-color:#6a8f5a;background:#141b14}
+  .node .n{font-size:13px;color:#f0e6d0;display:flex;justify-content:space-between}
+  .node .n span{color:#9aa;font-weight:normal;font-size:12px}
+  .node .d{font-size:11.5px;color:#9a9a9a;margin-top:3px;line-height:1.4}
+  .node .k{display:inline-block;margin-left:6px;padding:0 6px;border:1px solid #e8c170;border-radius:4px;color:#e8c170;font-size:11px}
+  #tree .close{position:absolute;right:28px;top:22px;color:#aaa;font-size:13px}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c" width="960" height="540"></canvas>
+  <div id="panel">
+    <h3>튜닝 (T)</h3>
+    <div id="sliders"></div>
+    <label style="margin-top:10px">라운드 이동 <input id="jumpR" type="number" min="1" max="30" value="1" style="width:50px"> <button id="jumpBtn">이동</button></label>
+  </div>
+  <div id="help">
+    <span class="g"><b>← →</b>이동</span><span class="g"><b>J</b>공격 · 체간 붕괴 시 인살 · 달리며 J = 대시 찌르기(해금)</span><span class="g"><b>K</b>튕기기 (누르고 있으면 막기)</span><span class="g"><b>L</b>회피 · 찌르기에 맞춰 = 간파</span><span class="g"><b>Space</b>점프 · 쓸기 회피 · 공중에서 Space = 밟기</span><br>
+    <span class="g"><b>U</b><b>I</b><b>O</b>전투 기술 (스킬 트리에서 해금)</span><span class="g"><b>Tab</b>스킬 트리</span><span class="g"><b>Enter</b>다음 라운드</span><span class="g"><b>R</b>회생 / 재도전 (한 판에 총 2회)</span><span class="g"><b>Q</b>처음부터 (스킬 리셋)</span><span class="g"><b>T</b>튜닝 · 라운드 이동</span>
+  </div>
+  <div id="tree">
+    <h2>스킬 트리</h2>
+    <div class="sp">스킬 포인트 <b id="spv">0</b> &nbsp; <span style="color:#777;font-size:12px">라운드 클리어마다 +1 (5라운드마다 +1 보너스) · 배운 아츠를 클릭하면 U/I/O 슬롯 재배치</span></div>
+    <div class="close">Tab / Esc 닫기</div>
+    <div class="branches" id="branches"></div>
+  </div>
+</div>
+<script>
+(() => {
+'use strict';
+const W = 960, H = 540, GROUND = H - 88;
+const cvs = document.getElementById('c'), ctx = cvs.getContext('2d');
+
+// ───────────────────────── 튜닝 ─────────────────────────
+const CFG = { deflectWindow:170, spamPenalty:70, enemySpeed:1.0, hitstop:80, enemyDeflectScale:1.0, enemyCounterScale:1.0, dmgTaken:1.0 };
+const TUNE = [
+  ['deflectWindow','튕기기 판정 창(ms)',60,320,10], ['spamPenalty','연타 페널티(ms)',0,150,10], ['enemySpeed','적 속도 배율',0.5,1.6,0.05],
+  ['hitstop','히트스톱(ms)',0,200,10], ['enemyDeflectScale','적 튕기기 확률 배율',0,3,0.1], ['enemyCounterScale','적 간파/밟기 확률 배율',0,3,0.1], ['dmgTaken','받는 피해 배율',0,3,0.1],
+];
+const STAT = { deflect:0, block:0, hit:0, mikiri:0, stomp:0, lastAge:null, lastJudge:'-' };
+const panel = document.getElementById('panel'), sl = document.getElementById('sliders');
+for (const [k,label,min,max,step] of TUNE){
+  const lab = document.createElement('label'); const val = document.createElement('span'); val.textContent = CFG[k]; lab.append(label, val);
+  const inp = document.createElement('input'); Object.assign(inp, { type:'range', min, max, step, value:CFG[k] });
+  inp.oninput = () => { CFG[k] = +inp.value; val.textContent = inp.value; }; sl.append(lab, inp);
+}
+
+// ───────────────────────── 입력 ─────────────────────────
+const keys = {}, pressed = {};
+const BLOCK_KEYS = new Set(['KeyQ','Space','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','KeyJ','KeyK','KeyL','KeyU','KeyI','KeyO','Tab','Enter']);
+addEventListener('keydown', e => {
+  if (BLOCK_KEYS.has(e.code)) e.preventDefault();
+  if (e.repeat) return;
+  keys[e.code] = true; pressed[e.code] = true; initAudio();
+  if (e.code === 'KeyT') panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+  if (e.code === 'Tab' || (e.code === 'Escape' && treeOpen)) toggleTree();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+const axis = () => (keys.ArrowRight||keys.KeyD ? 1:0) - (keys.ArrowLeft||keys.KeyA ? 1:0);
+
+// ───────────────────────── 오디오 ─────────────────────────
+let AC = null;
+function initAudio(){ if (!AC) { try { AC = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){} } }
+function tone(freq, dur, type='square', gain=0.15, slide=0){
+  if (!AC) return; const o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, AC.currentTime);
+  if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide), AC.currentTime+dur);
+  g.gain.setValueAtTime(gain, AC.currentTime); g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+dur);
+  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);
+}
+function noise(dur, gain=0.2, hp=2000){
+  if (!AC) return; const n = AC.sampleRate*dur, buf = AC.createBuffer(1,n,AC.sampleRate), d = buf.getChannelData(0);
+  for (let i=0;i<n;i++) d[i] = (Math.random()*2-1)*(1-i/n);
+  const s = AC.createBufferSource(); s.buffer = buf; const f = AC.createBiquadFilter(); f.type='highpass'; f.frequency.value = hp;
+  const g = AC.createGain(); g.gain.value = gain; s.connect(f).connect(g).connect(AC.destination); s.start();
+}
+const SFX = {
+  deflect(){ tone(2400,0.12,'square',0.08,-800); tone(3600,0.08,'sine',0.06); noise(0.1,0.25,3000); },
+  block(){ tone(900,0.1,'square',0.06,-300); noise(0.08,0.12,1500); },
+  hit(){ tone(140,0.18,'sawtooth',0.15,-90); noise(0.12,0.2,400); },
+  slash(){ noise(0.07,0.08,4000); },
+  danger(){ tone(1200,0.15,'sine',0.12,300); },
+  stagger(){ tone(400,0.4,'sawtooth',0.12,-300); noise(0.3,0.15,300); },
+  deathblow(){ tone(200,0.6,'sawtooth',0.2,-150); noise(0.4,0.3,200); setTimeout(()=>tone(80,0.8,'sine',0.25,-40),120); },
+  mikiri(){ tone(1600,0.2,'square',0.1,-1200); noise(0.15,0.25,2500); },
+  jump(){ tone(300,0.08,'sine',0.05,200); },
+  clear(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.25,'sine',0.12),i*110)); },
+  art(){ tone(600,0.12,'sine',0.08,400); },
+};
+
+// ───────────────────────── IK 리그 ─────────────────────────
+const RIG = { thigh:22, shin:22, torso:27, upper:15, fore:15, head:7, sword:52, tsuka:9 };
+function ik(ax,ay,tx,ty,l1,l2,side){
+  let dx=tx-ax, dy=ty-ay, d=Math.hypot(dx,dy);
+  d = Math.max(Math.abs(l1-l2)+0.05, Math.min(l1+l2-0.05, d));
+  const a = Math.acos((l1*l1+d*d-l2*l2)/(2*l1*d)), base = Math.atan2(dy,dx), ang = base+side*a;
+  const jx = ax+Math.cos(ang)*l1, jy = ay+Math.sin(ang)*l1, e = Math.atan2(ty-jy, tx-jx);
+  return [jx,jy, jx+Math.cos(e)*l2, jy+Math.sin(e)*l2];
+}
+const PI = Math.PI;
+const READY   = { hx:0, hy:41, lean:0.08, head:0, yaw:0, pitch:0, fL:[-9,0], fR:[10,0], hand:[16,36], sw:0.65, two:1, lh:[-6,32] };
+const RUN1    = { ...READY, lean:0.3, hy:39, fL:[-16,0], fR:[14,5], hand:[10,36], sw:0.5 };
+const RUN2    = { ...RUN1, fL:[13,0], fR:[-15,7] };
+const GUARD   = { ...READY, hand:[15,46], sw:1.5, fL:[-11,0], fR:[7,0], lean:0.05 };
+const RECOIL  = { ...GUARD, hand:[24,50], sw:0.95, lean:-0.14, hy:40 };
+const DODGE   = { ...READY, hy:29, lean:0.85, fL:[-20,0], fR:[22,0], hand:[6,26], sw:-0.5, two:0, lh:[-10,30] };
+const AIR     = { ...READY, lean:0.1, fL:[-8,18], fR:[10,14], hand:[-6,74], sw:1.7 };
+const STOMPAIR= { ...READY, lean:0.25, fL:[-6,22], fR:[16,-2], hand:[-8,72], sw:2.0 };
+const HIT     = { ...READY, hy:38, lean:-0.5, head:-0.2, fL:[-16,0], fR:[6,0], hand:[-4,44], sw:1.4, two:0, lh:[-16,40] };
+const BROKEN  = { ...READY, hy:38, lean:-0.55, head:-0.3, fL:[-14,0], fR:[8,0], hand:[-4,44], sw:1.9, two:0, lh:[-18,40] };
+const FALL1   = { ...BROKEN, hx:-8, hy:22, lean:-1.1, fL:[-2,0], fR:[12,0], hand:[-28,26], sw:2.4, lh:[-22,30] };
+const DEAD    = { ...BROKEN, hx:-20, hy:6, lean:-1.5, head:0.1, fL:[4,0], fR:[18,0], hand:[-34,4], sw:3.0, lh:[-26,10] };
+const STAB    = { ...READY, hx:10, hy:38, lean:0.55, fL:[-8,0], fR:[30,0], hand:[56,58], sw:0.02 };
+const WIND1   = { ...READY, lean:-0.15, hand:[-14,92], sw:2.3, fL:[-12,0] };
+const STRIKE1 = { ...READY, lean:0.4, hy:37, hand:[36,44], sw:-0.5, fL:[-4,0], fR:[18,0] };
+const FOLLOW1 = { ...STRIKE1, lean:0.45, hand:[30,26], sw:-1.0 };
+const WIND2   = { ...READY, lean:0.25, hy:39, hand:[14,36], sw:-1.5 };
+const STRIKE2 = { ...READY, lean:0.2, hand:[34,62], sw:1.0, fL:[-6,0], fR:[16,0] };
+const FOLLOW2 = { ...STRIKE2, lean:-0.1, hand:[10,92], sw:1.9 };
+const BIGWIND = { ...READY, lean:-0.3, hy:42, hand:[-26,84], sw:2.6, fL:[-12,0] };
+const BIGSTRIKE={ ...READY, lean:0.55, hy:32, fL:[-2,0], fR:[26,0], hand:[40,36], sw:-0.75 };
+const BIGFOLLOW={ ...BIGSTRIKE, sw:-0.95, hand:[40,30] };
+const THW     = { ...READY, lean:-0.2, hy:40, hand:[-12,40], sw:0.05, fL:[-16,0], fR:[8,0] };
+const THA     = { ...READY, lean:0.75, hy:31, fL:[-6,0], fR:[44,0], hand:[56,36], sw:0.02 };
+const SWW     = { ...READY, lean:-0.1, hy:36, yaw:-0.7, hand:[-14,22], sw:3.3, fL:[-16,0], fR:[10,0] };
+const SWA     = { ...READY, lean:0.35, hy:30, hand:[34,20], sw:0.05, fL:[-14,0], fR:[26,0] };
+const SHEATH  = { ...READY, lean:0.1, hy:40, hand:[6,34], sw:PI+0.12, two:0, lh:[-4,34], fL:[-12,0], fR:[8,0] };
+
+function lerpP(a,b,t){ const o={}; for (const k in a){ const x=a[k], y=(k in b)?b[k]:x; o[k] = Array.isArray(x) ? x.map((v,i)=>v+(y[i]-v)*t) : (typeof x==='number' ? x+(y-x)*t : x); } return o; }
+const EASE = { smooth:t=>t*t*(3-2*t), in:t=>t*t*t, out:t=>1-Math.pow(1-t,3), lin:t=>t, snap:t=>t<0.7?Math.pow(t/0.7,4)*0.98:0.98+0.02*((t-0.7)/0.3) };
+function clip(kf, extra={}){ let cur = READY; const out = kf.map(k => { cur = { ...cur, ...k.p }; return { t:k.t, p:cur, e:k.e||'smooth' }; }); return { kf:out, dur:out[out.length-1].t, ...extra }; }
+function sampleClip(c, t){
+  const kfs = c.kf; if (c.loop) t = t % c.dur;
+  if (t <= kfs[0].t) return kfs[0].p;
+  for (let i=1;i<kfs.length;i++) if (t <= kfs[i].t){ const a=kfs[i-1], b=kfs[i]; return lerpP(a.p, b.p, EASE[b.e]((t-a.t)/(b.t-a.t))); }
+  return kfs[kfs.length-1].p;
+}
+// 공격 클립: w = 타격 포즈 도달, a = 타격 구간 끝 (게임 타이밍에 맞춰 스케일)
+const CLIPS = {
+  idle:    clip([{t:0,p:READY},{t:1000,p:{hy:40,hand:[16,35],sw:0.6}},{t:2000,p:READY}], {loop:true}),
+  run:     clip([{t:0,p:RUN1},{t:170,e:'lin',p:RUN2},{t:340,e:'lin',p:RUN1}], {loop:true}),
+  guard:   clip([{t:0,p:READY},{t:70,p:GUARD},{t:99999,p:GUARD}]),
+  dodge:   clip([{t:0,p:READY},{t:60,e:'out',p:DODGE},{t:220,p:DODGE},{t:300,e:'out',p:READY}]),
+  hit:     clip([{t:0,p:HIT},{t:120,p:HIT},{t:320,e:'out',p:READY}]),
+  bhit:    clip([{t:0,p:HIT},{t:300,p:HIT},{t:700,e:'out',p:READY}]),
+  stagger: clip([{t:0,p:HIT},{t:150,p:BROKEN},{t:99999,p:BROKEN}]),
+  dead:    clip([{t:0,p:BROKEN},{t:250,e:'in',p:FALL1},{t:600,e:'in',p:DEAD},{t:99999,p:DEAD}]),
+  execute: clip([{t:0,p:READY},{t:120,p:{hand:[2,60],sw:0.1,lean:-0.12}},{t:260,e:'snap',p:STAB},{t:700,p:STAB},{t:900,e:'out',p:READY},{t:99999,p:READY}]),
+  victim:  clip([{t:0,p:BROKEN},{t:260,p:BROKEN},{t:300,p:{lean:-0.7,head:-0.4}},{t:700,e:'in',p:FALL1},{t:1100,e:'in',p:DEAD},{t:99999,p:DEAD}]),
+  bdeflect:clip([{t:0,p:READY},{t:50,p:RECOIL},{t:260,e:'out',p:GUARD}]),
+  mikiri:  clip([{t:0,p:READY},{t:80,e:'lin',p:{lean:0.1,fL:[-8,0],fR:[14,0]}},{t:160,e:'out',p:{hy:47,lean:0.2,fL:[-6,0],fR:[24,28],hand:[8,40],sw:1.25}},{t:240,e:'snap',p:{hy:43,lean:0.32,fR:[26,12]}},{t:520,p:{fR:[26,10]}},{t:700,e:'out',p:READY}]),
+  // ── 공격 클립 ──
+  p1:      clip([{t:0,p:READY},{t:150,e:'out',p:WIND1},{t:240,e:'snap',p:STRIKE1},{t:330,e:'out',p:FOLLOW1},{t:500,e:'out',p:READY}], {w:240,a:330}),
+  p2:      clip([{t:0,p:FOLLOW1},{t:100,p:WIND2},{t:180,e:'snap',p:STRIKE2},{t:260,e:'out',p:FOLLOW2},{t:450,e:'out',p:READY}], {w:180,a:260}),
+  big:     clip([{t:0,p:READY},{t:200,e:'out',p:BIGWIND},{t:340,e:'snap',p:BIGSTRIKE},{t:440,e:'out',p:BIGFOLLOW},{t:800,e:'out',p:READY}], {w:340,a:440}),
+  bigEnd:  clip([{t:0,p:FOLLOW2},{t:200,e:'out',p:BIGWIND},{t:340,e:'snap',p:{...BIGSTRIKE,fR:[32,0],hy:30}},{t:460,e:'out',p:{...BIGFOLLOW,fR:[32,0],hy:30}},{t:900,e:'out',p:READY}], {w:340,a:460}),
+  thrust:  clip([{t:0,p:READY},{t:200,e:'out',p:THW},{t:400,e:'snap',p:THA},{t:520,p:THA},{t:900,e:'out',p:READY}], {w:400,a:520}),
+  sweep:   clip([{t:0,p:READY},{t:220,e:'out',p:SWW},{t:360,p:{...SWW,hand:[-16,20],hy:34}},{t:420,e:'snap',p:SWA},{t:520,p:SWA},{t:900,e:'out',p:READY}], {w:420,a:520}),
+  dash:    clip([{t:0,p:RUN1},{t:130,e:'lin',p:RUN2},{t:260,e:'lin',p:RUN1},{t:380,p:{lean:0.05,hy:41,fL:[-10,0],fR:[8,0],hand:[-2,38],sw:0.1,two:1}},{t:470,e:'snap',p:{lean:0.7,hy:32,fL:[-12,0],fR:[32,0],hand:[42,34],sw:0.05}},{t:640,p:{hand:[44,34]}},{t:950,e:'out',p:READY}], {w:470,a:640}),
+  pdash:   clip([{t:0,p:RUN1},{t:90,p:{lean:0.05,hy:41,fL:[-10,0],fR:[8,0],hand:[-2,38],sw:0.1,two:1}},{t:170,e:'snap',p:{lean:0.7,hy:32,fL:[-12,0],fR:[32,0],hand:[42,34],sw:0.05}},{t:320,p:{hand:[44,34]}},{t:600,e:'out',p:READY}], {w:170,a:320}),
+  jump:    clip([{t:0,p:READY},{t:160,p:{hy:33,lean:0.25,hand:[8,44],sw:1.3,fL:[-12,0],fR:[10,0]}},{t:330,e:'out',p:{hy:72,lean:-0.1,fL:[-6,36],fR:[10,32],hand:[-10,112],sw:2.1}},{t:470,p:{hy:82,fL:[-4,48],fR:[8,46],hand:[-12,122],sw:2.3}},{t:580,e:'in',p:{hy:66,lean:0.45,fL:[-6,36],fR:[12,32],hand:[28,68],sw:-0.4}},{t:660,e:'in',p:{hy:31,lean:0.5,fL:[-15,0],fR:[17,0],hand:[31,14],sw:-1.05}},{t:820,p:{hy:31}},{t:1100,e:'out',p:READY}], {w:660,a:820}),
+  ichimonji:clip([{t:0,p:READY},{t:300,e:'out',p:{lean:-0.2,hy:42,hand:[-4,78],sw:1.85,fL:[-13,0],fR:[8,0]}},{t:600,p:{hand:[-8,80],sw:2.0,lean:-0.25}},{t:690,e:'snap',p:{lean:0.5,hy:33,fL:[-10,0],fR:[24,0],hand:[38,38],sw:-0.75}},{t:800,e:'out',p:{sw:-0.9,hand:[39,34]}},{t:1150,p:{sw:-0.9}},{t:1500,e:'out',p:READY}], {w:690,a:800}),
+  ichi2b:  clip([{t:0,p:{...READY,lean:0.5,hy:33,fL:[-10,0],fR:[24,0],hand:[39,34],sw:-0.9}},{t:200,e:'out',p:{lean:-0.15,hy:41,hand:[0,78],sw:1.85,fL:[-6,0],fR:[20,0]}},{t:280,p:{hand:[-4,80],sw:2.0}},{t:370,e:'snap',p:{lean:0.55,hy:32,fL:[-6,0],fR:[34,0],hand:[40,36],sw:-0.8}},{t:480,e:'out',p:{sw:-0.95,hand:[41,32]}},{t:800,p:{sw:-0.95}},{t:1150,e:'out',p:READY}], {w:370,a:480}),
+  iai:     clip([{t:0,p:READY},{t:300,e:'out',p:SHEATH},{t:1100,e:'lin',p:{hy:36,hand:[6,32]}},{t:1170,e:'snap',p:{lean:0.45,hy:31,fL:[-10,0],fR:[34,0],hand:[36,42],sw:0.1,two:1}},{t:1400,p:{hand:[38,42]}},{t:1800,e:'out',p:READY}], {w:1170,a:1400}),
+  whirl:   clip([{t:0,p:READY},{t:260,e:'out',p:{lean:-0.12,hy:39,hand:[-6,40],sw:2.7,fL:[-14,0],fR:[8,0]}},{t:330,e:'in',p:{yaw:1.2,hand:[-10,40],sw:2.9}},{t:430,e:'lin',p:{yaw:3.1,hand:[-14,40],sw:3.2,lean:0.1}},{t:530,e:'lin',p:{yaw:5.2,hand:[10,42],sw:0.6,lean:0.2}},{t:620,e:'out',p:{yaw:6.28,hy:34,lean:0.35,hand:[34,40],sw:0.05,fL:[-12,0],fR:[26,0]}},{t:800,p:{hand:[36,40]}},{t:1150,e:'out',p:READY}], {w:620,a:800}),
+  crossA:  clip([{t:0,p:READY},{t:220,e:'out',p:SHEATH},{t:700,p:{hy:39,hand:[7,33]}},{t:770,e:'snap',p:{lean:0.45,hy:34,fL:[-8,0],fR:[28,0],hand:[40,52],sw:0.15,two:1}},{t:850,e:'lin',p:{lean:0.5,hand:[34,30],sw:-0.9}}], {w:770,a:850}),
+  crossB:  clip([{t:0,p:{...READY,lean:0.5,hy:34,fL:[-8,0],fR:[28,0],hand:[34,30],sw:-0.9}},{t:60,p:{lean:0.35,hy:35,hand:[22,24],sw:-1.3}},{t:140,e:'snap',p:{lean:0.4,hy:33,fR:[30,0],hand:[38,46],sw:0.35}},{t:240,e:'out',p:{hand:[30,66],sw:1.1,lean:0.25}},{t:600,e:'out',p:READY}], {w:140,a:240}),
+  nightjar:clip([{t:0,p:READY},{t:200,p:{hy:33,lean:0.3,hand:[6,42],sw:1.2,fL:[-12,0],fR:[8,0]}},{t:340,e:'out',p:{hy:84,lean:0.1,pitch:1.4,fL:[-6,50],fR:[8,46],hand:[6,96],sw:1.8}},{t:470,e:'lin',p:{hy:98,pitch:3.5,fL:[-2,62],fR:[10,60],hand:[8,110],sw:2.0}},{t:600,e:'lin',p:{hy:70,pitch:5.6,lean:0.4,fL:[-6,40],fR:[8,36],hand:[24,66],sw:-0.4}},{t:690,e:'in',p:{hy:31,pitch:6.28,lean:0.5,fL:[-14,0],fR:[16,0],hand:[30,14],sw:-1.05}},{t:900,p:{hy:31}},{t:1200,e:'out',p:READY}], {w:690,a:900}),
+  pas1:    clip([{t:0,p:READY},{t:180,p:{hand:[-6,84],sw:2.2,lean:-0.1}},{t:260,e:'snap',p:{lean:0.3,hand:[30,40],sw:-0.5,fL:[-2,0],fR:[18,0]}},{t:320,p:{}}], {w:260,a:320}),
+  pas2:    clip([{t:0,p:{...READY,lean:0.3,hand:[30,40],sw:-0.5,fL:[-2,0],fR:[18,0]}},{t:110,e:'snap',p:{lean:0.25,hand:[28,60],sw:0.9}},{t:170,p:{}}], {w:110,a:170}),
+  pas3:    clip([{t:0,p:{...READY,lean:0.25,hand:[28,60],sw:0.9,fL:[-2,0],fR:[18,0]}},{t:110,e:'snap',p:{lean:0.3,hand:[28,38],sw:-0.55}},{t:170,p:{}}], {w:110,a:170}),
+  pas4:    clip([{t:0,p:{...READY,lean:0.3,hand:[28,38],sw:-0.55,fL:[-2,0],fR:[18,0]}},{t:110,e:'snap',p:{lean:0.25,hand:[28,60],sw:0.95}},{t:170,p:{}}], {w:110,a:170}),
+  pas5:    clip([{t:0,p:{...READY,lean:0.25,hand:[28,60],sw:0.95,fL:[-2,0],fR:[18,0]}},{t:110,e:'snap',p:{lean:0.4,hy:36,hand:[34,44],sw:-0.7,fL:[-10,0],fR:[26,0]}},{t:310,e:'out',p:{sw:-0.9,hand:[32,38]}},{t:660,e:'out',p:READY}], {w:110,a:310}),
+  dragonflash:clip([{t:0,p:READY},{t:320,e:'out',p:{lean:-0.25,hy:37,hand:[-16,36],sw:3.3,fL:[-18,0],fR:[12,0],lh:[-2,36]}},{t:640,p:{hand:[-18,34],hy:36}},{t:720,e:'snap',p:{lean:0.45,hy:31,hand:[44,50],sw:0.12,fL:[-14,0],fR:[32,0]}},{t:950,p:{hand:[45,50]}},{t:1350,e:'out',p:READY}], {w:720,a:950}),
+  sakura:  clip([{t:0,p:READY},{t:200,p:{hy:33,lean:0.2,hand:[-4,38],sw:2.6,fL:[-12,0],fR:[8,0]}},{t:360,e:'out',p:{hy:80,lean:0,fL:[-6,46],fR:[8,42],hand:[-28,98],sw:3.0,yaw:0.6}},{t:470,e:'lin',p:{hy:92,yaw:3.1,hand:[-30,104],sw:3.2,fL:[-4,56],fR:[8,54]}},{t:580,e:'lin',p:{hy:88,yaw:5.4,hand:[30,102],sw:0.3}},{t:660,e:'out',p:{hy:70,yaw:6.28,hand:[32,90],sw:0.1,lean:0.15,fL:[-6,38],fR:[10,34]}},{t:800,e:'in',p:{hy:36,lean:0.1,fL:[-12,0],fR:[12,0],hand:[14,44],sw:1.4}},{t:1150,e:'out',p:READY}], {w:580,a:660}),
+  mortal:  clip([{t:0,p:READY},{t:260,e:'out',p:{lean:0.05,hy:39,hand:[4,32],sw:PI+0.25,two:0,lh:[-6,32],fL:[-14,0],fR:[8,0]}},{t:720,p:{hy:38,hand:[6,30],lean:0.12}},{t:800,e:'snap',p:{lean:0.2,hy:36,fL:[-12,0],fR:[26,0],hand:[30,66],sw:0.3,two:1}},{t:900,e:'out',p:{hand:[16,84],sw:1.5,lean:-0.05}},{t:1250,p:{hand:[16,84]}},{t:1650,e:'out',p:READY}], {w:800,a:900}),
+};
+function mapAtkTime(c, t, tw, ta, tr){
+  if (t < tw) return c.w * t/tw;
+  if (t < ta) return c.w + (c.a-c.w)*(t-tw)/(ta-tw);
+  return c.a + (c.dur-c.a)*Math.min(1,(t-ta)/Math.max(1,tr-ta));
+}
+
+// ───────────────────────── 공격 정의 ─────────────────────────
+// type: normal | thrust | sweep. counter = 정답 대응. air = 사용자가 공중 (쓸기 회피). both = 뒤쪽도 타격. travel = 예비동작 중 전진.
+const ATK = {
+  // 플레이어 기본 콤보
+  p1:  { type:'normal', name:'베기',     windup:95,  active:85,  recover:200, range:105, dmg:11, posture:9,  lunge:30,  clip:'p1' },
+  p2:  { type:'normal', name:'올려베기', windup:90,  active:85,  recover:200, range:105, dmg:11, posture:9,  lunge:30,  clip:'p2' },
+  p3:  { type:'normal', name:'큰 베기',  windup:140, active:100, recover:320, range:115, dmg:15, posture:13, lunge:50,  clip:'big' },
+  p4:  { type:'normal', name:'올려베기', windup:90,  active:85,  recover:200, range:105, dmg:12, posture:10, lunge:30,  clip:'p2' },
+  p5:  { type:'normal', name:'마무리',   windup:160, active:110, recover:420, range:120, dmg:20, posture:18, lunge:70,  clip:'bigEnd' },
+  pdash:{ type:'thrust', name:'대시 찌르기', windup:130, active:100, recover:380, range:150, dmg:16, posture:18, lunge:120, clip:'pdash', danger:true },
+  // 적 기본
+  slash:   { type:'normal', name:'베기',     windup:520, active:110, recover:520, range:125, dmg:22, posture:16, lunge:60,  clip:'p1' },
+  slash2:  { type:'normal', name:'연속베기', windup:300, active:110, recover:220, range:125, dmg:18, posture:14, lunge:50,  clip:'p2' },
+  slashEnd:{ type:'normal', name:'마무리',   windup:420, active:120, recover:650, range:135, dmg:26, posture:22, lunge:80,  clip:'bigEnd' },
+  bigslash:{ type:'normal', name:'큰 베기',  windup:560, active:120, recover:600, range:135, dmg:28, posture:24, lunge:70,  clip:'big' },
+  thrust:  { type:'thrust', name:'찌르기',   windup:720, active:140, recover:780, range:200, dmg:36, posture:34, lunge:150, clip:'thrust', danger:true },
+  sweep:   { type:'sweep',  name:'쓸기',     windup:760, active:170, recover:820, range:165, dmg:32, posture:40, lunge:40,  clip:'sweep', danger:true },
+  dash:    { type:'thrust', name:'돌진 찌르기', windup:520, active:120, recover:700, range:170, dmg:34, posture:30, lunge:220, travel:180, clip:'dash', danger:true },
+  jump:    { type:'normal', name:'점프 베기', windup:660, active:120, recover:520, range:120, dmg:30, posture:30, lunge:30, travel:150, clip:'jump', air:true },
+  // 전투 기술 (양쪽 공용)
+  ichimonji:{ type:'normal', name:'일문자',  windup:690, active:110, recover:700, range:125, dmg:30, posture:44, lunge:60,  clip:'ichimonji', selfPost:-30 },
+  ichi2b:  { type:'normal', name:'일문자 이연', windup:370, active:110, recover:670, range:135, dmg:28, posture:40, lunge:90, clip:'ichi2b', selfPost:-20 },
+  iai:     { type:'normal', name:'거합',     windup:1100, active:120, recover:500, range:160, dmg:40, posture:38, lunge:160, clip:'iai' },
+  whirl:   { type:'sweep',  name:'선풍 베기', windup:520, active:160, recover:500, range:150, dmg:22, posture:26, lunge:40, clip:'whirl', both:true, danger:true },
+  crossA:  { type:'normal', name:'아시나 십자', windup:770, active:80, recover:60, range:150, dmg:24, posture:24, lunge:110, clip:'crossA' },
+  crossB:  { type:'normal', name:'십자 2타', windup:140, active:100, recover:400, range:150, dmg:26, posture:28, lunge:20, clip:'crossB' },
+  nightjar:{ type:'normal', name:'야타카 베기', windup:690, active:120, recover:400, range:120, dmg:26, posture:26, lunge:20, travel:160, clip:'nightjar', air:true },
+  pas1:    { type:'normal', name:'부주 도하', windup:260, active:60, recover:40, range:120, dmg:9, posture:7, lunge:24, clip:'pas1' },
+  pas2:    { type:'normal', name:'부주 2',   windup:110, active:60, recover:30, range:120, dmg:9, posture:7, lunge:24, clip:'pas2' },
+  pas3:    { type:'normal', name:'부주 3',   windup:110, active:60, recover:30, range:120, dmg:9, posture:7, lunge:24, clip:'pas3' },
+  pas4:    { type:'normal', name:'부주 4',   windup:110, active:60, recover:30, range:120, dmg:9, posture:7, lunge:24, clip:'pas4' },
+  pas5:    { type:'normal', name:'부주 5',   windup:110, active:80, recover:480, range:130, dmg:14, posture:14, lunge:40, clip:'pas5' },
+  dragonflash:{ type:'normal', name:'용섬',  windup:720, active:130, recover:620, range:270, dmg:36, posture:42, lunge:40, clip:'dragonflash', wave:true },
+  sakura:  { type:'normal', name:'사쿠라 무', windup:580, active:110, recover:500, range:135, dmg:28, posture:32, lunge:60, clip:'sakura', air:true, selfPost:-40 },
+  mortal:  { type:'normal', name:'불사 베기', windup:800, active:110, recover:760, range:150, dmg:60, posture:64, lunge:70, clip:'mortal', ghost:'#ff4a4a' },
+};
+// 아츠(전투 기술) = 공격 키 시퀀스
+const ART_SEQ = {
+  ichimonji:['ichimonji'], ichimonji2:['ichimonji','ichi2b'], iai:['iai'], whirl:['whirl'], cross:['crossA','crossB'], nightjar:['nightjar'],
+  passage:['pas1','pas2','pas3','pas4','pas5'], dragonflash:['dragonflash'], sakura:['sakura'], mortal:['mortal'], jump:['jump'], dash:['dash'],
+};
+const ART_HITS = k => ART_SEQ[k].length;
+
+// ───────────────────────── 스킬 트리 ─────────────────────────
+const SKILLS = [
+  // 신체
+  { id:'hp',      br:'신체', name:'체력 단련',   max:4, cost:1, desc:'최대 체력 +20 / 레벨' },
+  { id:'post',    br:'신체', name:'체간 단련',   max:3, cost:1, desc:'최대 체간 +15 / 레벨' },
+  { id:'recov',   br:'신체', name:'호흡법',      max:3, cost:1, desc:'체간 회복 +7/초 / 레벨' },
+  { id:'revive',  br:'신체', name:'회생 (回生)', max:2, cost:2, desc:'라운드당 회생 횟수 +1', req:'hp:1' },
+  { id:'heal',    br:'신체', name:'회복 표주박', max:2, cost:2, desc:'인살 성공 시 체력 25% 회복 / 레벨', req:'post:1' },
+  // 검술
+  { id:'atk',     br:'검술', name:'검 연마',     max:4, cost:1, desc:'피해·체간 피해 +15% / 레벨' },
+  { id:'combo',   br:'검술', name:'연속 베기',   max:2, cost:1, desc:'통상 콤보 3타 → 4타 → 5타' },
+  { id:'dash',    br:'검술', name:'대시 찌르기', max:1, cost:1, desc:'달리는 중 J: 찌르기 (적이 간파할 수 있음)' },
+  { id:'ichimonji', br:'검술', name:'일문자',    max:1, cost:2, desc:'[아츠] 수직 내려치기. 큰 체간 피해, 내 체간 -30', req:'atk:1', art:'ichimonji', cd:5000 },
+  { id:'ichimonji2', br:'검술', name:'일문자 이연', max:1, cost:2, desc:'[아츠] 일문자 2연속', req:'ichimonji:1', art:'ichimonji2', cd:7000 },
+  { id:'whirl',   br:'검술', name:'선풍 베기',   max:1, cost:2, desc:'[아츠] 360도 쓸기. 뒤쪽도 타격 (적이 밟기로 피할 수 있음)', req:'combo:1', art:'whirl', cd:5000 },
+  { id:'cross',   br:'검술', name:'아시나 십자', max:1, cost:2, desc:'[아츠] 발도 → 올려베기 2연', req:'dash:1', art:'cross', cd:7000 },
+  { id:'nightjar',br:'검술', name:'야타카 베기', max:1, cost:2, desc:'[아츠] 앞구르기 점프 베기. 공중이라 쓸기를 피함', req:'whirl:1', art:'nightjar', cd:6000 },
+  { id:'passage', br:'검술', name:'부주 도하',   max:1, cost:2, desc:'[아츠] 전진 5연타', req:'cross:1', art:'passage', cd:8000 },
+  { id:'dragonflash', br:'검술', name:'용섬',    max:1, cost:3, desc:'[아츠] 초장거리 참격', req:'ichimonji2:1', art:'dragonflash', cd:9000 },
+  { id:'sakura',  br:'검술', name:'사쿠라 무',   max:1, cost:3, desc:'[아츠] 회전 점프 베기 + 내 체간 -40', req:'nightjar:1', art:'sakura', cd:9000 },
+  { id:'mortal',  br:'검술', name:'불사 베기',   max:1, cost:3, desc:'[아츠] 붉은 발도. 피해 60', req:'passage:1', art:'mortal', cd:12000 },
+  // 대응
+  { id:'window',  br:'대응', name:'튕기기 감각', max:3, cost:1, desc:'튕기기 판정 창 +20ms / 레벨' },
+  { id:'dpost',   br:'대응', name:'튕기기 위력', max:3, cost:1, desc:'튕기기 시 적 체간 피해 +6 / 레벨' },
+  { id:'mikiri',  br:'대응', name:'간파 강화',   max:2, cost:1, desc:'간파 시 적 체간 피해 +15 / 레벨', req:'window:1' },
+  { id:'stomp',   br:'대응', name:'밟기 강화',   max:2, cost:1, desc:'밟기 시 적 체간 피해 +15 / 레벨', req:'window:1' },
+  { id:'gblock',  br:'대응', name:'철벽 가드',   max:2, cost:1, desc:'막기 시 받는 체간 피해 -30% / 레벨', req:'dpost:1' },
+  { id:'iron',    br:'대응', name:'부동',        max:1, cost:2, desc:'피격 시 밀려나는 거리 절반, 체간 피해 -25%', req:'gblock:1' },
+];
+const LV = {}; SKILLS.forEach(s => LV[s.id] = 0);
+let SP = 0, treeOpen = false;
+const artSlots = [null,null,null]; // U I O
+const SLOT_KEYS = ['U','I','O'], SLOT_CODES = ['KeyU','KeyI','KeyO'];
+function skillReqOK(s){ if (!s.req) return true; const [id,lv] = s.req.split(':'); return LV[id] >= +lv; }
+let slotCursor = 0;
+function buySkill(s){
+  if (s.art && LV[s.id] >= s.max){ // 이미 배운 아츠 클릭 = 슬롯 재배치 (U→I→O 순환)
+    const cur = artSlots.indexOf(s.id); if (cur >= 0) artSlots[cur] = null;
+    const i = artSlots.indexOf(null) >= 0 ? artSlots.indexOf(null) : (slotCursor++ % 3); artSlots[i] = s.id; renderTree(); return;
+  }
+  if (LV[s.id] >= s.max || !skillReqOK(s) || SP < s.cost) return;
+  SP -= s.cost; LV[s.id]++;
+  if (s.art){ const i = artSlots.indexOf(null); if (i >= 0) artSlots[i] = s.id; }
+  applySkills(); renderTree(); SFX.art();
+}
+function applySkills(){
+  P.maxHp = 100 + LV.hp*20; P.maxPost = 100 + LV.post*15; P.hp = Math.min(P.hp, P.maxHp);
+  P.maxRevive = 1 + LV.revive; P.comboMax = 3 + LV.combo;
+}
+const branchesEl = document.getElementById('branches');
+function renderTree(){
+  document.getElementById('spv').textContent = SP;
+  branchesEl.innerHTML = '';
+  for (const br of ['신체','검술','대응']){
+    const col = document.createElement('div'); col.className = 'branch'; col.innerHTML = `<h3>${br}</h3>`;
+    for (const s of SKILLS.filter(x => x.br===br)){
+      const lv = LV[s.id], ok = skillReqOK(s), maxed = lv >= s.max, can = ok && !maxed && SP >= s.cost;
+      const d = document.createElement('div'); d.className = 'node' + (!ok ? ' locked' : '') + (maxed ? ' maxed' : '');
+      const slot = s.art ? artSlots.indexOf(s.id) : -1;
+      const reqTxt = s.req && !ok ? ` · 필요: ${SKILLS.find(x=>x.id===s.req.split(':')[0]).name}` : '';
+      d.innerHTML = `<div class="n"><div>${s.name}${slot>=0?`<span class="k">${SLOT_KEYS[slot]}</span>`:''}</div><span>${lv}/${s.max} · ${s.cost}SP</span></div><div class="d">${s.desc}${reqTxt}</div>`;
+      if (can) d.style.borderColor = '#7a6a3a';
+      d.onclick = () => buySkill(s);
+      col.append(d);
+    }
+    branchesEl.append(col);
+  }
+}
+function toggleTree(){ treeOpen = !treeOpen; document.getElementById('tree').classList.toggle('open', treeOpen); if (treeOpen) renderTree(); }
+
+// ───────────────────────── 엔티티 ─────────────────────────
+function makeEntity(o){ return Object.assign({ x:0,y:0,vy:0,face:1,state:'idle',t:0,postLock:0,hp:100,maxHp:100,post:0,maxPost:100,scale:1,atk:null,seq:null,seqIdx:0,hitDone:false,resolved:false,lunge:0,invul:0 }, o); }
+const P = makeEntity({ x:260, name:'늑대', guardT:-9999, lastGuardPress:-9999, window:CFG.deflectWindow, dodgeDir:1, revive:1, maxRevive:1, comboMax:3, jumpBuf:-9999, stompDone:false, cds:[0,0,0], deflectT:-9999 });
+const E = makeEntity({ x:640, face:-1, name:'', color:'#e0d6c8', pool:[], maxLen:3, spd:1, deflectChance:0.1, counterChance:0.1, nodes:1, waitT:800, phase:0 });
+const ARENA = { left:40, right:1700 };
+let camX = 0, now = 0, hitstopT = 0, timeScale = 1, shake = 0, round = 1;
+const MAX_RETRY = 2; let retries = MAX_RETRY; // 한 판(런)에서 쓸 수 있는 재도전 횟수
+let gameState = 'play'; // play | dead | clear | won
+const particles = [], popups = [], ghosts = [];
+
+function setState(e, s){ e.blendFrom = e.curPose || null; e.state = s; e.t = 0; e.hitDone = false; e.resolved = false; }
+function dist(){ return Math.abs(P.x - E.x); }
+function popup(text, x, y, color='#fff', size=26, life=800){ popups.push({ text,x,y,color,size,life,age:0 }); }
+function sparks(x, y, color, n=18, spd=420){ for (let i=0;i<n;i++){ const a = Math.random()*PI*2, v = spd*(0.3+Math.random()*0.7); particles.push({ x,y, vx:Math.cos(a)*v, vy:Math.sin(a)*v-120, life:220+Math.random()*260, age:0, color, r:1.5+Math.random()*2 }); } }
+function judge(s, age){ STAT.lastJudge = s; STAT.lastAge = age; }
+const atkMult = () => 1 + LV.atk*0.15;
+
+// ───────────────────────── 라운드 / 적 생성 ─────────────────────────
+const TIERS = [
+  { name:'아시나 잡병', color:'#cfc8bd' }, { name:'아시나 무사', color:'#d9c9b0' }, { name:'떠돌이 검객', color:'#c8d2e0' },
+  { name:'검호', color:'#e0c8c8' }, { name:'검성', color:'#f0d8b8' }, { name:'검귀', color:'#ff9a8a' },
+];
+const NUM = ['','一','二','三','四','五'];
+function unlockRound(k){ return { thrust:3, sweep:5, bigslash:6, ichimonji:7, dash:9, jump:10, iai:11, whirl:13, cross:15, nightjar:17, passage:19, dragonflash:21, sakura:23, mortal:25, ichimonji2:27 }[k] ?? 1; }
+function makeEnemy(r){
+  const tier = Math.min(5, Math.floor((r-1)/5)), t = TIERS[tier];
+  const pool = ['slash','slash2','slashEnd'];
+  for (const k of ['thrust','sweep','bigslash','ichimonji','dash','jump','iai','whirl','cross','nightjar','passage','dragonflash','sakura','mortal','ichimonji2']) if (r >= unlockRound(k)) pool.push(k);
+  Object.assign(E, {
+    name: `${t.name} ${NUM[(r-1)%5+1]}`, color: t.color, pool,
+    maxHp: 120 + r*14, hp: 120 + r*14, maxPost: 90 + r*5, post: 0,
+    scale: Math.min(1.35, 0.98 + r*0.012), spd: Math.max(0.68, 1.05 - r*0.012),
+    maxLen: 3 + Math.floor((r-1)/6), // 3 → 7
+    deflectChance: Math.min(0.5, 0.05 + r*0.012), counterChance: Math.min(0.7, 0.12 + r*0.02),
+    phase:0, waitT: 900, x: P.x + 380*(P.face||1), face: -(P.face||1), y:0, vy:0, atk:null, seq:null, seqIdx:0, postLock:0,
+  });
+  E.x = Math.max(ARENA.left+60, Math.min(ARENA.right-60, E.x)); E.face = P.x < E.x ? -1 : 1;
+  setState(E,'idle');
+}
+function enemySpd(){ return E.spd * CFG.enemySpeed * (E.phase===1 ? 0.88 : 1); }
+// 콤보 즉석 생성: 최대 연타 수까지 공격을 이어 붙임 (아츠는 히트 수만큼 차지)
+function buildCombo(){
+  const d = dist(), pool = E.pool;
+  let len = 1 + Math.floor(Math.random()*E.maxLen); if (Math.random() < 0.35) len = E.maxLen;
+  const seq = [];
+  const arts = pool.filter(k => ART_SEQ[k]), basics = ['slash','slash2','slashEnd'].concat(pool.includes('bigslash')?['bigslash']:[]);
+  const dangers = pool.filter(k => ['thrust','sweep','dash'].includes(k));
+  // 원거리면 접근형 오프너
+  if (d > 230){ const far = pool.filter(k => ['dash','jump','nightjar','dragonflash'].includes(k)); if (far.length && Math.random() < 0.8) push(far[Math.random()*far.length|0]); }
+  while (hits(seq) < len){
+    const remain = len - hits(seq), r = Math.random();
+    if (arts.length && r < 0.28){ const cand = arts.filter(k => ART_HITS(k) <= remain); if (cand.length){ push(cand[Math.random()*cand.length|0]); continue; } }
+    if (dangers.length && (r < 0.5 || remain===1 && Math.random()<0.45)){ push(dangers[Math.random()*dangers.length|0]); continue; }
+    push(remain===1 && Math.random()<0.5 ? 'slashEnd' : basics[Math.random()*basics.length|0]);
+  }
+  return seq;
+  function push(k){ if (ART_SEQ[k]) seq.push(...ART_SEQ[k]); else seq.push(k); }
+  function hits(s){ return s.length; }
+}
+
+// ───────────────────────── 공격 시작/진행 (공용) ─────────────────────────
+function startSeq(e, seq){ e.seq = seq; e.seqIdx = 0; startAttack(e); }
+function startAttack(e){
+  const a = ATK[e.seq[e.seqIdx]]; e.atk = a; setState(e,'attack'); e.lunge = 0; e.travelLeft = a.travel||0;
+  const other = e===P ? E : P; e.face = other.x < e.x ? -1 : 1;
+  if (e===E && a.danger) SFX.danger();
+  if (e.seqIdx === 0 && a.selfPost) { e.post = Math.max(0, e.post + a.selfPost); }
+  // 상대의 대응(간파/밟기) 판단은 예비동작 후반에
+  e.counterChecked = false;
+}
+function atkTimes(e){ const a = e.atk, s = e===E ? enemySpd() : 1; const tw = a.windup*s, ta = tw + a.active*s; return [tw, ta, ta + a.recover*s]; }
+// 상대 공격 예비동작을 보고 간파/밟기 시도 (적 전용 AI)
+function enemyCounterCheck(){
+  const a = P.atk; if (!a || (a.type!=='thrust' && a.type!=='sweep')) return;
+  if (!['idle','approach'].includes(E.state) || E.y > 0) return;
+  if (dist() > a.range + 40) return;
+  if (Math.random() > E.counterChance * CFG.enemyCounterScale) return;
+  if (a.type==='thrust'){ setState(E,'mikiri'); E.face = P.x < E.x ? -1 : 1; E.mikiriTarget = true; }
+  else { setState(E,'stomp'); E.vy = 620; E.y = 0.01; E.stompDone = false; E.face = P.x < E.x ? -1 : 1; SFX.jump(); }
+}
+
+// ───────────────────────── 판정 ─────────────────────────
+function enemyHitsPlayer(a){
+  if (gameState !== 'play') return;
+  const dx = P.x - E.x, mid = (P.x+E.x)/2, hy = GROUND-50;
+  const facingOK = a.both || dx*E.face > -20;
+  if (!facingOK || Math.abs(dx) > a.range*E.scale){ judge('빗나감', null); return; }
+  if (P.invul > 0) return;
+  if (P.state==='mikiri') return;
+  if (P.state==='dodge' && P.t < 200){
+    if (a.type==='thrust' && P.t < 240){
+      E.post += 45 + LV.mikiri*15; E.postLock = 1500; setState(E,'hit'); E.hitDur = 700; setState(P,'mikiri'); P.invul = 700;
+      STAT.mikiri++; judge('간파', Math.round(P.t)); popup('見切り', mid, hy-40, '#ffd36b', 34); sparks(mid,hy,'#ffd36b',24,520); SFX.mikiri(); hitstopT = 110; shake = 8; return;
+    }
+    judge('회피', Math.round(P.t)); return;
+  }
+  if (a.type==='sweep'){
+    if (P.y > 22 || (P.state==='attack' && P.atk.air && P.t < atkTimes(P)[1])){
+      if (!P.stompDone && now - P.jumpBuf < 260 && P.y > 22){
+        P.stompDone = true; P.vy = 440; E.post += 35 + LV.stomp*15; E.postLock = 1500;
+        STAT.stomp++; judge('밟기', null); popup('踏みつけ', mid, hy-60, '#ffd36b', 32); sparks(E.x,GROUND-70*E.scale,'#ffd36b',20,400); SFX.mikiri(); hitstopT = 80;
+      } else judge('점프 회피', null);
+      return;
+    }
+    hurtPlayer(a, true); return;
+  }
+  if (P.state==='guard'){
+    const age = now - P.guardT;
+    if (age <= P.window){
+      const mult = a.type==='thrust' ? 1.3 : 1;
+      E.post += (20 + LV.dpost*6)*mult; E.postLock = 1200; P.post += 4;
+      STAT.deflect++; judge('튕기기', Math.round(age)); popup('弾き', mid, hy-30, '#ffb347', 30, 600); sparks(mid, hy, '#ffc86b', 22, 520);
+      SFX.deflect(); hitstopT = CFG.hitstop; shake = 6; P.deflectT = now; E.x -= E.face*10;
+      if (E.post >= E.maxPost) staggerEnemy();
+      return;
+    }
+    const mult = (a.type==='thrust' ? 1.7 : 1) * (1 - LV.gblock*0.3);
+    P.post += 15*mult; P.postLock = 900; P.x += E.face*22;
+    STAT.block++; judge('막기', Math.round(age)); sparks(mid, hy, '#9ab', 8, 250); SFX.block(); shake = 3;
+    if (P.post >= P.maxPost) staggerPlayer();
+    return;
+  }
+  hurtPlayer(a, false);
+}
+function hurtPlayer(a, unblockable){
+  P.hp -= a.dmg * CFG.dmgTaken; P.post += 28 * (LV.iron ? 0.75 : 1); P.postLock = 1200; STAT.hit++;
+  judge(unblockable?'쓸기 피격':'피격', P.state==='guard' ? Math.round(now-P.guardT) : null);
+  sparks(P.x, GROUND-45, '#e24a4a', 16, 300); SFX.hit(); shake = 10; hitstopT = 40;
+  P.x += E.face*(LV.iron ? 20 : 40);
+  if (P.hp <= 0){ P.hp = 0; setState(P,'dead'); gameState = 'dead'; return; }
+  if (P.post >= P.maxPost) staggerPlayer(); else setState(P,'hit');
+}
+function staggerPlayer(){ P.post = P.maxPost; setState(P,'stagger'); SFX.stagger(); popup('체간 붕괴', P.x, GROUND-110, '#e24a4a', 22, 900); if (E.state==='idle'||E.state==='approach') E.waitT = 250; }
+function playerHitsEnemy(a){
+  const dx = E.x - P.x, mid = (P.x+E.x)/2, hy = GROUND-50;
+  if (Math.abs(dx) > a.range || (!a.both && dx*P.face < 0)) return;
+  if (E.y > 30 && a.type==='sweep'){ judge('적이 뛰어넘음', null); return; }
+  if (E.state==='mikiri' || E.state==='stomp' || E.state==='deathblow' || E.state==='dead' || gameState!=='play') return;
+  if (E.state==='stagger'){ // 인살
+    setState(E,'deathblow'); setState(P,'deathblow'); judge('인살', null); E.dbApplied = false;
+    const lethal = E.hp - dbDamage() <= 0; // 처치 확정일 때만 슬로우모션 (staggerEnemy가 보장)
+    popup('忍殺', mid, hy-80, lethal ? '#ff2e2e' : '#ff8a6a', lethal ? 52 : 36, 1200); SFX.deathblow(); E.lethal = lethal; timeScale = lethal ? 0.3 : 1; shake = lethal ? 14 : 8; sparks(E.x, GROUND-60, '#e02020', lethal ? 40 : 20, 380);
+    if (LV.heal){ P.hp = Math.min(P.maxHp, P.hp + P.maxHp*0.25*LV.heal); popup('回復', P.x, GROUND-120, '#8fd18f', 22, 900); }
+    return;
+  }
+  if ((E.state==='idle'||E.state==='approach') && Math.random() < E.deflectChance*CFG.enemyDeflectScale){
+    setState(E,'deflect'); P.post += 14; P.postLock = 800; P.x -= P.face*26;
+    popup('!', mid, hy-30, '#ffb347', 30, 400); sparks(mid, hy, '#ffc86b', 14, 400); SFX.deflect(); hitstopT = 50; judge('적이 튕김', null); E.waitT = 120; return;
+  }
+  const armor = E.state==='attack' && E.t < atkTimes(E)[0];
+  const m = atkMult();
+  E.hp -= a.dmg*m*(armor?0.6:1); E.post += a.posture*m*(armor?0.6:1); E.postLock = 900;
+  sparks(mid, hy, '#fff', 10, 300); SFX.slash(); shake = a.dmg > 25 ? 6 : 2;
+  // 히트스톱: 그로기 중엔 짧게(12ms), 연타에 누적되지 않게 max로만 갱신
+  hitstopT = Math.max(hitstopT, E.state==='groggy' ? 12 : (a.dmg > 25 ? 60 : 25));
+  if (a.wave) popup('龍閃', mid, hy-60, '#dfe8ff', 28, 500);
+  if (E.hp <= 0){ E.hp = 0; if (E.state!=='stagger'){ staggerEnemy(); popup('체력 0', E.x, GROUND-175, '#ff5a5a', 18, 1200); } return; }
+  if (E.post >= E.maxPost) staggerEnemy();
+}
+const dbDamage = () => Math.round(E.maxHp*0.45 + 30) * atkMult();
+function staggerEnemy(){
+  SFX.stagger(); shake = 6;
+  if (E.hp - dbDamage() <= 0){ // 인살로 죽일 수 있을 때만 인살 기회
+    E.post = E.maxPost; setState(E,'stagger'); popup('체간 붕괴!  J = 인살', E.x, GROUND-150, '#ff5a5a', 22, 1600);
+  } else { // 아니면 그로기 2초 (자유 공격)
+    E.post = 0; E.postLock = 2200; setState(E,'groggy'); E.x += E.face*-30; popup('체간 붕괴 — 그로기', E.x, GROUND-150, '#ffb347', 22, 1400);
+  }
+}
+
+// 적의 간파/밟기 성공 처리
+function enemyMikiriHit(){
+  P.post += 35; P.postLock = 1200; setState(P,'hit'); P.x -= P.face*30;
+  popup('見切り', E.x, GROUND-130, '#ff8a6a', 30); sparks((P.x+E.x)/2, GROUND-40, '#ff8a6a', 18, 400); SFX.mikiri(); hitstopT = 90; shake = 6; judge('적에게 간파당함', null);
+  if (P.post >= P.maxPost) staggerPlayer();
+}
+function enemyStompHit(){
+  P.post += 30; P.postLock = 1200; setState(P,'hit'); E.vy = 420;
+  popup('踏みつけ', E.x, GROUND-160, '#ff8a6a', 30); sparks(P.x, GROUND-80, '#ff8a6a', 16, 380); SFX.mikiri(); hitstopT = 80; shake = 6; judge('적에게 밟힘', null);
+  if (P.post >= P.maxPost) staggerPlayer();
+}
+
+// ───────────────────────── 공격 상태 업데이트 (공용) ─────────────────────────
+function updateAttack(e, dt){
+  const a = e.atk, [tw, ta, tr] = atkTimes(e), other = e===P ? E : P;
+  const t = e.t;
+  if (t < tw){
+    if (e.travelLeft > 0){ const st = Math.min(e.travelLeft, (a.travel/tw)*dt*1.05); e.x += e.face*st; e.travelLeft -= st; }
+    else if (e===E && Math.abs(other.x-e.x) > a.range*e.scale*0.7) e.x += e.face*60*dt/1000;
+    if (e===P && !e.counterChecked && t > tw*0.5){ e.counterChecked = true; enemyCounterCheck(); }
+    if (e===E && !e.counterChecked && t > tw*0.5){ e.counterChecked = true; }
+  } else if (t < ta){
+    if (!e.hitDone){ e.hitDone = true; e.lunge = a.lunge; SFX.slash(); }
+    if (e.lunge > 0){ const st = Math.min(e.lunge, 1000*dt/1000); e.x += e.face*st; e.lunge -= st; }
+    if (t >= tw + (ta-tw)*0.35 && !e.resolved){ e.resolved = true; if (e===E) enemyHitsPlayer(a); else playerHitsEnemy(a); }
+  } else if (t < tr){
+    const next = e.seq[e.seqIdx+1];
+    if (next && t > ta + 40 && !(e===P && e.comboOK)){ e.seqIdx++; startAttack(e); return; }
+    if (e===P){ // 통상 콤보 이어가기 / 캔슬
+      if (e.comboOK && pressed.KeyJ && e.seqIdx < e.comboMax-1 && t > ta + 60){ e.seq = ['p1','p2','p3','p4','p5']; e.seqIdx++; startAttack(e); e.comboOK = true; return; }
+    }
+  } else {
+    setState(e,'idle'); if (e===E) e.waitT = (E.phase===1 ? 260 : 420) + Math.random()*500;
+  }
+}
+
+// ───────────────────────── 플레이어 ─────────────────────────
+function updatePlayer(dt){
+  P.t += dt; P.invul = Math.max(0, P.invul-dt); P.postLock -= dt; for (let i=0;i<3;i++) P.cds[i] = Math.max(0, P.cds[i]-dt);
+  if (P.y > 0 || P.vy > 0){ P.y += P.vy*dt/1000; P.vy -= 1700*dt/1000; if (P.y <= 0){ P.y = 0; P.vy = 0; P.stompDone = false; } }
+  const s = P.state, grounded = P.y <= 0;
+  const inRecover = s==='attack' && P.t > atkTimes(P)[1] + 80;
+  const canAct = ['idle','run','guard'].includes(s) || inRecover || (s==='dodge' && P.t > 220);
+  if (s==='hit' && P.t > 320) setState(P,'idle');
+  if (s==='mikiri' && P.t > 700) setState(P,'idle');
+  if (s==='stagger' && P.t > 1500){ P.post = 0; setState(P,'idle'); }
+  if (s==='deathblow' || s==='dead') return;
+  const ax = axis();
+  if (['idle','run','guard'].includes(s) || (!grounded && s!=='attack')){
+    if (ax){ P.face = ax; P.x += ax*(s==='guard'?110:250)*dt/1000; if (s==='idle') setState(P,'run'); }
+    else if (s==='run') setState(P,'idle');
+  }
+  if (s==='dodge'){ P.x += P.dodgeDir*(P.t<200?520:180)*dt/1000; if (P.t > 300) setState(P,'idle'); }
+  if (pressed.KeyK && (canAct || s==='guard') && grounded){
+    P.window = CFG.deflectWindow + LV.window*20 - (now - P.lastGuardPress < 380 ? CFG.spamPenalty : 0);
+    P.lastGuardPress = now; P.guardT = now; if (s!=='guard') setState(P,'guard');
+  }
+  if (s==='guard' && !keys.KeyK) setState(P,'idle');
+  if (pressed.KeyJ && grounded && (canAct && s!=='attack')){
+    if (s==='run' && LV.dash && ax){ P.comboOK = false; startSeq(P, ['pdash']); }
+    else { P.comboOK = true; startSeq(P, ['p1','p2','p3','p4','p5']); if (ax) P.face = ax; }
+  }
+  for (let i=0;i<3;i++) if (pressed[SLOT_CODES[i]] && artSlots[i] && P.cds[i] <= 0 && grounded && (canAct && s!=='attack' || inRecover)){
+    const sk = SKILLS.find(x => x.id===artSlots[i]); P.cds[i] = sk.cd; P.comboOK = false; startSeq(P, ART_SEQ[sk.art]); SFX.art();
+    popup(sk.name, P.x, GROUND-125, '#dfe8ff', 18, 700);
+  }
+  if (s==='attack') updateAttack(P, dt);
+  if (pressed.KeyL && canAct && grounded && s!=='attack'){ P.dodgeDir = ax || P.face; setState(P,'dodge'); }
+  if (pressed.Space){
+    if (grounded && (canAct || s==='guard') && s!=='attack'){ P.vy = 760; P.y = 0.01; setState(P,'idle'); SFX.jump(); }
+    else if (!grounded) P.jumpBuf = now;
+  }
+  if (P.postLock <= 0 && s!=='stagger'){ const rate = (24 + LV.recov*7) * (0.4 + 0.6*P.hp/P.maxHp) * (s==='guard'?1.8:1); P.post = Math.max(0, P.post - rate*dt/1000); }
+  P.x = Math.max(ARENA.left, Math.min(ARENA.right, P.x));
+}
+
+// ───────────────────────── 적 ─────────────────────────
+function updateEnemy(dt){
+  E.t += dt; E.postLock -= dt;
+  const s = E.state;
+  if (E.y > 0 || E.vy > 0){ E.y += E.vy*dt/1000; E.vy -= 1700*dt/1000; if (E.y <= 0){ E.y = 0; E.vy = 0; if (s==='stomp'){ setState(E,'idle'); E.waitT = 300; } } }
+  if (s==='deathblow'){
+    if (E.t > 300 && !E.dbApplied){ // 찌르는 순간 큰 피해 (최대 체력 45% + 30)
+      E.dbApplied = true; const dmg = dbDamage(); E.hp = Math.max(0, E.hp - dmg);
+      popup(`-${Math.round(dmg)}`, E.x, GROUND-150*E.scale, '#ff5a5a', 24, 1000);
+    }
+    if (!E.lethal && E.t > 600){ // 비처치: 쓰러지지 않고 그로기 2초
+      timeScale = 1; setState(P,'idle'); setState(E,'groggy'); E.post = 0; E.postLock = 2200; E.dbApplied = false; E.x += E.face*-40;
+      popup('그로기', E.x, GROUND-150*E.scale, '#ffb347', 20, 1200); return;
+    }
+    if (E.t > 1100){
+      timeScale = 1; setState(P,'idle');
+      if (E.hp <= 0){ E.hp = 0; setState(E,'dead'); gameState = 'clear'; SP += 1 + (round%5===0 ? 1 : 0); SFX.clear(); popup(`라운드 ${round} 클리어  +${round%5===0?2:1} SP`, W/2 + camX, 150, '#e8c170', 26, 2500); }
+      else { E.post = 0; E.postLock = 800; setState(E,'idle'); E.waitT = 1400; E.x += E.face*-120; E.dbApplied = false; }
+    }
+    return;
+  }
+  if (E.phase===0 && round >= 10 && E.hp < E.maxHp*0.5 && s!=='dead'){ E.phase = 1; popup('2단계', E.x, GROUND-140, '#ff5a5a', 26, 1200); }
+  if (s==='dead') return;
+  if (gameState !== 'play'){ if (s!=='idle') setState(E,'idle'); return; }
+  // 시선: 공격 예비동작 후반·타격 중이 아니면 항상 플레이어 쪽
+  if (s!=='attack' || E.t < atkTimes(E)[0]*0.65 || E.t > atkTimes(E)[1]) if (s!=='mikiri' && s!=='stomp') E.face = P.x < E.x ? -1 : 1;
+  if (s==='groggy'){ if (E.t > 2000){ setState(E,'idle'); E.waitT = 400; } return; }
+  if (s==='stagger'){ if (E.t > 2600){ E.post = E.maxPost*0.35; if (E.hp <= 0) E.hp = Math.round(E.maxHp*0.1); setState(E,'idle'); E.waitT = 500; } return; }
+  if (s==='hit'){ if (E.t > (E.hitDur||500)){ setState(E,'idle'); E.waitT = 300; } return; }
+  if (s==='deflect'){ if (E.t > 260) setState(E,'idle'); return; }
+  if (s==='mikiri'){
+    if (E.t > 160 && E.mikiriTarget){ E.mikiriTarget = false; if (P.state==='attack' && P.atk.type==='thrust' && dist() < 170){ P.hitDone = true; P.resolved = true; enemyMikiriHit(); } }
+    if (E.t > 700){ setState(E,'idle'); E.waitT = 200; } return;
+  }
+  if (s==='stomp'){
+    if (!E.stompDone && E.y > 30 && dist() < 90){ E.stompDone = true; if (P.state==='attack' && P.atk.type==='sweep'){ P.resolved = true; } enemyStompHit(); }
+    E.x += E.face*180*dt/1000; return;
+  }
+  if (E.postLock <= 0){ const rate = 14*(0.25 + 0.75*E.hp/E.maxHp); E.post = Math.max(0, E.post - rate*dt/1000); }
+  if (s==='idle'){
+    E.waitT -= dt;
+    if (E.waitT <= 0){ const hasFar = E.pool.some(k => ['dash','jump','nightjar','dragonflash'].includes(k)); if (dist() > 230 && (!hasFar || Math.random() < 0.5)) setState(E,'approach'); else startSeq(E, buildCombo()); }
+  } else if (s==='approach'){
+    E.x += E.face*230*dt/1000;
+    if (dist() <= 150) startSeq(E, buildCombo()); else if (E.t > 2500){ setState(E,'idle'); E.waitT = 200; }
+  } else if (s==='attack') updateAttack(E, dt);
+  E.x = Math.max(ARENA.left+30, Math.min(ARENA.right-30, E.x));
+}
+// 겹침 방지: 양쪽 업데이트가 끝난 뒤 매 프레임 (그로기·붕괴·피격 등 조기 return 상태에서도 항상 적용)
+function resolveOverlap(){
+  if (E.state==='dead' || E.state==='deathblow' || P.state==='deathblow') return;
+  if (P.y >= 70 || E.y >= 40) return; // 공중이면 통과 허용 (뛰어넘기)
+  const minD = 48, d = P.x - E.x, ad = Math.abs(d);
+  if (ad >= minD) return;
+  const dir = d === 0 ? -P.face : Math.sign(d), push = minD - ad;
+  // 움직일 수 없는 상태(그로기/붕괴/피격)는 밀리지 않고 플레이어만 밀려남
+  const eStuck = ['groggy','stagger','hit','mikiri'].includes(E.state);
+  if (eStuck){ P.x += dir*push; } else { P.x += dir*push*0.5; E.x -= dir*push*0.5; }
+  P.x = Math.max(ARENA.left, Math.min(ARENA.right, P.x)); E.x = Math.max(ARENA.left+30, Math.min(ARENA.right-30, E.x));
+}
+
+function updateFX(dt){
+  for (const p of particles){ p.age += dt; p.x += p.vx*dt/1000; p.y += p.vy*dt/1000; p.vy += 900*dt/1000; }
+  for (let i=particles.length-1;i>=0;i--) if (particles[i].age > particles[i].life) particles.splice(i,1);
+  for (const p of popups){ p.age += dt; p.y -= 30*dt/1000; }
+  for (let i=popups.length-1;i>=0;i--) if (popups[i].age > popups[i].life) popups.splice(i,1);
+  for (let i=ghosts.length-1;i>=0;i--) if (now - ghosts[i].t > 260) ghosts.splice(i,1);
+  shake = Math.max(0, shake - dt*0.04);
+}
+
+// ───────────────────────── 포즈 & 그리기 ─────────────────────────
+function poseOf(e){
+  const s = e.state, t = e.t; let p;
+  const clipT = () => { const c = CLIPS[e.atk.clip], [tw,ta,tr] = atkTimes(e); return sampleClip(c, mapAtkTime(c, t, tw, ta, tr)); };
+  if (s==='stomp') p = { ...STOMPAIR };
+  else if (e.y > 0 && !['deathblow','dead','attack','stagger','hit','mikiri'].includes(s)){ p = { ...AIR }; if (e.vy < 0) p.lean = 0.3; }
+  else if (s==='idle') p = sampleClip(CLIPS.idle, now);
+  else if (s==='run' || s==='approach') p = sampleClip(CLIPS.run, now);
+  else if (s==='guard'){ p = sampleClip(CLIPS.guard, t); const d = now - (e.deflectT||-9999); if (d < 170) p = lerpP(p, RECOIL, Math.sin(Math.min(1,d/170)*PI)); }
+  else if (s==='dodge') p = sampleClip(CLIPS.dodge, t);
+  else if (s==='hit') p = sampleClip(e===E ? CLIPS.bhit : CLIPS.hit, t);
+  else if (s==='mikiri') p = sampleClip(CLIPS.mikiri, t);
+  else if (s==='stagger'){ p = { ...sampleClip(CLIPS.stagger, t) }; p.lean += Math.sin(t/80)*0.12; }
+  else if (s==='groggy'){ p = { ...BROKEN, hy:36, lean:-0.4, fL:[-16,0], fR:[10,0] }; p.lean += Math.sin(t/110)*0.08; p.hy += Math.sin(t/140)*1.5; }
+  else if (s==='dead') p = sampleClip(CLIPS.dead, t);
+  else if (s==='deflect') p = sampleClip(CLIPS.bdeflect, t);
+  else if (s==='deathblow') p = sampleClip(e===P ? CLIPS.execute : CLIPS.victim, t);
+  else if (s==='attack'){ p = { ...clipT() }; const tw = atkTimes(e)[0]; if (e===E && t > tw*0.8 && t < tw) p.lean += Math.sin(t/22)*0.04; }
+  else p = READY;
+  if (e.blendFrom && t < 80) p = lerpP(e.blendFrom, p, t/80);
+  e.curPose = p; return p;
+}
+function drawFigure(p, x, y, face, sc, color, sword, alpha=1, deco=null){
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.translate(x - camX, GROUND - y); ctx.scale(face*sc, -sc);
+  if (p.pitch){ const cx=p.hx, cy=p.hy+8; ctx.translate(cx,cy); ctx.rotate(-p.pitch); ctx.translate(-cx,-cy); }
+  if (p.yaw){ const c=Math.cos(p.yaw); ctx.translate(p.hx,0); ctx.scale(Math.max(0.12,Math.abs(c))*Math.sign(c||1),1); ctx.translate(-p.hx,0); }
+  ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle=color; ctx.lineWidth=3.4;
+  const hx=p.hx, hy=p.hy;
+  const sx = hx + Math.sin(p.lean)*RIG.torso, sy = hy + Math.cos(p.lean)*RIG.torso;
+  const nx = sx + Math.sin(p.lean+p.head)*(RIG.head+4), ny = sy + Math.cos(p.lean+p.head)*(RIG.head+4);
+  // 망토 (몸 뒤에 먼저 그림): 어깨에서 뒤로 늘어지며 이동 속도·시간에 따라 나부낌
+  if (deco && deco.cape){
+    const sway = deco.sway||0, f = Math.sin(now/170)*2.5;
+    const ax = sx - Math.sin(p.lean)*3, ay = sy - 1;
+    ctx.fillStyle = alpha<1 ? color : capeColor(); ctx.strokeStyle = alpha<1 ? color : '#1a1a1a'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(ax, ay);
+    ctx.quadraticCurveTo(ax-10-sway*0.6, ay-8+f, ax-16-sway, hy-10+f*0.5);
+    ctx.lineTo(ax-6-sway*0.7, hy-4+f*0.3);
+    ctx.quadraticCurveTo(ax-3, hy+8, ax+3, ay-2);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = color; ctx.lineWidth = 3.4; // 몸 선 스타일 복원
+  }
+  for (const f of [p.fL,p.fR]){ const [kx,ky,ex,ey] = ik(hx,hy,f[0],f[1],RIG.thigh,RIG.shin,+1); ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(kx,ky); ctx.lineTo(ex,ey); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(sx,sy); ctx.stroke();
+  ctx.beginPath(); ctx.arc(nx,ny,RIG.head,0,PI*2); ctx.stroke();
+  // 삿갓: 머리 위 납작한 원뿔, 머리 기울기에 따라 회전
+  if (deco && deco.hat){
+    ctx.save(); ctx.translate(nx, ny); ctx.rotate(-(p.lean+p.head));
+    ctx.fillStyle = alpha<1 ? color : '#c9a46a'; ctx.strokeStyle = alpha<1 ? color : '#5a4020'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(-15, 3); ctx.lineTo(0, 13); ctx.lineTo(15, 3); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-15, 3); ctx.lineTo(15, 3); ctx.stroke();
+    ctx.restore();
+  }
+  const dx = Math.cos(p.sw), dy = Math.sin(p.sw), hand = p.hand, shx = sx - Math.sin(p.lean)*2, shy = sy - 2;
+  const lt = p.two > 0.5 ? [hand[0]-dx*7, hand[1]-dy*7] : p.lh;
+  const la = ik(shx,shy,lt[0],lt[1],RIG.upper,RIG.fore,-1);
+  ctx.globalAlpha = alpha*0.75; ctx.beginPath(); ctx.moveTo(shx,shy); ctx.lineTo(la[0],la[1]); ctx.lineTo(la[2],la[3]); ctx.stroke(); ctx.globalAlpha = alpha;
+  const ra = ik(shx,shy,hand[0],hand[1],RIG.upper,RIG.fore,-1);
+  ctx.beginPath(); ctx.moveTo(shx,shy); ctx.lineTo(ra[0],ra[1]); ctx.lineTo(ra[2],ra[3]); ctx.stroke();
+  const gx = ra[2], gy = ra[3];
+  ctx.strokeStyle = alpha<1 ? color : '#6b3a20'; ctx.lineWidth = 3.8; ctx.beginPath(); ctx.moveTo(gx-dx*RIG.tsuka, gy-dy*RIG.tsuka); ctx.lineTo(gx+dx*3, gy+dy*3); ctx.stroke();
+  ctx.strokeStyle = sword; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(gx+dx*3, gy+dy*3); ctx.lineTo(gx+dx*RIG.sword, gy+dy*RIG.sword); ctx.stroke();
+  ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(gx+dx*3-dy*3.5, gy+dy*3+dx*3.5); ctx.lineTo(gx+dx*3+dy*3.5, gy+dy*3-dx*3.5); ctx.stroke();
+  ctx.restore();
+}
+// 플레이어 몸 색: 체력 비율에 따라 연두 → 주황 → 붉은색
+function mixHex(a, b, t){ const A = a.match(/\w\w/g).map(h=>parseInt(h,16)), B = b.match(/\w\w/g).map(h=>parseInt(h,16)); return '#' + A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join(''); }
+function playerColor(){ const r = Math.max(0, Math.min(1, P.hp/P.maxHp)); return r > 0.5 ? mixHex('#f0a040', '#a8e86a', (r-0.5)/0.5) : mixHex('#e03838', '#f0a040', r/0.5); }
+function capeColor(){ const r = Math.max(0, Math.min(1, P.hp/P.maxHp)); return mixHex('#5a1414', '#2f5a2a', r); }
+function drawStick(e, color, sword){
+  const p = poseOf(e), sc = e===E ? E.scale : 1;
+  // 잔상: 공격·회피·간파·밟기 중 40ms마다 포즈 스냅샷
+  const fast = ['attack','dodge','mikiri','stomp','deathblow'].includes(e.state) || (e===P && e.y > 0);
+  const deco = e===P ? { hat:true, cape:true, sway: (e.state==='run' ? 8 : e.state==='dodge' ? 12 : e.state==='attack' ? 5 : 0) + (e.y > 0 ? 6 : 0) } : null;
+  if (fast && now - (e.lastGhost||0) > 40){ e.lastGhost = now; ghosts.push({ p, x:e.x, y:e.y, face:e.face, sc, t:now, deco, color: (e.state==='attack' && e.atk.ghost) || (e===E ? '#c9a08a' : '#8fb3e0') }); }
+  drawFigure(p, e.x, e.y, e.face, sc, color, sword, 1, deco);
+}
+
+// ───────────────────────── 렌더 ─────────────────────────
+function bar(x,y,w,h,ratio,fg,bg='#222'){ ctx.fillStyle=bg; ctx.fillRect(x,y,w,h); ctx.fillStyle=fg; ctx.fillRect(x,y,w*Math.max(0,Math.min(1,ratio)),h); ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.strokeRect(x+.5,y+.5,w-1,h-1); }
+function postureBar(cx,y,w,h,ratio){
+  ctx.fillStyle='#1b1710'; ctx.fillRect(cx-w/2,y,w,h);
+  const r = Math.max(0,Math.min(1,ratio)); ctx.fillStyle = r>0.85 ? '#ff4d2e' : r>0.5 ? '#ffa030' : '#e8c170'; ctx.fillRect(cx - w/2*r, y, w*r, h);
+  ctx.strokeStyle='#000'; ctx.strokeRect(cx-w/2+.5,y+.5,w-1,h-1); ctx.strokeStyle='#e8c170'; ctx.beginPath(); ctx.moveTo(cx,y-3); ctx.lineTo(cx,y+h+3); ctx.stroke();
+}
+function drawBackground(){
+  const tier = Math.min(5, Math.floor((round-1)/5));
+  const skies = [['#1a1f2e','#3a2f38'],['#1c2230','#3a3040'],['#15202a','#2f3a44'],['#241a2a','#4a3040'],['#2a1a1a','#5a3030'],['#101018','#3a1a24']];
+  const g = ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,skies[tier][0]); g.addColorStop(0.7,skies[tier][1]); g.addColorStop(1,'#1c1517');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = tier>=4 ? '#e8a080' : '#e9dcc0'; ctx.beginPath(); ctx.arc(760 - camX*0.05, 90, 38, 0, PI*2); ctx.fill();
+  ctx.fillStyle = '#141824';
+  for (let i=-1;i<8;i++){ const bx = i*420 - (camX*0.15)%420; ctx.beginPath(); ctx.moveTo(bx,GROUND); ctx.lineTo(bx+210,170+((i*37)%60)); ctx.lineTo(bx+420,GROUND); ctx.fill(); }
+  ctx.strokeStyle = '#2a3a2c'; ctx.lineWidth = 6;
+  for (let i=-1;i<14;i++){ const bx = i*110 + ((i*53)%40) - (camX*0.5)%110; ctx.beginPath(); ctx.moveTo(bx, GROUND+10); ctx.lineTo(bx+8, 60); ctx.stroke();
+    ctx.lineWidth=2; for (let j=0;j<4;j++){ const yy = 120+j*90; ctx.beginPath(); ctx.moveTo(bx+3,yy); ctx.lineTo(bx-14,yy-8); ctx.stroke(); } ctx.lineWidth=6; }
+  ctx.fillStyle = '#4a1f1f';
+  for (const tx of [300, 1250]){ const x = tx - camX; ctx.fillRect(x, GROUND-230, 12, 230); ctx.fillRect(x+120, GROUND-230, 12, 230); ctx.fillRect(x-20, GROUND-240, 172, 12); ctx.fillRect(x-8, GROUND-210, 148, 8); }
+  ctx.fillStyle = '#2b2622'; ctx.fillRect(0, GROUND, W, H-GROUND);
+  ctx.strokeStyle = '#5a4d3c'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0,GROUND+.5); ctx.lineTo(W,GROUND+.5); ctx.stroke();
+  ctx.strokeStyle = '#3a332c'; for (let i=-1;i<20;i++){ const x = i*60 - camX%60; ctx.beginPath(); ctx.moveTo(x, GROUND+18); ctx.lineTo(x+30, GROUND+18); ctx.stroke(); }
+}
+function drawHUD(){
+  ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#eee';
+  ctx.fillText(`${E.name}${E.phase? '  · 2단계':''}`, 280, 30);
+  ctx.fillStyle = '#e8c170'; ctx.font = 'bold 16px sans-serif'; ctx.textAlign='center'; ctx.fillText(`ROUND ${round} / 30`, W/2, 30 - 14 + 0); ctx.textAlign='left';
+  postureBar(W/2, 36, 420, 9, E.post/E.maxPost);
+  bar(280, 50, 400, 8, E.hp/E.maxHp, '#b5262a', '#2a1214');
+  ctx.fillStyle='#ccc'; ctx.font='11px monospace'; ctx.textAlign='right'; ctx.fillText(`${Math.ceil(E.hp)} / ${E.maxHp}`, 680, 30); ctx.textAlign='left';
+  ctx.fillStyle='#777'; ctx.font='11px sans-serif'; ctx.fillText(`연타 최대 ${E.maxLen} · 패턴 ${E.pool.length}종 · 간파/밟기 ${Math.round(E.counterChance*100)}%`, 280, 72);
+  if (E.state==='stagger'){ ctx.fillStyle='#ff4d2e'; ctx.font='bold 16px sans-serif'; ctx.textAlign='center'; ctx.fillText('J — 인살 (처치)', W/2, 92); ctx.textAlign='left'; }
+  if (E.state==='groggy'){ ctx.fillStyle='#ffb347'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center'; ctx.fillText(`그로기 — 자유 공격 (${Math.max(0,((2000-E.t)/1000)).toFixed(1)}s)`, W/2, 92); ctx.textAlign='left'; }
+  // 플레이어
+  postureBar(W/2, H-46, 320, 10, P.post/P.maxPost);
+  bar(30, H-40, 260, 12, P.hp/P.maxHp, '#c9a441', '#2a2412');
+  ctx.fillStyle = '#eee'; ctx.font='bold 13px sans-serif'; ctx.fillText(P.name, 30, H-46);
+  for (let i=0;i<P.maxRevive;i++){ ctx.fillStyle = i < P.revive ? '#f0d9a0' : '#444'; ctx.beginPath(); ctx.arc(305 + i*16, H-34, 6, 0, PI*2); ctx.fill(); }
+  // 아츠 슬롯
+  for (let i=0;i<3;i++){ const x = 30 + i*76, y = H-78; const id = artSlots[i], sk = id && SKILLS.find(s=>s.id===id);
+    ctx.fillStyle = '#15161c'; ctx.fillRect(x, y, 70, 24); ctx.strokeStyle = sk ? '#e8c170' : '#333'; ctx.strokeRect(x+.5,y+.5,69,23);
+    if (sk){ const cd = P.cds[i], r = cd/sk.cd; if (cd>0){ ctx.fillStyle='rgba(0,0,0,.6)'; ctx.fillRect(x, y, 70*r, 24); } ctx.fillStyle = cd>0 ? '#777' : '#f0e6d0'; ctx.font='11px sans-serif'; ctx.fillText(`${SLOT_KEYS[i]} ${sk.name}`, x+5, y+16); }
+    else { ctx.fillStyle='#444'; ctx.font='11px sans-serif'; ctx.fillText(`${SLOT_KEYS[i]} —`, x+5, y+16); } }
+  if (SP > 0){ ctx.fillStyle='#ffd36b'; ctx.font='bold 12px sans-serif'; ctx.fillText(`SP ${SP}  (Tab: 스킬 트리)`, 260, H-62); }
+  ctx.fillStyle='#888'; ctx.font='11px sans-serif'; ctx.fillText(`R(회생·재도전) 총 ${retries}/${MAX_RETRY}`, 400, H-30);
+  ctx.textAlign='right'; ctx.font='12px monospace'; ctx.fillStyle='#bbb';
+  const age = STAT.lastAge==null ? '' : `  (${STAT.lastAge}ms)`;
+  ctx.fillText(`판정: ${STAT.lastJudge}${age}   창: ${P.window}ms`, W-16, H-22);
+  ctx.fillText(`P:${P.state}${P.state==='attack'?'/'+P.atk.name:''}  E:${E.state}${E.atk&&E.state==='attack'?'/'+E.atk.name+` (${E.seqIdx+1}/${E.seq.length})`:''}`, W-16, H-8);
+  ctx.textAlign='left';
+  if (E.state==='attack' && E.atk.danger && E.t < atkTimes(E)[0]){
+    ctx.save(); ctx.globalAlpha = Math.sin(now/40) > 0 ? 1 : 0.55; ctx.fillStyle = '#ff2a2a'; ctx.font = 'bold 44px serif'; ctx.textAlign='center';
+    ctx.fillText('危', E.x - camX, GROUND - E.y - 100*E.scale - 20); ctx.restore();
+  }
+  if (P.state==='attack' && P.atk.danger && P.t < atkTimes(P)[0]){ ctx.save(); ctx.fillStyle='#ffd36b'; ctx.font='bold 22px serif'; ctx.textAlign='center'; ctx.fillText('危', P.x - camX, GROUND - P.y - 110); ctx.restore(); }
+}
+function render(){
+  ctx.save();
+  if (shake > 0) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+  drawBackground();
+  for (const e of [P,E]){ ctx.fillStyle='rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(e.x-camX, GROUND+4, 22*(1-e.y/500), 5, 0, 0, PI*2); ctx.fill(); }
+  for (const g of ghosts){ const a = 1 - (now-g.t)/260; drawFigure(g.p, g.x, g.y, g.face, g.sc, g.color, g.color, a*0.45, g.deco); }
+  drawStick(E, E.state==='stagger' ? '#ff8a6a' : E.state==='groggy' ? '#ffc08a' : E.color, '#c9d7e8');
+  const pc = P.invul>0 && Math.sin(now/40)>0 ? '#888' : (P.state==='guard' && now-P.guardT <= P.window ? '#ffd86b' : playerColor());
+  drawStick(P, pc, '#dfe8f5');
+  for (const p of particles){ ctx.globalAlpha = 1 - p.age/p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x-camX, p.y, p.r, 0, PI*2); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  for (const p of popups){ ctx.globalAlpha = 1 - Math.pow(p.age/p.life,3); ctx.fillStyle = p.color; ctx.font = `bold ${p.size}px serif`; ctx.textAlign='center'; ctx.strokeStyle='#000'; ctx.lineWidth=4; ctx.strokeText(p.text, p.x-camX, p.y); ctx.fillText(p.text, p.x-camX, p.y); }
+  ctx.globalAlpha = 1; ctx.restore();
+  drawHUD();
+  ctx.textAlign='center';
+  if (gameState==='dead'){
+    ctx.fillStyle='rgba(0,0,0,.55)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#c8202a'; ctx.font='bold 120px serif'; ctx.fillText('死', W/2, H/2+30);
+    ctx.fillStyle='#ddd'; ctx.font='16px sans-serif';
+    if (retries > 0 && P.revive > 0){ ctx.fillText(`R — 회생 (남은 R ${retries}회)`, W/2, H/2+80); ctx.fillStyle='#999'; ctx.fillText('Q — 처음부터 (스킬 리셋)', W/2, H/2+106); }
+    else if (retries > 0){ ctx.fillText(`R — 이 라운드 재도전 (스킬 유지 · 남은 R ${retries}회)`, W/2, H/2+80); ctx.fillStyle='#999'; ctx.fillText('Q — 처음부터 (스킬 리셋)', W/2, H/2+106); }
+    else { ctx.fillStyle='#ff8a6a'; ctx.fillText('R 횟수(총 2회)를 모두 썼습니다', W/2, H/2+80); ctx.fillStyle='#ddd'; ctx.fillText('Q — 처음부터 (라운드 1 · 스킬 리셋)', W/2, H/2+106); }
+  } else if (gameState==='clear'){
+    ctx.fillStyle='rgba(0,0,0,.35)'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#e8c170'; ctx.font='bold 56px serif'; ctx.fillText(round>=30 ? '三十戦 完' : '忍殺', W/2, H/2+10);
+    ctx.fillStyle='#ddd'; ctx.font='16px sans-serif';
+    ctx.fillText(round>=30 ? `모든 라운드 클리어 — 튕기기 ${STAT.deflect} · 피격 ${STAT.hit} · 간파 ${STAT.mikiri} · 밟기 ${STAT.stomp}` : `라운드 ${round} 클리어 — SP ${SP}   ·   Tab 스킬 트리   ·   Enter 다음 라운드`, W/2, H/2+52);
+  }
+  ctx.textAlign='left';
+}
+
+// ───────────────────────── 라운드 흐름 & 루프 ─────────────────────────
+function resetRun(){ // 처음부터: 라운드 1, 스킬 전부 리셋
+  for (const k in LV) LV[k] = 0; SP = 0; artSlots.fill(null); slotCursor = 0; retries = MAX_RETRY;
+  Object.assign(STAT, { deflect:0, block:0, hit:0, mikiri:0, stomp:0 });
+  applySkills(); P.hp = P.maxHp; if (treeOpen) toggleTree(); startRound(1);
+}
+function startRound(r){
+  round = r; makeEnemy(r); gameState = 'play';
+  Object.assign(P, { y:0, vy:0, hp:P.maxHp, post:0, invul:0, revive:P.maxRevive, atk:null, seq:null, seqIdx:0 }); setState(P,'idle');
+  particles.length = 0; popups.length = 0; ghosts.length = 0; timeScale = 1; hitstopT = 0;
+  popup(`ROUND ${r}  —  ${E.name}`, (P.x+E.x)/2, 200, '#e8c170', 30, 2000);
+}
+let last = performance.now();
+function frame(ts){
+  let raw = Math.min(50, ts - last); last = ts;
+  if (pressed.KeyR && gameState==='dead' && retries > 0){ // 회생이든 재도전이든 R은 런 전체 2회
+    if (P.revive > 0){ retries--; P.revive--; P.hp = P.maxHp*0.5; P.post = 0; P.invul = 1200; setState(P,'idle'); gameState = 'play'; E.waitT = 900; E.x += E.face*-90; popup('回生', P.x, GROUND-110, '#f0d9a0', 30, 1000); }
+    else if (retries > 0){ retries--; startRound(round); popup(`재도전 (남은 횟수 ${retries})`, (P.x+E.x)/2, 250, '#ffb347', 22, 1800); }
+  }
+  if (pressed.KeyQ && (gameState==='dead' || gameState==='clear')) resetRun();
+  if (pressed.Enter && gameState==='clear' && round < 30) startRound(round+1);
+  if (treeOpen) raw = 0; // 트리 열면 일시정지
+  if (hitstopT > 0){ hitstopT -= raw; raw = 0; }
+  const dt = raw * timeScale; now += dt;
+  if (dt > 0){ updatePlayer(dt); updateEnemy(dt); resolveOverlap(); updateFX(dt); }
+  const target = Math.max(0, Math.min(ARENA.right - W + 40, (P.x + E.x)/2 - W/2));
+  camX += (target - camX) * Math.min(1, Math.max(raw,1)/1000*6);
+  render();
+  for (const k in pressed) pressed[k] = false;
+  requestAnimationFrame(frame);
+}
+applySkills(); P.hp = P.maxHp; startRound(1);
+window.__dbg = { LV, SKILLS, P, E, CFG, pc:()=>playerColor(), addSP:n=>{ SP+=n; renderTree(); }, buy:id=>buySkill(SKILLS.find(x=>x.id===id)) }; // 콘솔 디버그용
+document.getElementById('jumpBtn').onclick = () => { startRound(Math.max(1,Math.min(30,+document.getElementById('jumpR').value||1))); cvs.focus(); };
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
