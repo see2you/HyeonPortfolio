@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>여행자 가이드 — 그리드 정보 · 포토맵 · 카탈로그 기획</title>
+<style>
+
+:root{
+  --bg:#ffffff; --fg:#1a1c1f; --muted:#6b7280; --line:#e3e5e8;
+  --accent:#0c66e4; --card:#ffffff; --code:#f4f5f7; --thead:#f4f5f7;
+  --shadow:0 1px 2px rgba(9,30,66,.08),0 0 1px rgba(9,30,66,.12);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#161719;--fg:#e6e7ea;--muted:#9aa0a6;--line:#2f3236;
+        --accent:#7cb2ff;--card:#1c1e21;--code:#232629;--thead:#232629;
+        --shadow:0 1px 2px rgba(0,0,0,.4);}
+}
+html[data-theme=light]{color-scheme:light}
+html[data-theme=dark]{color-scheme:dark;
+  --bg:#161719;--fg:#e6e7ea;--muted:#9aa0a6;--line:#2f3236;
+  --accent:#7cb2ff;--card:#1c1e21;--code:#232629;--thead:#232629;
+  --shadow:0 1px 2px rgba(0,0,0,.4);}
+html[data-theme=light]{
+  --bg:#ffffff;--fg:#1a1c1f;--muted:#6b7280;--line:#e3e5e8;
+  --accent:#0c66e4;--card:#ffffff;--code:#f4f5f7;--thead:#f4f5f7;
+  --shadow:0 1px 2px rgba(9,30,66,.08),0 0 1px rgba(9,30,66,.12);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",
+    "Malgun Gothic","Noto Sans KR",Segoe UI,Roboto,sans-serif;
+  font-size:15px;line-height:1.65;}
+.wrap{display:flex;align-items:flex-start;gap:32px;max-width:1200px;margin:0 auto;padding:0 24px 96px}
+
+/* 목차 */
+#toc{position:sticky;top:24px;flex:0 0 232px;max-height:calc(100vh - 48px);
+  overflow:auto;padding:20px 0;font-size:13px;}
+#toc h3{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;
+  border-left:2px solid var(--line);line-height:1.4}
+#toc a:hover{color:var(--fg);background:var(--code)}
+#toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+main{flex:1 1 auto;min-width:0;padding-top:8px}
+header.page{padding:44px 0 20px;border-bottom:1px solid var(--line);margin-bottom:28px}
+header.page h1{margin:0 0 8px;font-size:30px;line-height:1.25;letter-spacing:-.01em}
+header.page .meta{color:var(--muted);font-size:12.5px}
+header.page .meta a{color:var(--muted)}
+
+.sec{margin:0 0 34px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.sec>h2{margin:0;padding:13px 18px;font-size:16px;font-weight:700;
+  background:linear-gradient(0deg,var(--code),var(--code));
+  border-bottom:1px solid var(--line);scroll-margin-top:16px}
+.sec-body{padding:18px}
+.sec-body>:first-child{margin-top:0}
+.sec-body>:last-child{margin-bottom:0}
+
+h3{font-size:15px;margin:24px 0 8px}
+.sec.flat>.sec-body{padding:22px 24px}
+p.ph{font-size:16px;margin:30px 0 10px;padding-bottom:6px;
+  border-bottom:1px solid var(--line);scroll-margin-top:16px}
+p.ph:first-child{margin-top:0}
+p.ph strong{font-weight:700}
+p{margin:0 0 10px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+ol{list-style:decimal}
+ol ol{list-style:lower-alpha}
+ol ol ol{list-style:lower-roman}
+ol ol ol ol{list-style:decimal}
+ul{list-style:disc}
+ul ul{list-style:circle}
+ul ul ul{list-style:square}
+li{margin:3px 0}
+li>p{margin:0}
+strong{font-weight:700}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.9em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+
+/* 표 */
+.tablewrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--card)}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;
+  word-break:break-word}
+th{background:var(--thead);font-weight:600;white-space:nowrap}
+tbody tr:hover td:not([data-hasbg]){background:color-mix(in srgb,var(--code) 55%,transparent)}
+td[data-hasbg],th[data-hasbg]{color:#172b4d}
+html[data-theme=dark] td[data-hasbg],html[data-theme=dark] th[data-hasbg]{color:#172b4d}
+table p{margin:0}
+table ol,table ul{margin:0;padding-left:18px}
+
+/* 이미지 */
+figure.media{margin:14px 0}
+figure.media img,figure.media video{max-width:100%;height:auto;border-radius:8px;
+  border:1px solid var(--line);display:block}
+figure.media video{width:auto;max-height:78vh;background:#000}
+figure.media img{max-height:78vh;width:auto}
+figure.media figcaption{margin-top:6px;font-size:12px;color:var(--muted)}
+.imgph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  min-height:96px;padding:16px;border:1px dashed var(--line);border-radius:8px;
+  background:repeating-linear-gradient(45deg,transparent,transparent 9px,
+    color-mix(in srgb,var(--line) 35%,transparent) 9px,
+    color-mix(in srgb,var(--line) 35%,transparent) 10px);}
+.imgph-ico{width:26px;height:20px;border:2px solid var(--muted);border-radius:3px;opacity:.5;
+  position:relative;overflow:hidden;flex:none}
+.imgph-ico::before{content:"";position:absolute;left:3px;bottom:2px;width:9px;height:9px;
+  background:var(--muted);transform:rotate(45deg)}
+.imgph-ico::after{content:"";position:absolute;right:4px;top:3px;width:5px;height:5px;
+  border-radius:50%;background:var(--muted)}
+.imgph-name{font-size:13px;font-weight:600;color:var(--fg);word-break:break-all;text-align:center}
+.imgph-note{font-size:11.5px;color:var(--muted);text-align:center}
+
+/* 툴바 */
+.tools{position:fixed;top:14px;right:16px;display:flex;gap:6px;z-index:20}
+.tools button{font:inherit;font-size:12px;padding:6px 11px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--line);background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+.tools button:hover{border-color:var(--accent);color:var(--accent)}
+
+@media (max-width:900px){
+  #toc{display:none}
+  .wrap{padding:0 14px 64px}
+  header.page h1{font-size:24px}
+  .tools{top:8px;right:8px}
+}
+@media print{
+  #toc,.tools{display:none}
+  .wrap{display:block;max-width:none;padding:0}
+  .sec{break-inside:avoid;box-shadow:none}
+  body{font-size:11pt}
+}
+
+/* PDF 정리본 추가 */
+header.page .meta.src{margin-top:3px;font-size:11.5px;opacity:.8}
+p.docmeta{color:var(--muted);font-size:12.5px;margin:0 0 6px}
+figure.media .ann{margin-top:8px;border-left:3px solid var(--accent);
+  background:var(--code);border-radius:0 8px 8px 0;padding:9px 12px}
+figure.media .ann-h{font-size:11px;letter-spacing:.06em;color:var(--muted);
+  margin-bottom:5px;text-transform:uppercase}
+figure.media .ann ul{margin:0;padding-left:18px}
+figure.media .ann li{font-size:13.5px;margin:2px 0}
+figure.media details.uit{margin-top:6px}
+figure.media details.uit summary{cursor:pointer;font-size:12px;color:var(--muted)}
+figure.media details.uit p{margin:5px 0 0;font-size:12.5px;color:var(--muted);
+  line-height:1.6;word-break:break-word}
+.sec-body>ul{margin-top:0}
+
+li.small{font-size:12.5px;color:var(--muted)}
+
+/* 여행자 가이드 추가 */
+#toc a.l2{padding-left:22px;font-size:12.5px}
+h3{scroll-margin-top:16px;padding-left:9px;border-left:3px solid var(--accent)}
+h4{font-size:14px;margin:16px 0 6px}
+.cont{margin:6px 0}
+figure.media img{cursor:zoom-in;background:#fff}
+mark{background:#fff3a3;color:#1a1c1f;padding:0 2px;border-radius:2px}
+.dim{color:var(--muted)}
+.c{font-weight:600}
+li.nomark{list-style:none;margin-left:-22px}
+.lead1{margin:10px 0 6px;font-weight:600}
+.lead{color:var(--muted);font-weight:600;margin:0 0 14px}
+.notice{margin:0 0 22px;padding:9px 13px;border-left:3px solid var(--accent);background:var(--code);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted)}
+.tbl td{border:1px solid var(--line);padding:7px 10px;vertical-align:top}
+.tbl tr:first-child td{background:var(--thead);font-weight:600;text-align:center}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;z-index:50;align-items:center;justify-content:center;cursor:zoom-out}
+#lb.on{display:flex} #lb img{max-width:96vw;max-height:96vh}
+</style>
+</head>
+<body>
+<div class="tools">
+  <button id="themeBtn" type="button">테마 전환</button>
+  <button id="printBtn" type="button">인쇄 / PDF</button>
+</div>
+<div class="wrap">
+<nav id="toc"><h3>목차</h3><a class="l1" href="#p1">개발 방향 컨셉</a><a class="l2" href="#p2">기본 UI 사용법</a><a class="l2" href="#p3">탭 정보</a><a class="l2" href="#p4">포토맵</a><a class="l1" href="#p5">개요</a><a class="l2" href="#p6">월드맵을 탐색하는 유저에게 정보를 제공</a><a class="l1" href="#p7">유저가 볼 수 있는 정보</a><a class="l2" href="#p8">포토맵 (월드맵을 드래그했을 때 표시)</a><a class="l2" href="#p9">주소를 터치했을 때 제공하는 정보</a><a class="l2" href="#p10">추후 추가될 수 있는 정보</a><a class="l1" href="#p11">[정보표시 방법]</a><a class="l2" href="#p12">1️⃣빌딩사진 보여주기 ( 포토맵 )</a><a class="l2" href="#p13">2️⃣탭 2 빌딩 정보</a><a class="l2" href="#p14">3️⃣탭 3 카탈로그</a><a class="l2" href="#p15">🟨탭 4 지역짱 (짱건물 이후 진행)</a><a class="l1" href="#p16">[그리드 고유 컬러]</a><a class="l2" href="#p17">컨셉</a><a class="l2" href="#p18">그리드 컬러 규칙</a><a class="l1" href="#p19">배치방법</a><a class="l2" href="#p20">색상 규칙</a><a class="l2" href="#p21">스크립트 (gps_grid_color.json)</a><a class="l2" href="#p22">1색 설정 (우측)</a><a class="l2" href="#p23">제 2색 배치 (탭 버튼색)</a><a class="l1" href="#p24">UI 가안</a><a class="l1" href="#p25">개발</a></nav>
+<main>
+<header class="page">
+  <h1>여행자 가이드</h1>
+  <div class="meta">빌딩앤파이터 · GPS 그리드 정보 UI 기획 — 포토맵 / 유저·클랜 정보 / 빌딩 정보 / 가판대 카탈로그 / 그리드 고유 컬러</div>
+  <div class="meta src">원본: Google Docs 기획문서 정리본 · 이미지 43장</div>
+</header>
+<p class="notice">이 문서는 포트폴리오 공개를 위해 재구성·수정된 것으로, 실제 서비스에 적용된 원본과 다를 수 있습니다.</p>
+<p class="lead"><span class="c" style="color:#8b5cf6"><u>UX: </u></span><a href="https://xd.adobe.com/view/0ec5e7bb-f278-4501-b303-95172efcadfc-5b96/?hints=on" target="_blank" rel="noopener">플로우</a></p>
+<section class="sec"><h2 id="p1">개발 방향 컨셉<div class="cont"><figure class="media"><img src="traveler_guide_img/00.webp" alt="" loading="lazy" data-zoom></figure><figure class="media"><img src="traveler_guide_img/01.webp" alt="" loading="lazy" data-zoom></figure></div><div class="cont"><figure class="media"><img src="traveler_guide_img/02.webp" alt="" loading="lazy" data-zoom></figure><figure class="media"><img src="traveler_guide_img/03.webp" alt="" loading="lazy" data-zoom></figure></div></h2><div class="sec-body">
+<h3 id="p2">기본 UI 사용법</h3>
+<h4>좌하단 주소버튼을 눌러서 띄운다. <b>월드맵 스크롤 하다가 새로운 그리드에 들어가면 해당 버튼이 깜박깜박 </b>해서 터치 유도한다.</h4>
+<h4><span class="c" style="color:#e5484d"><u><b>그리드 고유 컬러 2색 조합 사용. 일단 컬러 조합은 랜덤으로. 색 차이는 어느정도 나게</b></u></span></h4>
+<h3 id="p3"><b>탭 정보</b></h3>
+<h4><b>탭1 : 그리드 통계 : 건맨 인구, 온라인 유저 수, 그동안 쌓인 세금, 주요 클랜과 인물. </b></h4>
+<h4>탭2 : 지역짱 (B3에서는 제외 - 지역짱데이터를 가져올 빌딩정보를 선정하는 작업이 우선 ’아르바이트 툴’)</h4>
+<h4><b>탭3: 가판대 카탈로그: 그 그리드 유저들의 가판대 모음 -&gt; 다음 페이지 넘길때 메가폰 소모. 헤이데이 가판대.  </b></h4>
+<ol><li>이 N페이지를 넘겨 보는 동안 공짜.
+</li><li>목록을 다시 받아오는 데 까지 일정 시간이 필요함. 예) 10분.
+<ol><li>그걸 땡기는데 메가폰이 드는 것입니다.
+</li></ol>
+</li><li>다시 받아올 때 기존 목록을 포함하지 않으면 더 좋을거같긴 한데 어려우면 또 완전 랜덤이어도 괜찮을듯.
+</li><li>카탈로그 가이드
+<ol><li>완전 랜덤으로 가져와서 N 페이지를 구성한다.
+</li></ol>
+</li><li><b>한페이지에 8~10개의 상품이 보여진다.</b>
+</li></ol>
+<h4><span class="c" style="color:#8b5cf6"><b>작업 우선순위</b></span></h4>
+<ol><li><span class="c" style="color:#8b5cf6">포토맵                : 0 순위</span>
+</li><li><span class="c" style="color:#8b5cf6">정보                : A</span>
+</li><li><span class="c" style="color:#8b5cf6">카탈로그        : B</span>
+</li><li><span class="c" style="color:#8b5cf6">지역짱                : C</span>
+</li></ol>
+<h3 id="p4">포토맵</h3>
+<h4>월드맵을 드래그할 때(지역을 이동할 때),  UI표시를 제거하고 주변의 빌딩사진들을 유저에게 보여주어 주변의 분위기를 보여준다.</h4>
+<ol><li>월드맵 줌 1단계에서만 보여준다.
+</li><li>중심 빌딩의 사진은 보여주지않는다.
+</li><li><u>사진보여져야하는 위치가 측면에 고정으로 있을 필요는 없다.</u>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/04.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ol>
+</div></section>
+<section class="sec"><h2 id="p5">개요</h2><div class="sec-body">
+<p class="lead1">처음 방문하는 지역정보를 유저에게 제공한다.</p>
+<h3 id="p6">월드맵을 탐색하는 유저에게 정보를 제공</h3>
+<p class="lead1">(가안)</p>
+<h4><figure class="media"><img src="traveler_guide_img/05.webp" alt="" loading="lazy" data-zoom></figure></h4>
+</div></section>
+<section class="sec"><h2 id="p7">유저가 볼 수 있는 정보</h2><div class="sec-body">
+<h3 id="p8"><b>포토맵 (월드맵을 드래그했을 때 표시)</b></h3>
+<h4>월드맵을 드래그하면서 주변의 빌딩사진을 볼 수 있다.</h4>
+<h4>오프라인 분위기 파악.</h4>
+<h3 id="p9"><b>주소를 터치했을 때 제공하는 정보</b></h3>
+<h4>그리드 고유 컬러</h4>
+<h4>그리드 정보</h4>
+<ol><li>그리드 순위
+</li><li>인구 수 : 그리드내에 본진이 있는 유저 수
+</li><li>그리드 인구 중: <s>현재 접속 인원수 (해당 그리드에 본진을 둔 유저중 현재 접속인원 수)</s>
+<ol><li>페이지를 오픈했을 때, 그리드에서 접속한 인원 수.
+</li></ol>
+</li><li><s>지난 세금</s> → 현재세금 ( 세금취합주기에 따름)
+</li><li>랜드마크 빌딩
+</li><li>에픽빌딩 수량
+</li><li>유니크 빌딩 수량
+<ol><li>레어빌딩수량은 보여주지않음
+</li></ol>
+</li></ol>
+<h4>오늘의 인물</h4>
+<ol><li><b>본진을 둔 유저들 중 랜덤 1명</b>
+</li><li><b>추후 아바타를 가진 유저가 우선순위</b>
+</li><li><span class="dim"><s>그리드내 본진이 있는 유저들의 순위 10~1위 랜덤 1명 (유저인터렉션 있음)</s></span>
+</li></ol>
+<h4>클랜정보</h4>
+<ol><li>그리드를 기점으로 하고있는 클랜들 중 Top 3
+</li></ol>
+<h4>그리드에서 판매되고 있는 상품 (가판대)</h4>
+<ol><li>상품 구매가능
+</li></ol>
+<h3 id="p10"><b>추후 추가될 수 있는 정보</b></h3>
+<h4>그리드 태그 정보</h4>
+<ol><li>그리드에만 붙을 수 있는 특성 또는 특징
+</li></ol>
+<h4>그리드 특정건물의 지역짱</h4>
+<ol><li>그리드 내 특정건물을 보유하고 있는 유저순위 (전투력?)
+</li></ol>
+</div></section>
+<section class="sec"><h2 id="p11">[정보표시 방법]</h2><div class="sec-body">
+<h3 id="p12">1️⃣빌딩사진 보여주기 ( 포토맵 )</h3>
+<h4><b>사진크기</b></h4>
+<ul><li><span class="c" style="color:#8b5cf6"><b>대 : 256x256</b></span>
+</li><li><span class="c" style="color:#8b5cf6"><b>중 : 128x128</b></span>
+</li><li><span class="c" style="color:#8b5cf6"><b>소 : 64x64</b></span>
+</li></ul>
+<h4>사진 탐색 범위</h4>
+<ul><li>유저가 보고있는 화면 중심으로 일정범위의 빌딩의 사진 데이터를 가져온다.
+</li><li>각 범위의 빌딩 사진중 랜덤으로 사진을 보여준다.
+</li><li>화면을 드래그하여 주변 분위기 확인
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/06.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li>말풍선 처럼 빌딩위에 사진이 붙어 있다.
+</li><li>드래그가 진행 중 일 때,  다른 UI를 표시하지않고 사진만 보여준다.
+<ul><li>드래그가 종료되면 빌딩사진을 보여주지않는다.
+</li></ul>
+</li><li>드래그 중에는 사진 이외의 UI는 표시하지않는다.
+<ul><li>드래그 중 표시되는 UI
+<ul><li>행정구역 주소
+</li><li>토스트 메시지
+</li><li>레이드 메시지 (드래그 종료. ‘HUD표시’상태로 돌아감.)
+</li><li>월드맵에 표시되는 UI (사진이 최상위 )
+<ul><li>빌딩특성 (특성보다 사진이 상위 뎁스: 사진이 특성을 가림)
+</li><li>공격중 / 빼앗김
+</li><li>생산품
+</li><li>시설
+</li><li>수성보상
+</li><li>도장찍기
+</li></ul>
+</li></ul>
+</li><li>드래그 중 표시하지않는 UI (HUD)
+<ul><li>프로필 사진 및 닉네임, 종합전투력
+</li><li>탑바 및 메뉴버튼
+</li><li>에픽미션 버튼
+</li><li>미션버튼
+</li><li>채팅버튼과 내용
+</li><li>레이더버튼
+</li><li>유저리스트 버튼
+</li><li>월드맵 줌인 초기화버튼
+</li><li>월드맵 보기 옵션버튼
+</li></ul>
+</li></ul>
+</li></ul>
+</li><li>사진을 보여줄 빌딩 선정방법
+<ul><li>제시방법
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/07.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/08.webp" alt="" loading="lazy" data-zoom></figure><figure class="media"><img src="traveler_guide_img/09.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li><b>그리드를 9개의 구역</b>으로 나눈다.
+</li><li>화각에 포함되는 <b>구역에서 N개 (4종 예상)의 빌딩을 랜덤</b>으로 선택하여 사진을 보여준다.
+</li><li>구역에 랜드마크가 속해있다면, <b>랜드마크 사진은 우선순위 0</b> 순위.
+</li><li>줌 1단계에서 <b>최대 9개의 구역</b>이 화각에 들어올 수 있음.
+</li></ul>
+</li></ul>
+</li><li>사진로딩
+<ul><li><span class="c" style="color:#e5484d"><b>Best 상황</b></span> : 드래그 상황에 맞게 실시간으로 보여진다면 Best
+</li><li><span class="c" style="color:#e5484d"><b>실시간으로 사진 갱신이 어렵다면</b></span><b> (개발팀 문의) </b>: 사진 로딩에 시간이 오래 걸린다면 드래그 중에 인디케이터로 이미지 로딩중을 보여주고 드래그가 종료(터치는 유지)되면 이동이 없을 시점을 기준으로 이미지를 불러온다.
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/10.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li><li>이미지는 가운데 정렬
+</li><li><s>사진이 표시되어야 할 위치가 고정은 아니지만 </s><u><s><b>고정이 필요하다면</b></s></u><s> 아래와 같이 정의함.</s>
+<ul><li><span class="c" style="color:#8b5cf6"><u><s><b>고정은 안하는 방향으로 진행. </b></s></u></span>
+</li><li><s>화면에서 보는 위치에서 이미지가 표시되는 빌딩 방향으로 이미지위치가 자율적으로 변동 </s>
+<ul><li><s>월드맵에서 화면 밖의 내 위치표시가 표시되는 것 처럼.</s><figure class="media"><img src="traveler_guide_img/11.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+</li></ul>
+</li></ul>
+<h4>내가 위치한 그리드가 아닐 경우 그리드 주소에 반짝 반짝 깜빡깜빡</h4>
+<ul><li>연출예시
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/12.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li>이런 효과가 아니더라도 눈에 띄는 효과 필요.
+</li></ul>
+</li><li>표시가 되어야하는 부분
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/13.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li><li>연출이 필요한 시점
+<ul><li>현재 내 위치와 다른 그리드일 경우 연출을 넣어준다.
+</li><li>고정된 데이터가 아닌 변동된 데이터이므로<b> ‘첫 방문 그리드’만 표시하지 않고</b>, <b>나와 다른 그리드일 경우</b> 유저에게 <b>터치를 어필</b>한다.
+</li></ul>
+</li></ul>
+<p class="lead1">2️⃣탭 1 표시 유저 및 클랜 정보 (디렉션의 탭 1내용을 탭 2개로 분리)</p>
+<h4>표시정보</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/14.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+<h4>지역정보</h4>
+<ul><li>그리드 순위
+<ul><li>‘그리드에 본진이 있는 유저의 전투력 총합’으로 순위결정
+</li><li>집계되지 않는 랭킹의 경우( 바다, 섬 등)  순위를 표시하지않음
+<ul><li>‘<b>N 위 ‘</b>로 표시 (최하위)
+</li></ul>
+</li><li><span class="dim"><s>100위 밖의 그리드 순위는 집계 하지 않는다.</s></span>
+<ul><li><span class="dim"><s>각 그리드 순위 집계 필요. (서버팀 작업)</s></span>
+</li><li><span class="dim"><s><b>100위 까지만 표시. </b></s></span><span class="dim"><s>그 밖의 순위는</s></span><span class="dim"><s><b> ‘100위권 밖’</b></s></span><span class="dim"><s> 이라고만 표시.</s></span>
+</li><li><span class="dim"><s>집계시간: 유저랭킹과 동일 (1시간 서버시간 기준 - 정각-)</s></span>
+</li></ul>
+</li></ul>
+</li><li>인구정보
+<ul><li>인구 : 그리드에 본진을 둔 유저의 수
+</li><li>온라인 :
+<ul><li><b>&#x27;여기 몇명이나 온 상태인가&#x27; </b><b>를 보여주는게 의도.</b>
+</li><li><b>현재 방문중인 유저 수</b>
+</li><li><span class="dim"><s>해당그리드에 본진을 둔 유저들 중 온라인 상태인 유저 수</s></span>
+</li></ul>
+</li></ul>
+</li><li>오늘의 인물
+<ul><li><b>본진을 둔 유저들 중 랜덤 1명 </b><s><b>(온라인 상태)</b></s>
+<ul><li><b>캐릭터: 전투력이 제일 높은 캐릭터.</b>
+</li></ul>
+</li><li><b>추후 아바타를 가진 유저가 우선순위</b>
+</li><li><b>오늘의 유저가 표시되지않는 경우 있음</b>
+<ul><li><b>캐릭터가 표시되는 영역에 ‘유저없음’ 표시 필요.</b>
+</li></ul>
+</li><li><span class="c" style="color:#8b5cf6">해당 유저가 본진이 없을 경우, 유저를 터치하여 가판대로 이동하려 할 때 토스트 메시지를 보여준다.</span>
+<ul><li><span class="c" style="color:#8b5cf6">토스트메시지 노출 필요: </span>
+<ul><li><span class="c" style="color:#8b5cf6"><b>uid: homeless_user</b></span>
+</li><li><span class="c" style="color:#8b5cf6">본진 정보가 없는 유저입니다.</span>
+</li></ul>
+</li></ul>
+</li><li><span class="dim"><s>표시되는 유저: 그리드내 본진이 있는 유저들의 순위 10~1위 랜덤 1명 (유저인터렉션 있음)</s></span>
+</li><li><span class="dim"><s>해당유저가 최근 사용한 캐릭터 (</s></span><span class="dim"><s>아바타 입은 주캐)</s></span>
+</li><li><span class="dim"><s>나중에 아바타 팔면 그걸 계속 노출시켜줘야 함. (지금 캐릭터UI에서 표시되는 사이즈와 비슷하게)</s></span>
+</li></ul>
+</li><li>그리드내 있는 클랜정보
+<ul><li>그리드내 클랜 순위 Top 3
+</li><li>집계시간: 유저랭킹과 동일
+<ul><li><mark><span class="dim"><s> (1시간 서버시간 기준 - 정각-)</s></span></mark>
+</li><li>그리드별 집계시간 다를 수 있음. (서버 과부하 고려)
+</li></ul>
+</li></ul>
+</li><li>세금이 걷힌 총액
+<ul><li>‘조’ 단위가 넘을 수 있음
+</li><li><s>지난 세금</s> --&gt;현재세금 ( 세금취합주기에 따름)
+<ul><li><span class="dim"><s>실시간 아님. 정보를 보관하고있지않다면, 이번 누적세금</s></span>
+</li><li><u>세금이 표시되는 다른 컨텐츠</u>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/15.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li><li><span class="c" style="color:#8b5cf6"><b> 세금 데이터가 없을 때</b></span>
+<ul><li><span class="c" style="color:#8b5cf6"><b>0원 으로 표시.</b></span>
+</li></ul>
+</li></ul>
+</li></ul>
+<h3 id="p13">2️⃣탭 2 빌딩 정보</h3>
+<h4>표시될 정보</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/16.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li>해당 그리드의 랜드마크
+<ul><li>빌딩사진
+</li><li>빌딩이름
+</li></ul>
+</li><li>해당 그리드의 빌딩 종류
+<ul><li>해당 그리드를 주소로 가지는  에픽 빌딩 수량
+</li><li>해당 그리드를 주소로 가지는  유니크 빌딩 수량
+</li></ul>
+</li><li>빌딩특성 정보 (추후예정 - b3 이후)
+<ul><li>해당그리드에서 부여되는 고유 특성 안내
+</li></ul>
+</li><li>랜드마크가 없거나 확인 할 수 없는 지역은 표시 안함.
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/17.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+<h3 id="p14">3️⃣탭 3 카탈로그</h3>
+<h4>카탈로그</h4>
+<ul><li><span class="c" style="color:#8b5cf6"><b>카탈로그 갱신은 ‘메가폰’</b></span>
+</li><li><span class="c" style="color:#8b5cf6"><b>10분마다 100개 리스트를 취합하고, 100개중 랜덤 표시. (시간은 스크립트로 컨트롤)</b></span>
+</li><li><span class="c" style="color:#8b5cf6"><b>갱신때 품절인 사항은 포함하지않음.</b></span>
+</li><li>가안 (상품수량 8개 x 3페이지)
+</li></ul>
+<h4><b>카탈로그 갱신 재화</b></h4>
+<ul><li>메가폰
+<ul><li>ri_consumable /  megaphone
+</li><li>common_constant.json / grid_catalog_reset_cost
+</li><li>비용: 메가폰 10개
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/18.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+<h4>카탈로그 순서</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/19.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+<h4>재화가 부족할 때 카탈로그 갱신을 눌렀을 경우</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/20.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li>재화 소모팝업에서 확인버튼 비활성화
+</li><li>시안에서 메가폰비용이 표시되던 사항은 제거.
+</li></ul>
+<h4>플로우</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/21.webp" alt="" loading="lazy" data-zoom></figure><figure class="media"><img src="traveler_guide_img/22.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li><span class="c" style="color:#8b5cf6"><b>▣필요한 토스트 메시지</b></span>
+<ul><li><span class="c" style="color:#8b5cf6">uid : first_catalog_page        </span>
+<ul><li>text : 첫 페이지 입니다.
+<ul><li>토스트 메시지가 보여지는 경우
+<ul><li>카탈로그 첫 페이지에서 [이전] 페이지를 누르려 할 때
+</li></ul>
+</li></ul>
+</li></ul>
+</li><li><span class="c" style="color:#8b5cf6">uid : last_catalog_page</span>
+<ul><li>text : 마지막 페이지 입니다.
+<ul><li>토스트 메시지가 보여지는 경우
+<ul><li>카탈로그 마지막 페이지에서 [다음] 페이지를 누르려 할 때
+</li></ul>
+</li></ul>
+</li></ul>
+</li><li><span class="c" style="color:#8b5cf6">uid : reset_catalog</span>
+<ul><li>text : 카탈로그가 갱신되었습니다.
+<ul><li>토스트 메시지가 보여지는 경우
+<ul><li>카탈로그 갱신에 성공했을 때
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/23.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+</li></ul>
+</li><li><span class="c" style="color:#8b5cf6">uid : reset_catalog_free</span>
+<ul><li>text : 카탈로그가 오래되어 무료 갱신되었습니다.
+<ul><li>토스트 메시지가 보여지는 경우
+<ul><li>오픈한지 10분이 지난 카탈로그를 갱신 성공했을 때
+</li></ul>
+</li></ul>
+</li></ul>
+</li></ul>
+</li><li>카탈로그 선정방식 (<u>서버팀에게 문의 필요</u>)
+<ul><li>카탈로그가 생성될 시점을 기준으로 해당 그리드의 가판대 물품리스트를 취합하여, 랜덤으로 보여준다.
+</li><li>카탈로그는 N시간 유지된다. (매번 볼때마다 바뀌지는 않는다.)
+<ul><li><s>24시간으로 설정 예정.</s>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/24.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+</li><li>카탈로그는 <u><b>메가폰</b></u>를 사용하여  갱신가능.
+</li><li>페이지는 최대 N페이지 (1~2페이지)
+<ul><li>페이지가 많을 경우, 첫페이지로 이동과 같은 기능을 지원해야하므로 페이지는 최대 2~3페이지.
+</li><li>판매하는 유저가 없을 경우 카탈로그에 보여지는 것이 없을 수 있음.
+</li><li>판매유저가 없을 경우, 카탈로그 독점 현상(유저 한명의 판매품목만 보여지는 현상)이 발생 할 수 있음.
+</li></ul>
+</li><li>각 유저마다 보여지는 카탈로그는 다르다.
+</li><li>상품 표시 정보
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/25.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+<ul><li>판매상품에 표시될 사항
+<ul><li>프로필사진
+<ul><li>판매자의 프로필 사진
+</li></ul>
+</li><li>닉네임
+<ul><li>판매자 닉네임
+</li></ul>
+</li><li>아이템이름
+<ul><li>아이템 이름은 롤링 기능을 지원필요.
+</li></ul>
+</li><li>아이템 이미지
+</li><li>해당아이템이 장비일 경우 착용레벨
+</li><li>판매수량
+<ul><li>천단위까지 입력가능 (다이아 판매가능하다는 기준)
+</li><li>다이아는 판매수량을 제한해야함.
+</li></ul>
+</li><li>판매가격
+<ul><li>1억단위까지 표기 가능 ( 현재 억단위까지 가격입력가능)
+</li></ul>
+</li></ul>
+</li><li><s>판매 완료된 상품에 표기될 사항</s>
+<ul><li><s>품절표시</s>
+</li><li><s>구매한 유저의 프로필 사진</s>
+</li><li><s>구매한 유저의 닉네임 (선택사항)</s>
+</li></ul>
+</li><li>상태에 따른 표기 방법
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/26.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+</li><li>레퍼런스 (‘<u><i>헤이데이</i></u>’)
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/27.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/28.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/29.webp" alt="" loading="lazy" data-zoom></figure>
+</li><li class="nomark"><figure class="media"><img src="traveler_guide_img/30.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li></ul>
+<h3 id="p15">🟨탭 4 지역짱 (짱건물 이후 진행)</h3>
+<h4>전국 짱건물을 선정하고 난 이후 진행</h4>
+</div></section>
+<section class="sec"><h2 id="p16">[그리드 고유 컬러]</h2><div class="sec-body">
+<h3 id="p17">컨셉</h3>
+<h4><figure class="media"><img src="traveler_guide_img/31.webp" alt="" loading="lazy" data-zoom></figure></h4>
+<h4>각 그리드마다 고유의 색 조합을 부여하여, ‘색’으로 그리드를 구분할 수 있도록 한다.</h4>
+<h3 id="p18">그리드 컬러 규칙</h3>
+<h4>그리드 고유 컬러 설정 규칙</h4>
+<ul><li>색 선별 방법 (HSV 방식 <a href="https://imcyber.tistory.com/49" target="_blank" rel="noopener">HSV-&gt;RGB코드변경 참조사이트</a> ) <a href="http://www.hipenpal.com/tool/html-color-charts-rgb-color-table-in-korean.php" target="_blank" rel="noopener">색상변경사이트</a>
+<ul><li>HSV-&gt;RGB <a href="https://docs.google.com/spreadsheets/d/1ljcCMxhWmLsbKFOlTFQWAnJ5CoYQs09qupbcEaayIo8/edit#gid=0" target="_blank" rel="noopener">변경계산기</a>
+</li><li><u>소연님 </u><a href="https://docs.google.com/document/d/1VGZPXLVDvlFeXtdVGXrJH-N0UUxIISz1FHrVvT2Krb4/edit?ts=605d7622#" target="_blank" rel="noopener">시안</a>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/32.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li><li>사용할 H/ S/ B 구간<div class="cont"><table class="tbl"><tr><td><b>S / B 구간</b></td><td><b>H 색상구간  10~360구간</b></td></tr><tr><td><figure class="media"><img src="traveler_guide_img/33.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="traveler_guide_img/34.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table></div>
+</li></ul>
+</li><li>2색 조합
+<ul><li>10만개 컬러 설정 시 317개 컬러 필요
+</li><li>H 17단계 (+20씩 증가 0~350, 0==360 )
+</li><li>S 7단계 <s>(+25씩 증가 75~100)</s> --&gt; (+10씩증가 40~100&amp;)
+</li><li>B 6단계 (+10씩 증가 50~100)
+</li><li>350개 (350 * 349 = <b>122,150개 조합 사용가능</b>)
+</li></ul>
+</li></ul>
+</div></section>
+<section class="sec"><h2 id="p19">배치방법</h2><div class="sec-body">
+<h3 id="p20">색상 규칙</h3>
+<h4><figure class="media"><img src="traveler_guide_img/35.webp" alt="" loading="lazy" data-zoom></figure></h4>
+<h3 id="p21">스크립트 <b>(gps_grid_color.json)</b></h3>
+<h4>hue  값</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/36.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+<figure class="media"><img src="traveler_guide_img/37.webp" alt="" loading="lazy" data-zoom></figure>
+<h3 id="p22">1색 설정 (우측)</h3>
+<h4>그리드를 가로로 연속해서 전국 그리드에 색을 배치한다.</h4>
+<ul><li><s>그리드를 줄바꿈해서 색을 배치할 때, 이전 행(가로)의 시작보다 한 단계 다음 단계부터 배치를 시작한다.</s>
+</li><li>그리드 줄바꿈시 배치 시작의 번호 순서
+<ul><li>0, 5, 10   (1행부터 3행)
+</li><li>1, 6, 11   (4행부터 6행)
+</li><li>2, 7, 12   (7행부터 9행)
+</li><li>3, 8, 13   (10행부터 12행)
+</li><li>4, 9, 14   (12행부터 15행)
+</li><li>5, 10,15  (16행부터 18행)
+</li><li>6, 11,16  (19행부터 21행)
+</li></ul>
+</li></ul>
+<h4>saturation(채도) 값 랜덤</h4>
+<h4>brightness(명도)값 랜덤</h4>
+<h4>예시)</h4>
+<ul><li class="nomark"><figure class="media"><img src="traveler_guide_img/38.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+<h3 id="p23">제 2색 배치 (탭 버튼색)</h3>
+<h4>스크립트 값 중 랜덤.</h4>
+<ul><li><b>H</b>ue 값 -&gt;  <b>S</b>aturation 값 -&gt;  <b>B</b>rightness 값 -&gt; 최종색
+</li></ul>
+<h4>동일한 경우 발생할 수 있음.</h4>
+</div></section>
+<section class="sec"><h2 id="p24">UI 가안</h2><div class="sec-body">
+<h4><figure class="media"><img src="traveler_guide_img/39.webp" alt="" loading="lazy" data-zoom></figure><figure class="media"><img src="traveler_guide_img/40.webp" alt="" loading="lazy" data-zoom></figure></h4>
+<h4><figure class="media"><img src="traveler_guide_img/41.webp" alt="" loading="lazy" data-zoom></figure></h4>
+<h4><figure class="media"><img src="traveler_guide_img/42.webp" alt="" loading="lazy" data-zoom></figure></h4>
+</div></section>
+<section class="sec"><h2 id="p25">개발</h2><div class="sec-body">
+<h4>예비작업</h4>
+<ol><li>leader_character_uuid  추가됨
+<ol><li>모든 패킷의 bypass_param -&gt; log_info -&gt; leader_character_uuid 를 세팅해 주세요
+</li></ol>
+</li><li>pbuf_character_buy_character 패킷에 total_character_count 추가됨
+<ol><li> 보유하고 있는 캐릭터의 개수를 세팅해주세요
+</li></ol>
+</li></ol>
+<h4>포토맵</h4>
+<ol><li>기존의 정보로 작업가능
+</li><li>빌딩 이미지가 없을 경우 gps_building_tag의 alternate_photo를 대신 사용한다.
+</li><li>나중에 이미지를 3가지로 분리할 경우 수정작업이 필요합니다.
+</li></ol>
+<h4>유저 및 클랜 정보</h4>
+<ol><li>pbuf_community_grid_news
+</li></ol>
+<h4>빌딩정보</h4>
+<ol><li>기존의 정보로 표시가능
+</li></ol>
+<h4>카탈로그</h4>
+<ol><li>pbuf_community_grid_catalog
+<ol><li>최초 무료 카테고리를 요청한다
+</li></ol>
+</li><li>pbuf_community_grid_catalog_reset
+<ol><li>메가폰을 소모해서 카테고리를 갱신한다
+</li></ol>
+</li></ol>
+</div></section>
+</main>
+</div>
+<div id="lb"><img alt=""></div>
+<script>
+(function(){
+  var root=document.documentElement;
+  var saved=null;try{saved=localStorage.getItem('t')}catch(e){}
+  if(saved)root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=function(){
+    var cur=root.getAttribute('data-theme');
+    if(!cur)cur=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+    var nx=cur==='dark'?'light':'dark';
+    root.setAttribute('data-theme',nx);
+    try{localStorage.setItem('t',nx)}catch(e){}
+  };
+  document.getElementById('printBtn').onclick=function(){window.print()};
+  document.querySelectorAll('.sec-body table').forEach(function(t){
+    var w=document.createElement('div');w.className='tablewrap';
+    t.parentNode.insertBefore(w,t);w.appendChild(t);
+  });
+  var links=[].slice.call(document.querySelectorAll('#toc a'));
+  var heads=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1))});
+  function upd(){
+    var best=0;
+    heads.forEach(function(h,i){if(h&&h.getBoundingClientRect().top<=90)best=i});
+    links.forEach(function(a,i){a.classList.toggle('on',i===best)});
+    var on=links[best]; if(on){var t=document.getElementById('toc'); var r=on.getBoundingClientRect(), tr=t.getBoundingClientRect(); if(r.top<tr.top||r.bottom>tr.bottom) on.scrollIntoView({block:'nearest'});}
+  }
+  window.addEventListener('scroll',upd,{passive:true});upd();
+  var lb=document.getElementById('lb'),lbi=lb.querySelector('img');
+  document.querySelectorAll('img[data-zoom]').forEach(function(i){i.addEventListener('click',function(){lbi.src=i.src;lb.classList.add('on')})});
+  lb.onclick=function(){lb.classList.remove('on')};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('on')});
+})();
+</script>
+</body>
+</html>
