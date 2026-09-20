@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>GPS 인터렉션 오브젝트 — 주머니 · 물음표 · 유물상자 기획</title>
+<style>
+
+:root{
+  --bg:#ffffff; --fg:#1a1c1f; --muted:#6b7280; --line:#e3e5e8;
+  --accent:#0c66e4; --card:#ffffff; --code:#f4f5f7; --thead:#f4f5f7;
+  --shadow:0 1px 2px rgba(9,30,66,.08),0 0 1px rgba(9,30,66,.12);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#161719;--fg:#e6e7ea;--muted:#9aa0a6;--line:#2f3236;
+        --accent:#7cb2ff;--card:#1c1e21;--code:#232629;--thead:#232629;
+        --shadow:0 1px 2px rgba(0,0,0,.4);}
+}
+html[data-theme=light]{color-scheme:light}
+html[data-theme=dark]{color-scheme:dark;
+  --bg:#161719;--fg:#e6e7ea;--muted:#9aa0a6;--line:#2f3236;
+  --accent:#7cb2ff;--card:#1c1e21;--code:#232629;--thead:#232629;
+  --shadow:0 1px 2px rgba(0,0,0,.4);}
+html[data-theme=light]{
+  --bg:#ffffff;--fg:#1a1c1f;--muted:#6b7280;--line:#e3e5e8;
+  --accent:#0c66e4;--card:#ffffff;--code:#f4f5f7;--thead:#f4f5f7;
+  --shadow:0 1px 2px rgba(9,30,66,.08),0 0 1px rgba(9,30,66,.12);}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo",
+    "Malgun Gothic","Noto Sans KR",Segoe UI,Roboto,sans-serif;
+  font-size:15px;line-height:1.65;}
+.wrap{display:flex;align-items:flex-start;gap:32px;max-width:1200px;margin:0 auto;padding:0 24px 96px}
+
+/* 목차 */
+#toc{position:sticky;top:24px;flex:0 0 232px;max-height:calc(100vh - 48px);
+  overflow:auto;padding:20px 0;font-size:13px;}
+#toc h3{margin:0 0 10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#toc a{display:block;padding:5px 10px;color:var(--muted);text-decoration:none;
+  border-left:2px solid var(--line);line-height:1.4}
+#toc a:hover{color:var(--fg);background:var(--code)}
+#toc a.on{color:var(--accent);border-left-color:var(--accent);font-weight:600}
+
+main{flex:1 1 auto;min-width:0;padding-top:8px}
+header.page{padding:44px 0 20px;border-bottom:1px solid var(--line);margin-bottom:28px}
+header.page h1{margin:0 0 8px;font-size:30px;line-height:1.25;letter-spacing:-.01em}
+header.page .meta{color:var(--muted);font-size:12.5px}
+header.page .meta a{color:var(--muted)}
+
+.sec{margin:0 0 34px;border:1px solid var(--line);border-radius:10px;
+  background:var(--card);box-shadow:var(--shadow);overflow:hidden}
+.sec>h2{margin:0;padding:13px 18px;font-size:16px;font-weight:700;
+  background:linear-gradient(0deg,var(--code),var(--code));
+  border-bottom:1px solid var(--line);scroll-margin-top:16px}
+.sec-body{padding:18px}
+.sec-body>:first-child{margin-top:0}
+.sec-body>:last-child{margin-bottom:0}
+
+h3{font-size:15px;margin:24px 0 8px}
+.sec.flat>.sec-body{padding:22px 24px}
+p.ph{font-size:16px;margin:30px 0 10px;padding-bottom:6px;
+  border-bottom:1px solid var(--line);scroll-margin-top:16px}
+p.ph:first-child{margin-top:0}
+p.ph strong{font-weight:700}
+p{margin:0 0 10px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+ol{list-style:decimal}
+ol ol{list-style:lower-alpha}
+ol ol ol{list-style:lower-roman}
+ol ol ol ol{list-style:decimal}
+ul{list-style:disc}
+ul ul{list-style:circle}
+ul ul ul{list-style:square}
+li{margin:3px 0}
+li>p{margin:0}
+strong{font-weight:700}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.9em;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+hr{border:0;border-top:1px solid var(--line);margin:20px 0}
+
+/* 표 */
+.tablewrap{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--card)}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;
+  word-break:break-word}
+th{background:var(--thead);font-weight:600;white-space:nowrap}
+tbody tr:hover td:not([data-hasbg]){background:color-mix(in srgb,var(--code) 55%,transparent)}
+td[data-hasbg],th[data-hasbg]{color:#172b4d}
+html[data-theme=dark] td[data-hasbg],html[data-theme=dark] th[data-hasbg]{color:#172b4d}
+table p{margin:0}
+table ol,table ul{margin:0;padding-left:18px}
+
+/* 이미지 */
+figure.media{margin:14px 0}
+figure.media img,figure.media video{max-width:100%;height:auto;border-radius:8px;
+  border:1px solid var(--line);display:block}
+figure.media video{width:auto;max-height:78vh;background:#000}
+figure.media img{max-height:78vh;width:auto}
+figure.media figcaption{margin-top:6px;font-size:12px;color:var(--muted)}
+.imgph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  min-height:96px;padding:16px;border:1px dashed var(--line);border-radius:8px;
+  background:repeating-linear-gradient(45deg,transparent,transparent 9px,
+    color-mix(in srgb,var(--line) 35%,transparent) 9px,
+    color-mix(in srgb,var(--line) 35%,transparent) 10px);}
+.imgph-ico{width:26px;height:20px;border:2px solid var(--muted);border-radius:3px;opacity:.5;
+  position:relative;overflow:hidden;flex:none}
+.imgph-ico::before{content:"";position:absolute;left:3px;bottom:2px;width:9px;height:9px;
+  background:var(--muted);transform:rotate(45deg)}
+.imgph-ico::after{content:"";position:absolute;right:4px;top:3px;width:5px;height:5px;
+  border-radius:50%;background:var(--muted)}
+.imgph-name{font-size:13px;font-weight:600;color:var(--fg);word-break:break-all;text-align:center}
+.imgph-note{font-size:11.5px;color:var(--muted);text-align:center}
+
+/* 툴바 */
+.tools{position:fixed;top:14px;right:16px;display:flex;gap:6px;z-index:20}
+.tools button{font:inherit;font-size:12px;padding:6px 11px;border-radius:7px;cursor:pointer;
+  border:1px solid var(--line);background:var(--card);color:var(--fg);box-shadow:var(--shadow)}
+.tools button:hover{border-color:var(--accent);color:var(--accent)}
+
+@media (max-width:900px){
+  #toc{display:none}
+  .wrap{padding:0 14px 64px}
+  header.page h1{font-size:24px}
+  .tools{top:8px;right:8px}
+}
+@media print{
+  #toc,.tools{display:none}
+  .wrap{display:block;max-width:none;padding:0}
+  .sec{break-inside:avoid;box-shadow:none}
+  body{font-size:11pt}
+}
+
+/* PDF 정리본 추가 */
+header.page .meta.src{margin-top:3px;font-size:11.5px;opacity:.8}
+p.docmeta{color:var(--muted);font-size:12.5px;margin:0 0 6px}
+figure.media .ann{margin-top:8px;border-left:3px solid var(--accent);
+  background:var(--code);border-radius:0 8px 8px 0;padding:9px 12px}
+figure.media .ann-h{font-size:11px;letter-spacing:.06em;color:var(--muted);
+  margin-bottom:5px;text-transform:uppercase}
+figure.media .ann ul{margin:0;padding-left:18px}
+figure.media .ann li{font-size:13.5px;margin:2px 0}
+figure.media details.uit{margin-top:6px}
+figure.media details.uit summary{cursor:pointer;font-size:12px;color:var(--muted)}
+figure.media details.uit p{margin:5px 0 0;font-size:12.5px;color:var(--muted);
+  line-height:1.6;word-break:break-word}
+.sec-body>ul{margin-top:0}
+
+li.small{font-size:12.5px;color:var(--muted)}
+
+.ind1{margin-left:22px} .ind2{margin-left:44px} .ind3{margin-left:66px} .ind4{margin-left:88px} .ind5{margin-left:110px}
+#toc a.l2{padding-left:22px;font-size:12.5px}
+h3{scroll-margin-top:16px;padding-left:9px;border-left:3px solid var(--accent)}
+table.grid{width:auto;max-width:100%} table.grid td{text-align:center;vertical-align:top} table.grid figure.media{margin:4px 0} table.grid img{max-height:none}
+ul ul{list-style:circle}
+figure.media img{cursor:zoom-in;background:#fff}
+mark{background:#fff3a3;color:#1a1c1f;padding:0 2px;border-radius:2px}
+.c{font-weight:600}
+li.nomark{list-style:none;margin-left:-24px}
+ol ol{list-style:decimal} ol ol ol{list-style:lower-alpha}
+.notice{margin:0 0 22px;padding:9px 13px;border-left:3px solid var(--accent);background:var(--code);border-radius:0 8px 8px 0;font-size:12.5px;color:var(--muted)}
+#lb{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;z-index:50;align-items:center;justify-content:center;cursor:zoom-out}
+#lb.on{display:flex} #lb img{max-width:96vw;max-height:96vh}
+</style>
+</head>
+<body>
+<div class="tools">
+  <button id="themeBtn" type="button">테마 전환</button>
+  <button id="printBtn" type="button">인쇄 / PDF</button>
+</div>
+<div class="wrap">
+<nav id="toc"><h3>목차</h3><a class="l1" href="#s1" title="1️⃣개요">1️⃣개요</a><a class="l1" href="#s2" title="2️⃣앞으로 개발사항">2️⃣앞으로 개발사항</a><a class="l2" href="#s3" title="사라지는 것">사라지는 것</a><a class="l2" href="#s4" title="스캔기능의 변경 사항.">스캔기능의 변경 사항.</a><a class="l2" href="#s5" title="물음표">물음표</a><a class="l2" href="#s6" title="유물상자">유물상자</a><a class="l2" href="#s7" title="암상인">암상인</a><a class="l2" href="#s8" title="주머니 시야범위">주머니 시야범위</a><a class="l2" href="#s9" title="물음표 오브젝트 생성로직 변경">물음표 오브젝트 생성로직 변경</a><a class="l2" href="#s10" title="물음표 생성 알려주기">물음표 생성 알려주기</a><a class="l1" href="#s11" title="3️⃣주머니">3️⃣주머니</a><a class="l2" href="#s12" title="카메라 축적">카메라 축적</a><a class="l2" href="#s13" title="애니메이션과 햅틱반응">애니메이션과 햅틱반응</a><a class="l2" href="#s14" title="주머니 생성">주머니 생성</a><a class="l2" href="#s15" title="배치 방법">배치 방법</a><a class="l1" href="#s16" title="4️⃣유저 시야 처리">4️⃣유저 시야 처리</a><a class="l1" href="#s17" title="5️⃣필요 리소스">5️⃣필요 리소스</a><a class="l2" href="#s18" title="아이콘">아이콘</a><a class="l2" href="#s19" title="팝업">팝업</a><a class="l2" href="#s20" title="결과화면">결과화면</a><a class="l2" href="#s21" title="유물상자 레어리티 구분">유물상자 레어리티 구분</a><a class="l2" href="#s22" title="주머니 메쉬 (주머니 메쉬 제작 필요.)">주머니 메쉬 (주머니 메쉬 제작 필요.)</a><a class="l2" href="#s23" title="스캐너 팝업 변경">스캐너 팝업 변경</a><a class="l1" href="#s24" title="6️⃣물음표 생성 알려주기">6️⃣물음표 생성 알려주기</a><a class="l2" href="#s25" title="생성 알림.">생성 알림.</a><a class="l2" href="#s26" title="알림 터치시 위치에 화살표.">알림 터치시 위치에 화살표.</a><a class="l2" href="#s27" title="알람 (22-01-07 추가)">알람 (22-01-07 추가)</a><a class="l1" href="#s28" title="7️⃣플로우들">7️⃣플로우들</a><a class="l2" href="#s29" title="주머니&amp;유물상자 오픈 UI 플로우">주머니&amp;유물상자 오픈 UI 플로우</a><a class="l2" href="#s30" title="주머니 오픈 시스템 플로우 (레어리티를 미리 알 수 없기 때문에 서버에서 레어리티를 받아와야하지않을까요?.)">주머니 오픈 시스템 플로우</a><a class="l1" href="#s31" title="8️⃣스크립트">8️⃣스크립트</a><a class="l2" href="#s32" title="제거되는 것들">제거되는 것들</a><a class="l2" href="#s33" title="초기화시간">초기화시간</a><a class="l2" href="#s34" title="비용처리">비용처리</a><a class="l2" href="#s35" title="주머니 컨텐츠 언락">주머니 컨텐츠 언락</a><a class="l2" href="#s36" title="팝업 오픈 후 위치가 변경되었을 때, (N m 보정)">팝업 오픈 후 위치가 변경되었을 때, (N m 보정)</a><a class="l2" href="#s37" title="토스트메시지">토스트메시지</a><a class="l2" href="#s38" title="생성알람">생성알람</a><a class="l2" href="#s39" title="주머니 생성 스크립트">주머니 생성 스크립트</a><a class="l2" href="#s40" title="주머니 보상 레어리티">주머니 보상 레어리티</a><a class="l2" href="#s41" title="시야범위">시야범위</a><a class="l2" href="#s42" title="하루 획득 가능한 주머니량 &amp; 유물상자 량">하루 획득 가능한 주머니량 &amp; 유물상자 량</a><a class="l2" href="#s43" title="물음표 거리에 비례하여 레어리티 증가">물음표 거리에 비례하여 레어리티 증가</a><a class="l2" href="#s44" title="주머니 생성 / 획득 관련 클라 - 서버 구현 방법 정리">주머니 생성 / 획득 관련 클라 - 서버 구현 방법 정리</a><a class="l2" href="#s45" title="관련 치트 공유">관련 치트 공유</a></nav>
+<main>
+<header class="page">
+  <h1>GPS 인터렉션 오브젝트</h1>
+  <div class="meta">빌딩앤파이터 · GPS 콘텐츠 기획 — 주머니(걷기 유도 보상) · 물음표/유물상자 생성 로직 · 시야 처리 · 리소스 · 플로우 · 스크립트</div>
+  <div class="meta src">원본: Google Docs 기획문서 정리본 · 작성자 김현 · 이미지 51장</div>
+</header>
+<p class="notice">이 문서는 포트폴리오 공개를 위해 재구성·수정된 것으로, 실제 서비스에 적용된 원본과 다를 수 있습니다.</p>
+<section class="sec"><h2 id="s1">1️⃣개요</h2><div class="sec-body">
+<p class="ind1"><b>히스토리</b></p>
+<p class="ind3">유물상자(물음표)가 생성되어진 곳으로 유저가 이동했었다.</p>
+<p class="ind3">스캐너를 돌리고 상자가 생성된 위치로 이동을 했다.</p>
+<p class="ind3">보상위치가 정해져있어서 수동적으로 걸어다녀야만 했다.</p>
+<p class="ind1"><b>진행방향</b></p>
+<p class="ind3">유저가 이동하는 경로에<b> 보상(주머니)</b>가 보여질 것이다.</p>
+<p class="ind3">능동적으로 걸어다닐 때, 보상이 보인다.</p>
+<p class="ind3">물음표 생성은 그대로 유지한다. (유저의 이동 목적이 되어야하니까)</p>
+<p class="ind4">다만 유저의 위치에서 좀 더 멀리서 생성되어도 된다.</p>
+<p class="ind1"><b>주머니란?</b></p>
+<p class="ind3"><b>                스캐너 또는 유저가 해당지역에 머물렀을 때 생성되는 보상이 아니라</b></p>
+<p class="ind3"><b>                맵에 퍼져있는 보상을 유저가 찾아다니면서 먹을 수 있는 개념.</b></p>
+<p class="ind3"><b>                B5에서는 물음표(암상인 또는 유물상자)가 유저에게 이동할 방향성을 제시할 것이며,</b></p>
+<p class="ind3"><b>                이동 중에 발견되는 주머니를 추가적으로 얻는 방식으로 진행.</b></p>
+<p class="ind3"><b>                유저 주변에 있을 때만 보여지고 거리가 멀 경우 보이지 않는다.</b></p>
+<p class="ind3"><b>                주머니를 오픈</b></p>
+<p class="ind3"><span class="c" style="color:#e5484d"><b>메가폰을 지불해서 오픈</b></span><b>한다.</b></p>
+<p class="ind3"><b>                무료오픈을 하기 위해서는 주머니 위치까지 이동해야한다. (보정 80m - 유물상자와 동일)</b></p>
+</div></section>
+<section class="sec"><h2 id="s2">2️⃣앞으로 개발사항</h2><div class="sec-body">
+<h3 id="s3">사라지는 것</h3>
+<ul><li>GPS 상자
+<ul><li>체인 박스
+</li><li>최초 방문 그리드 스캔보상 삭제
+</li></ul>
+</li></ul>
+<h3 id="s4">스캔기능의 변경 사항.</h3>
+<p class="ind3"><b>이전</b></p>
+<ul><li>유물상자 생성
+</li><li>GPS상자 생성
+</li><li>레이드 정보 알림으로 받음
+</li><li>물음표 오픈
+</li><li>빌딩특성 오픈
+</li></ul>
+<p class="ind3"><b>앞으로</b></p>
+<ul><li><s>유물상자 생성</s>
+</li><li><s>GPS상자 생성</s>
+</li><li>레이드 정보 알림으로 받음
+</li><li>물음표 오픈
+</li><li>빌딩특성 오픈
+</li></ul>
+<h3 id="s5">물음표</h3>
+<ul><li><b>생성조건 </b>
+<ul><li>본진근처 생성
+</li><li>유저가 그리드에서 일정시간 머물렀을 때 생성
+</li></ul>
+</li><li><b>생성수량</b>
+<ul><li>변경사항 없음
+</li></ul>
+</li><li><b>life time </b>
+<ul><li>변경사항 없음
+</li></ul>
+</li><li><b>생성되었을 때 알려주기 </b>
+<ul><li>시스템 메시지→알람메시지
+</li><li>알람을 눌렀을 때 포커싱
+</li><li>오전 6시가 되었을 때 ‘알람’ 삭제 필요
+</li></ul>
+</li><li><b>신규기능</b>
+<ul><li>생성기준에서 거리가 멀수록 높은 레어리티의 유물상자가 생성된다.
+</li></ul>
+</li></ul>
+<h3 id="s6">유물상자</h3>
+<ul><li><b>상자의 레어리티 표시 (</b><b><a href="#kix.ac38hdf1zz3o" target="_blank" rel="noopener">링크</a></b><b>)</b>
+</li></ul>
+<p class="ind4">현재는 레어리티가 별도로 표시되지않고 있으나, 이펙트를 통해 상자 바닥 또는 주변 이펙트를 통해 레어리티를 구분할 수 있다.</p>
+<ul><li>라이프타임 (변경사항없음)
+<ul><li>물음표는 1일
+</li><li>유물상자일때는 3일
+</li><li>암상인 1일
+</li></ul>
+</li><li><span class="c" style="color:#e5484d"><b>오픈</b></span>
+<ul><li><span class="c" style="color:#e5484d"><b>메가폰을 사용하여 오픈한다.</b></span>
+</li></ul>
+</li></ul>
+<h3 id="s7">암상인</h3>
+<ul><li><b>변경사항 없음</b>
+</li></ul>
+<h3 id="s8">주머니 시야범위</h3>
+<table class="grid c1"><tr><td><figure class="media"><img src="gps_interaction_img/00.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<p class="ind2"><b>        주머니 시야을 나타내는 원을 하나 더 그려준다</b></p>
+<p class="ind3">80+a(total 200m으로 예상)</p>
+<h3 id="s9">물음표 오브젝트 생성로직 변경</h3>
+<p class="ind2">유저 현재 위치에서 생성 (그리드 Stay - 한 그리드에 N분간 머물렀을 때(기존과 동일))</p>
+<p class="ind4">생성될 때 <b>유저와 거리를 판단</b><b>하여 레어리티가 높은 물음표가 생성되도록 하는 스크립트 필요</b>.</p>
+<p class="ind3"><b>본진근처(최초접속 시)에서 생성되는 것은 유지</b></p>
+<p class="ind4">생성될 때 <b>본진과 거리를 판단</b><b>하여 레어리티가 높은 물음표가 생성되도록 하는 스크립트 필요</b>.</p>
+<h3 id="s10">물음표 생성 알려주기</h3>
+<p class="ind2">그리드에 오래 머물렀을 때 &amp; 본진 근처에서 물음표를 생성하게 되는데 이때 시스템메시지를 표시해준다.</p>
+<p class="ind2">[알람]</p>
+<ol><li>본진 근처 정체 불명 컨텐츠 생성
+</li><li>주변에 정체 불명 컨텐츠 생성
+</li></ol>
+</div></section>
+<section class="sec"><h2 id="s11">3️⃣주머니</h2><div class="sec-body">
+<p class="ind1">주머니 = 걸어다니게 유도하는 상자</p>
+<p class="ind1">주머니는 외형적으로 레어리티구분 없음.</p>
+<p class="ind0">다만 나오는 자원의 차이는 크다. <span class="c" style="color:#e5484d"><u>(메쉬구분은 없지만 자체적 레어리티는 있어야함. 생성확률 조절 스크립트 필요)</u></span></p>
+<h3 id="s12">카메라 축적</h3>
+<p class="ind2"><b>                유물상자와 동일</b></p>
+<h3 id="s13">애니메이션과 햅틱반응</h3>
+<ol><li>시야 밖 움직임없음
+</li><li>시야 내 회전
+</li><li>거리 (보정값(80)을 제외하고 0m일 때, 햅틱과 꿈틀 애니매이션
+</li></ol>
+<h3 id="s14">주머니 생성</h3>
+<p class="ind2"><b>                예시 이미지)    헥스 1개당 주머니 1개가 생성되는 방법 (헥스로 풀어본다.)                </b></p>
+<table class="grid c1"><tr><td><figure class="media"><img src="gps_interaction_img/01.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<h3 id="s15">배치 방법</h3>
+<p class="ind1"><b>헥스</b></p>
+<p class="ind3">월드맵은 헥스로 이루어져 있으며, 헥스의 묶음으로 월드맵을 표시할 수 있다.</p>
+<p class="ind2">헥스를 구분할 때 기본 19개의 헥스가 한 묶음으로 한다.</p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/02.webp" alt="" loading="lazy" data-zoom></figure>                <figure class="media"><img src="gps_interaction_img/03.webp" alt="" loading="lazy" data-zoom></figure></p>
+<p class="ind1"><b>유저의 시야 범위</b></p>
+<p class="ind2"><b>반지름 대략 200m (80m + 120m)</b></p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/04.webp" alt="" loading="lazy" data-zoom></figure></p>
+<p class="ind2"><b>        주머니가 배치될 헥스</b></p>
+<p class="ind2"><b>의도</b></p>
+<p class="ind3">중심헥스의 GPS를 이용하여 19헥스에서 주머니가 생성될 위치를 책정한다.</p>
+<p class="ind3">매일 같은 위치에 생성되면 유저에게 쉽게 패턴이 파악되기 때문에 일정한 규칙을 가지고 랜덤하게 뿌려진다는 느낌을 유저에게 주도록한다.</p>
+<p class="ind2"><b>규칙</b></p>
+<ol><li>하루 획득제한량이 있다.
+</li><li>한번 생성된 주머니는 다음날(오전6시)에 초기화 된다.
+</li><li>유저마다 주머니가 생성되는 헥스의 위치는 동기화  (<s>다를 수 있다.)</s>
+</li><li>19개의 헥스에 최소 N개의 주머니는 확정적으로 생성된다. 100% (어디에 생성될지는 랜덤)
+<ol><li><mark><s>단, 유저가 최초 접속한 헥스의 인근 헥스에 주머니를 1개 생성한다.</s></mark>
+</li></ol>
+</li><li><b>헥스 19개에 최대 생성가능 주머니 수는 </b><span class="c" style="color:#e5484d"><b>최대 19개</b></span><b> (생성위치 랜덤)</b>
+<ol><li>1개씩 증가하는 확률은 스크립트로 제어 (3개, 4개, 5개...19개)
+</li><li>ex) 가중치로 데이터 작성. (2개까지는 확정적으로 된다는 예제)
+<ol><li>1개         100%
+</li><li>2개         100%
+</li><li>3개         50%
+</li><li>4개         10%
+</li><li>5개         1%
+</li></ol>
+</li></ol>
+</li><li><b>주머니가 생성되는 위치는 건물과 위치가 겹치면 안되기 때문에</b>
+<ol><li>각 헥스의 하단부분에서 생성되도록 한다
+</li><li class="nomark"><figure class="media"><img src="gps_interaction_img/05.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ol>
+</li></ol>
+</div></section>
+<section class="sec"><h2 id="s16">4️⃣유저 시야 처리</h2><div class="sec-body">
+<p class="ind2"><b>시야 밖의 주머니는 어떻게 알 수 있는가?        </b></p>
+<table class="grid c2"><tr><td><figure class="media"><img src="gps_interaction_img/06.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/07.webp" alt="" loading="lazy" data-zoom></figure></td></tr><tr><td>‘시야범위보다 + 헥스 1칸’<b>  거리에 있는 주머니는 알파 50%의 오브젝트로 보여진다.</b><br><b>시야범위에 가까울수록 짙어지도록 하는 것이 의도.</b><br><span class="c" style="color:#e5484d"><b>반투명한 주머니가 보여지는 거리는 ‘시야거리’ + 50m (스크립트)</b></span><br><b>예시)</b><br><b>시야거리경계에서 100m 멀 경우 = 투명도 80%<br>시야거리경계에서 10m 멀 경우 = 투명도8%</b></td><td>시야범위 내에 들어왔을 때 투명도는 없다.</td></tr></table>
+<p class="ind2"><b>빠른 속도로 이동할 때 주머니를 계속 보여줄 것 인가?    </b></p>
+<p class="ind2"><b>No</b></p>
+<p class="ind2">시속 12Km미만인 경우만 주머니를 볼 수 있다.</p>
+<p class="ind3"><b>        체크방법: </b></p>
+<p class="ind4">시속 12km일 경우 초속 3.333m</p>
+<p class="ind4">캐릭터 이동체크할 때 이동거리가 초당 3.333m이상일 경우 (체크간격 10초 -- 변동될 수 있습니다.)</p>
+<p class="ind4"><span class="c" style="color:#e5484d"><u><b>캐릭터 시야 붉은 원</b></u></span><u><s> + 토스트 메시지</s></u> <u><s><b>(</b></s></u><s><b>이동속도가 너무 빠릅니다.)</b></s></p>
+<p class="ind4"><s><b>체크간격마다 토스트 메시지 노출</b></s></p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/08.webp" alt="" loading="lazy" data-zoom></figure></p>
+</div></section>
+<section class="sec"><h2 id="s17">5️⃣필요 리소스</h2><div class="sec-body">
+<h3 id="s18">아이콘</h3>
+<p class="ind2"><b>                주머니 아이콘</b></p>
+<p class="ind2"><b>                신규 주머니 모양의 아이콘 추가.</b></p>
+<h3 id="s19">팝업</h3>
+<p class="ind2"><b>                거리와 무관하게 오픈할 때 메가폰이 사용됨.</b></p>
+<p class="ind2"><b>                남은거리 {0} ← 는 값을 받아서 출력할 수 있도록.</b></p>
+<p class="ind3"><s><b>이유: </b></s></p>
+<p class="ind3"><s><b>상자&amp;주머니를 오픈하는 플로우를 줄이려는 의도.</b></s></p>
+<p class="ind3"><s><b>필요한 재화를 표시해주지 않을 경우 오픈을 시도할 때 마다 팝업을 보여주어야 함.</b></s></p>
+<table class="grid c2"><tr><td><b>주머니</b></td><td><figure class="media"><img src="gps_interaction_img/09.webp" alt="" loading="lazy" data-zoom></figure></td></tr><tr><td><b>주머니(메가폰 부족)</b></td><td><figure class="media"><img src="gps_interaction_img/10.webp" alt="" loading="lazy" data-zoom></figure></td></tr><tr><td><b>유물상자</b></td><td><figure class="media"><img src="gps_interaction_img/11.webp" alt="" loading="lazy" data-zoom></figure></td></tr><tr><td><b>유물상자(메가폰 부족)</b></td><td><figure class="media"><img src="gps_interaction_img/12.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<h3 id="s20">결과화면</h3>
+<p class="ind1"><b>        획득제한 양을 결과화면에서 표시한다.        </b></p>
+<p class="ind1"><span class="c" style="color:#e5484d"><u><b>획득량 최대량 -10 부터 표시</b></u></span></p>
+<table class="grid c1"><tr><td><figure class="media"><img src="gps_interaction_img/13.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<h3 id="s21">유물상자 레어리티 구분</h3>
+<p class="ind2">빛 기둥 기존과 동일, 오픈연출 기존과 동일.</p>
+<p class="ind1"><b>레어리티 이펙트 예시                </b></p>
+<p class="ind1"><span class="c" style="color:#e5484d"><b>        이펙트가 아닌 박스 색상 다양화로 진행.</b></span></p>
+<table class="grid c5"><tr><td><b>노말</b></td><td><b>레어</b></td><td><b>유니크</b></td><td><b>전설</b></td><td><b>에픽</b></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/14.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/15.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/16.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/17.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/18.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<h3 id="s22">주머니 메쉬 (주머니 메쉬 제작 필요.)</h3>
+<ol><li><span class="c" style="color:#e5484d"><u><b>오픈 가능거리 일 때 애니매이션 필요</b></u></span>
+<ol><li>예시
+</li></ol>
+</li></ol>
+<table class="grid c2"><tr><td>idle</td><td>오픈가능 범위 내 있을 때</td></tr><tr><td><figure class="media"><img src="gps_interaction_img/19.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/20.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<ol><li><span class="c" style="color:#e5484d"><u><b>주머니가 오픈되는 애니메이션</b></u></span>
+<ol><li><span class="c" style="color:#e5484d"><u><b>어떻게 열려야되는지.. 문의.</b></u></span>
+</li><li><b> 메쉬는 레어리티에 따라 구분이 필요없으나 </b><span class="c" style="color:#e5484d"><u><b>주머니 오픈연출 레어리티에 따라 구분 필요</b></u></span>
+</li><li><span class="c" style="color:#e5484d"><u><b>박스와 동일하게 소박/ 중박/ 대박</b></u></span>
+</li></ol>
+</li></ol>
+<table class="grid c3"><tr><td><u><b>소박 (노말)</b></u></td><td><u><b>중박 (레어, 유니크)</b></u></td><td><u><b>대박 (레전드.에픽)</b></u></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/21.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/22.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/23.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<ol><li><span class="c" style="color:#e5484d"><u><b>메쉬</b></u></span>
+</li></ol>
+<p class="ind2"><b>                  메쉬예시                 </b></p>
+<table class="grid c4"><tr><td><b>복주머니 컨셉 1</b></td><td><b>복주머니 컨셉 2</b></td><td><b>복주머니 컨셉 3</b></td><td><b>그냥 랜덤박스?</b></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/24.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/25.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/26.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/27.webp" alt="" loading="lazy" data-zoom></figure><figure class="media"><img src="gps_interaction_img/28.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<p class="ind2"><b>        주머니는 빛기둥 제거           </b><figure class="media"><img src="gps_interaction_img/29.webp" alt="" loading="lazy" data-zoom></figure></p>
+<p class="ind2"><b>AD님이 바닥 이펙트는 만들어주기로 하셨슴.</b></p>
+<h3 id="s23">스캐너 팝업 변경</h3>
+<p class="ind2">최초스캔 보상 삭제</p>
+<p class="ind3">최초방문한 그리드에서 <span class="c" style="color:#e5484d">첫 스캔</span>을 할 때<span class="c" style="color:#e5484d"> 높은 레어리티</span>의 유물상자를 생성해주던 것.</p>
+<p class="ind1">팝업 내용 수정</p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/30.webp" alt="" loading="lazy" data-zoom></figure></p>
+</div></section>
+<section class="sec"><h2 id="s24">6️⃣물음표 생성 알려주기</h2><div class="sec-body">
+<h3 id="s25">생성 알림.</h3>
+<p class="ind1"><b>        2종 (본진근처, 주변근처)</b></p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/31.webp" alt="" loading="lazy" data-zoom></figure></p>
+<h3 id="s26">알림 터치시 위치에 화살표.</h3>
+<table class="grid c2"><tr><td><b>오늘의 빌딩을 화살표로 알려주는 규칙과 동일</b></td><td><b>생성된 물음표에 화살표. (다수일 경우 </b><span class="c" style="color:#e5484d"><b>가장 가까운 1개</b></span><b>)</b></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/32.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/33.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<h3 id="s27">알람 (22-01-07 추가)</h3>
+<ol><li><s>알람 삭제버튼 추가</s>
+</li><li>hp, stay 각각 1개만 알람에 등록
+<ol><li>생성된 물음표 수량과 무관.
+</li><li>새롭게 생성되는 물음표 오브젝트가 있다면 ‘알람’ 다시 등록. (레드닷 등록됨)
+</li></ol>
+</li><li>표시되는 화살표
+<ol><li>가장 가까운 물음표
+</li></ol>
+</li><li>재접속시 처리 방향
+</li><li><b>기존 생성된 물음표 오브젝트가 있더라도 재접속한 위치에 물음표 오브젝트가 없을 경우 알람등록되지 않음.</b>
+</li><li><s><b>삭제된 물음표 알람도 재접속하면 재 등록됨.</b></s>
+</li></ol>
+</div></section>
+<section class="sec"><h2 id="s28">7️⃣플로우들</h2><div class="sec-body">
+<h3 id="s29">주머니&amp;유물상자 오픈 UI 플로우</h3>
+<p class="ind2">획득량 Over사항을 토스트 메시지로 표시</p>
+<table class="grid c1"><tr><td><b>uid: gps_reward_limit</b></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/34.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<p class="ind2"><b>                기본 플로우</b></p>
+<table class="grid c4"><tr><td><b>step 1 : </b><br><b>주머니 위치로 이동하여 주머니를 터치하면 팝업</b></td><td><b>step 2 : </b><br><b>비용 팝업 오픈</b><br><b>개봉하기 터치 시 상자(주머니) 오픈 연출</b></td><td><b>step 3: </b><br><b>오픈연출 → 주머니 보상결과 팝업 오픈</b><br><span class="c" style="color:#e5484d"><u><b>획득량 최대량 -10 부터 표시</b></u></span></td><td><b>step 4: </b><br><b>오픈한 주머니 삭제</b></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/35.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/36.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/37.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/38.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<p class="ind1"><b>메가폰이 부족할 경우 플로우</b></p>
+<table class="grid c3"><tr><td><b>step 1 : </b><br><b>메가 폰 부족시 </b><br><b>버튼은 활성화 상태, </b><br><b>비용 텍스트 붉은색</b></td><td><b>step 2: </b><br><b>다이아로 메가폰 구매 팝업 오픈 </b><span class="c" style="color:#e5484d"><b>(버튼 텍스트 ‘개봉하기’) </b></span><br><b>(다이아가 부족할 경우→  필요재화량 붉은색 텍스트)</b><br>재화부족 시 개봉하기버튼 눌렀을 때 토스트메시지 → 팝업 안닫음<br><b>uid: have_not_enough_something</b></td><td><b>step 3: </b><br><b>개봉하기 터치 시 상자(주머니) 오픈 연출</b><b> → 보상결과.</b><br><span class="c" style="color:#e5484d"><u><b>오늘 개봉량은</b></u></span><br><span class="c" style="color:#e5484d"><u><b>획득량 최대량 -10 부터 표시</b></u></span></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/39.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/40.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/41.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+<h3 id="s30">주머니 오픈 시스템 플로우 (레어리티를 미리 알 수 없기 때문에 서버에서 레어리티를 받아와야하지않을까요?.)</h3>
+<table class="grid c2"><tr><td><b>주머니 </b></td><td><b>유물상자</b></td></tr><tr><td><figure class="media"><img src="gps_interaction_img/42.webp" alt="" loading="lazy" data-zoom></figure></td><td><figure class="media"><img src="gps_interaction_img/43.webp" alt="" loading="lazy" data-zoom></figure></td></tr></table>
+</div></section>
+<section class="sec"><h2 id="s31">8️⃣스크립트</h2><div class="sec-body">
+<h3 id="s32">제거되는 것들</h3>
+<p class="ind2">gps_contents_spawn_count.json</p>
+<p class="ind2">스캔했을 때 확정적으로 유물상자와 GPS상자를 얼마나 생성할지 컨트롤 하던 스크립트</p>
+<p class="ind2"><b>spawn_group_type</b></p>
+<p class="ind3">question_mark_obj_spawn_type_scan                 ← 스캔으로 생성되는 것들</p>
+<p class="ind3">question_mark_obj_type_chain_box                         ← 유물상자를 오픈했을 때, 유물상자에서 유물상자를 생성하던 타입</p>
+<p class="ind2"><b>spawn_obj_type</b></p>
+<p class="ind3">question_mark_obj_type_scan_treasure_box         ← 스캔으로 생성되던 유물상자</p>
+<p class="ind2">question_mark_obj_type_gps_box                        ← 스캔으로 생성되던 GPS 상자</p>
+<h3 id="s33">초기화시간</h3>
+<p class="ind2"><b>                common_constants.json</b></p>
+<p class="ind2">daily_reset_time 참조</p>
+<h3 id="s34">비용처리</h3>
+<p class="ind1"><b>        gps_distance_cost.json</b></p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/44.webp" alt="" loading="lazy" data-zoom></figure></p>
+<h3 id="s35">주머니 컨텐츠 언락</h3>
+<p class="ind1"><b>        unlock_gps_pocket  ← </b>스캐너 오픈과 동일하게</p>
+<h3 id="s36">팝업 오픈 후 위치가 변경되었을 때, (N m 보정)</h3>
+<p class="ind2">주머니/유물상자 메가폰사용하여 오픈할 때, 이동 중이라면</p>
+<p class="ind2">팝업이 오픈된 위치와 몇미터가 멀어지면 인정하지 않을 것인가? (개봉시 토스트메시지 표시, 팝업닫음)</p>
+<p class="ind2"><b>                gps_constants.json</b></p>
+<p class="ind3">reward_popup_correction_value (int) 100m</p>
+<h3 id="s37">토스트메시지</h3>
+<p class="ind1"><b>common_toast_message.json</b></p>
+<p class="ind2"><b>        일일제한 토스트메시지</b></p>
+<p class="ind3">uid: gps_reward_limit</p>
+<p class="ind3">text: 오늘 제한 양을 모두 획득 하였습니다.</p>
+<p class="ind3"><b>                시야 밖의 주머니 터치시 </b></p>
+<p class="ind4">uid: gps_untouchable_reward</p>
+<p class="ind4">text: 범위 밖 입니다. (남은거리 {0})</p>
+<p class="ind4">남은거리 : 현재거리 - 시야범위</p>
+<p class="ind3"><b>                팝업 오픈 후 위치가 일정거리 이상 멀어졌을 때, (gps_constants.json</b>   reward_popup_correction_value (int) 100m 값 참조)</p>
+<p class="ind3">보상을 받으려고 할 경우(개봉버튼 터치 시) 팝업을 닫고 토스트 메시지를 표시</p>
+<p class="ind4">uid: gps_untouchable_reward</p>
+<p class="ind4">text<b>: </b>범위 밖 입니다. (남은거리 {0})</p>
+<p class="ind4">남은거리 : 현재거리 - 시야범위</p>
+<p class="ind3">이동 중 주머니 터치 시(&amp;중복터치 팝업에서 주머니 아이콘 터치 시) (22-01-13 추가)</p>
+<p class="ind4"><b>uid: gps_reward_speed_limit</b></p>
+<p class="ind4">text: 이동 중에는 주머니를 오픈 할 수 없습니다.</p>
+<p class="ind3">개봉할 거리가 변경되어 가격도 함께 변경되었을 때 (22-01-13 추가)</p>
+<p class="ind4"><b>uid: </b>gps_reward_open_price_change</p>
+<p class="ind4">text: 거리가 변경되어 가격이 변경되었습니다.</p>
+<h3 id="s38">생성알람</h3>
+<p class="ind1">content_alarm.json</p>
+<p class="ind2">uid: <b>alarmtype_question_obj_spawn_user</b></p>
+<p class="ind3">content type: <b>content_type_gps_reward</b></p>
+<p class="ind3">text: <b>주변에 미확인 콘텐츠가 생성되었습니다.</b></p>
+<p class="ind3">uid: <b>alarmtype_question_obj_spawn_hq</b></p>
+<p class="ind3">content type: <b>content_type_gps_reward</b></p>
+<p class="ind3">text: <b>본진 주변에 미확인 콘텐츠가 생성되었습니다.</b></p>
+<h3 id="s39">주머니 생성 스크립트</h3>
+<p class="ind2">gps_pocket_spawn_prob.json</p>
+<p class="ind3"><b>                        수량컨트롤 &amp; 레어리티 (   ㅠㅅㅠ)        </b></p>
+<p class="ind2"><figure class="media"><img src="gps_interaction_img/45.webp" alt="" loading="lazy" data-zoom></figure><span class="c" style="color:#e5484d"><b>        생성량과 레어리티 분리</b></span></p>
+<p class="ind2"><b>                생성조건에 걸리지 않을 경우 더 이상 생성되지않도록 한다.</b></p>
+<p class="ind3"><b>                        ex) 위 표에서 볼 때,</b></p>
+<p class="ind4"><b>                                9개까지는 100% 확률로 생성해주고, 10개째 50%확률에 걸리지않을 경우 해당 헥스 그룹에서는 9개만 생성된다. (더이상 생성하지않는다.)</b></p>
+<h3 id="s40">주머니 보상 레어리티</h3>
+<p class="ind1"><b>gps_pocket_reward_weight.json</b></p>
+<p class="ind2"><b>        주머니를 오픈했을 때, 해당 확률에 따라서 보상이 정해짐.</b></p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/46.webp" alt="" loading="lazy" data-zoom></figure></p>
+<h3 id="s41">시야범위</h3>
+<p class="ind2">gps_constant.json</p>
+<p class="ind2">pocket_vision_range(INT)  200(미터)</p>
+<p class="ind2">pocket_preview_range(INT)  250(미터)</p>
+<h3 id="s42">하루 획득 가능한 주머니량 &amp; 유물상자 량</h3>
+<p class="ind1">gps_constant.json</p>
+<p class="ind2">daily_pocket_limit_all</p>
+<p class="ind2">daily_treasurebox_limit_all</p>
+<h3 id="s43">물음표 거리에 비례하여 레어리티 증가</h3>
+<p class="ind1">최초접속 시 본진근처</p>
+<p class="ind2">현재</p>
+<p class="ind3">spawn_obj_type의 question_mark_obj_type_hq_treasure_box 를 거리 min~max(생성비율 확률가짐) 내에 일정 수량을 prob(가중치)로 구분하여 뿌림.</p>
+<p class="ind2">수정될 사항</p>
+<p class="ind3">배치될 거리를 구분</p>
+<p class="ind4">low(에픽,레전드 생성확률 엄청 낮음), mid(에픽,레전드 생성확률 낮음), high(에픽,레전드 생성확률 있음)</p>
+<p class="ind4">Low 거리 몇? 일 때 생성확률</p>
+<p class="ind4">Mid 거리 몇?  일 때 생성확률</p>
+<p class="ind4">High 거리 몇?  일 때 생성확률</p>
+<p class="ind1">Stay(그리드에 머물렀을 때) 물음표 생성</p>
+<p class="ind2">현재</p>
+<p class="ind3">spawn_obj_type의 question_mark_obj_type_hq_treasure_box 를 거리 min~max(생성비율 확률가짐) 내에 일정 수량을 prob(가중치)로 구분하여 뿌림.</p>
+<p class="ind2">수정될 사항</p>
+<p class="ind3">배치될 거리를 구분</p>
+<p class="ind4">low(에픽,레전드 생성확률 엄청 낮음), mid(에픽,레전드 생성확률 낮음), high(에픽,레전드 생성확률 있음)</p>
+<p class="ind4">Low 거리 몇? 일 때 생성확률</p>
+<p class="ind4">Mid 거리 몇?  일 때 생성확률</p>
+<p class="ind4">High 거리 몇?  일 때 생성확률</p>
+<p class="ind2"><b>현재 스크립트        </b></p>
+<p class="ind2"><b>gps_contents_spawn_prob.json</b></p>
+<p class="ind4"><b>        삭제컬럼</b></p>
+<p class="ind5"><b>                스캔확률</b></p>
+<p class="ind5">first_scan_prob</p>
+<p class="ind5">normal_scan_prob</p>
+<p class="ind5"><b>                체인박스 생성 타입</b></p>
+<p class="ind5">chain_spawn_group_type</p>
+<p class="ind5"><b>                채인박스 생성확률</b></p>
+<p class="ind5">chain_spawn_group_prob</p>
+<p class="ind4"><b>        삭제 값</b></p>
+<p class="ind5">스캔해서 생성되는 오브젝트</p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/47.webp" alt="" loading="lazy" data-zoom></figure></p>
+<p class="ind0"><b>수정방향</b></p>
+<p class="ind1"><span class="c" style="color:#e5484d"><b>min 거리(</b></span><b>500, 공성가능거리</b><span class="c" style="color:#e5484d"><b>) ~ max거리(</b></span><b>obj_spawn_range_max</b><span class="c" style="color:#e5484d"><b>) 를 5등분 하여 레어리티 확률을 따로 가져간다.</b></span></p>
+<p class="ind1"><b>        distance_step_weight[0]~[4]추가</b></p>
+<p class="ind0"><figure class="media"><img src="gps_interaction_img/48.webp" alt="" loading="lazy" data-zoom></figure></p>
+<h3 id="s44">주머니 생성 / 획득 관련 클라 - 서버 구현 방법 정리</h3>
+<ul><li>한 헥스에는 주머니가 하나만 스폰되고, 그 주머니를 해당 헥스에는 주머니가 스폰 안되므로, 서버/클라 통신때 주머니가 스폰된 헥스 인덱스를 주머니의 식별자로 사용한다.
+<ul><li>ex : col=19381, row=2711의 주머니를 까도록 서버로 요청함
+</li></ul>
+</li><li>로그인때 서버에게 오늘 깐 주머니들의 목록을 받는다
+</li><li>클라이언트
+<ul><li>클라이언트에서는 유저가 현재 위치한 헥스가 바뀔 때마다, 매니저에게 내 주변에 위치한 박스들의 헥스/좌표 목록을 요청한다. (시드를 통해 계산하므로 서버 요청 필요x)
+<ul><li>헥스가 바뀔때 요청하는 것은 너무 자주 요청해서 생기는 부하를 방지하기 위함.
+</li><li>UIU_GpsDataManager::GetNearGpsPocketSpawnInfos함수로 구현 완료
+</li><li>이때 실제로 보여야 되는 범위보다 넉넉한 범위의 박스를 리턴함
+</li><li>목록을 받아서 오늘 이미 깐 헥스는 제외시킨 뒤, 현재 스폰된 주머니 오브젝트를 갱신한다. (새 목록에 없는 것 파괴 / 오브젝트가 없는 것 스폰)
+</li></ul>
+</li><li>주머니와 나와의 거리에 따라 visibility / 투명도 / 애니메이션을 갱신한다 (이 처리는 위치한 헥스가 바뀌지 않아도 내 위치 좌표 변경때마다 해야 함)
+</li><li>주머니 깔 때 서버로 요청한다.
+<ul><li>까는 연출에 레어리티 결정이 필요하므로, 일단 요청해서 응답을 받은 뒤에 주머니가 까지는 연출을 한다.
+</li></ul>
+</li></ul>
+</li><li>서버
+<ul><li>특정 헥스의 주머니를 까는 패킷이 오면 csc함수를 이용해 다음과 같은 검증을 한다
+<ul><li>이 유저가 오늘 이미 깐게 아닌지
+</li><li>해당 헥스에 실제로 주머니가 스폰되었는지 (CheckGpsPocketValiditySample 코드 참조)
+</li><li>유저와 실제 주머니 스폰 좌표가 너무 멀지 않은지 (CheckGpsPocketValiditySample 코드 참조)
+</li></ul>
+</li><li>서버에서 레어리티를 결정해서 클라이언트로 응답으로 내려준다.
+</li></ul>
+</li><li>남은 과제
+<ul><li>일일 초기화때 바뀌는 랜덤시드를 어떻게 계산할 것인가?
+<ul><li>그냥 날짜+시간으로 잘 계산해야 되나?
+</li><li>로그인때 서버에서 시드를 받고 일일초기화 태스크에서 일일초기화때 다시 그날의 시드를 받는 처리를 해야 되나?
+</li></ul>
+</li></ul>
+</li></ul>
+<h3 id="s45">관련 치트 공유</h3>
+<ul><li>Ctrl+H모드에서 헥스 클릭 : 해당 헥스가 속한 구역에 주머니 스폰 여부 표시 (스폰 : 초록색, 미스폰 : 빨간색)
+<ul><li class="nomark"><figure class="media"><img src="gps_interaction_img/49.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</li><li>ShowNearGpsPocket 미터범위
+<ul><li>내 위치로부터 범위 내에 있는 주머니 스폰 좌표를 표시
+</li><li>정확히 미터에서 잘리는건 아니고 그 이상으로 표시됩니다
+</li><li>너무 큰 값을 입력하면 엄청나게 느릴 수 있으니 주의 (5000 이하 추천)
+</li></ul>
+</li><li class="nomark"><figure class="media"><img src="gps_interaction_img/50.webp" alt="" loading="lazy" data-zoom></figure>
+</li></ul>
+</div></section>
+</main>
+</div>
+<div id="lb"><img alt=""></div>
+<script>
+(function(){
+  var root=document.documentElement;
+  var saved=null;try{saved=localStorage.getItem('t')}catch(e){}
+  if(saved)root.setAttribute('data-theme',saved);
+  document.getElementById('themeBtn').onclick=function(){
+    var cur=root.getAttribute('data-theme');
+    if(!cur)cur=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+    var nx=cur==='dark'?'light':'dark';
+    root.setAttribute('data-theme',nx);
+    try{localStorage.setItem('t',nx)}catch(e){}
+  };
+  document.getElementById('printBtn').onclick=function(){window.print()};
+  var links=[].slice.call(document.querySelectorAll('#toc a'));
+  var heads=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1))});
+  function upd(){
+    var best=0;
+    heads.forEach(function(h,i){if(h&&h.getBoundingClientRect().top<=90)best=i});
+    links.forEach(function(a,i){a.classList.toggle('on',i===best)});
+  }
+  window.addEventListener('scroll',upd,{passive:true});upd();
+  var lb=document.getElementById('lb'),lbi=lb.querySelector('img');
+  document.querySelectorAll('img[data-zoom]').forEach(function(i){i.addEventListener('click',function(){lbi.src=i.src;lb.classList.add('on')})});
+  lb.onclick=function(){lb.classList.remove('on')};
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')lb.classList.remove('on')});
+})();
+</script>
+</body>
+</html>
