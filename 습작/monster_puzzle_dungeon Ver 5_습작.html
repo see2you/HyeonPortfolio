@@ -184,6 +184,32 @@
     80%{ transform:translate(4px,0); }
     100%{ transform:translate(0,0); }
   }
+  /* Ver 6 : 구슬이 터질 때의 보드 진동. 콤보가 쌓일수록 세진다 */
+  #board.quake-s{ animation: quakeS 150ms cubic-bezier(.36,.07,.19,.97); }
+  #board.quake-m{ animation: quakeM 190ms cubic-bezier(.36,.07,.19,.97); }
+  #board.quake-l{ animation: quakeL 240ms cubic-bezier(.36,.07,.19,.97); }
+  @keyframes quakeS{
+    0%{ transform:translate(0,0); }      25%{ transform:translate(-2px,1px); }
+    50%{ transform:translate(2px,-1px); } 75%{ transform:translate(-1px,-1px); }
+    100%{ transform:translate(0,0); }
+  }
+  @keyframes quakeM{
+    0%{ transform:translate(0,0) rotate(0deg); }      20%{ transform:translate(-4px,2px) rotate(-.3deg); }
+    40%{ transform:translate(4px,-2px) rotate(.3deg); } 60%{ transform:translate(-3px,-2px) rotate(-.2deg); }
+    80%{ transform:translate(2px,2px) rotate(.1deg); }  100%{ transform:translate(0,0) rotate(0deg); }
+  }
+  @keyframes quakeL{
+    0%{ transform:translate(0,0) rotate(0deg) scale(1); }
+    15%{ transform:translate(-6px,3px) rotate(-.55deg) scale(1.012); }
+    30%{ transform:translate(6px,-4px) rotate(.55deg) scale(1.012); }
+    45%{ transform:translate(-5px,-3px) rotate(-.4deg) scale(1.008); }
+    60%{ transform:translate(4px,3px) rotate(.3deg) scale(1.004); }
+    80%{ transform:translate(-2px,-1px) rotate(-.1deg) scale(1); }
+    100%{ transform:translate(0,0) rotate(0deg) scale(1); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    #board.quake-s,#board.quake-m,#board.quake-l{ animation:none; }
+  }
   .flash-hit{ animation: panelFlash .45s ease; }
   @keyframes panelFlash{
     0%{ background-color: rgba(255,70,70,.35); }
@@ -961,6 +987,7 @@
         }
         const pos = groupCenterPercent(g.cells);
         g.cells.forEach(idx=>{ game.board[idx]=null; affectedCols.add(idx%COLS); clearOrbCellVisual(idx); });
+        shakeBoard(comboCount);                // Ver 6 : 터질 때마다 보드 진동
         spawnFloatingText('#board', comboCount+' 콤보!', 'combo', pos);
         await wait(50);
       }
@@ -1336,6 +1363,23 @@
 
   function setLog(html){ $('#log').innerHTML = html; }
   function appendLog(html){ $('#log').innerHTML += '<br>'+html; }
+
+  // ---------- board quake ----------
+  /* Ver 6 : 구슬이 터지는 순간 보드를 흔든다. 콤보가 쌓일수록 진폭이 커져
+     "때리는 맛"이 누적되게 한다. 같은 캐스케이드 안에서 연달아 호출되면
+     클래스를 지웠다 다시 붙여 애니메이션을 처음부터 재생한다. */
+  const QUAKE=['quake-s','quake-m','quake-l'];
+  let quakeTimer=null;
+  function shakeBoard(combo){
+    const el=$('#board');
+    if(!el) return;
+    const lv = combo>=5 ? 2 : (combo>=3 ? 1 : 0);
+    QUAKE.forEach(c=>el.classList.remove(c));
+    void el.offsetWidth;                       // 재생 리셋
+    el.classList.add(QUAKE[lv]);
+    clearTimeout(quakeTimer);
+    quakeTimer=setTimeout(()=>QUAKE.forEach(c=>el.classList.remove(c)), 260);
+  }
 
   // ---------- attack effects (shake / flash / floating damage numbers) ----------
   function playHitEffect(el){
