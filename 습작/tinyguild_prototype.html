@@ -678,7 +678,14 @@ function checkTut(){
 let cur=null;
 const sheet=$('#sheet'),body=$('#sheetBody');
 function openSheet(key,title,render){cur={key,title,render};$('#sheetTitle').textContent=title;sheet.hidden=false;draw()}
-function draw(){if(!cur)return;const st=body.scrollTop;body.innerHTML=cur.render();body.scrollTop=st;tickSheet()}
+function draw(){if(!cur)return;const st=body.scrollTop;body.innerHTML=cur.render();body.scrollTop=st;lastSig=sheetSig();tickSheet()}
+let lastSig='';
+function sheetSig(){if(!cur)return '';const k=cur.key,mem=()=>S.members.map(m=>m.id+(m.busy||'')+m.lv).join();
+ if(k==='board')return k+JSON.stringify([S.board.quests.map(q=>q.uid+q.st+(q.locked?1:0)),S.board.lv,S.board.mc,S.board.pity,S.applicants.map(a=>a.id),mem(),Math.floor(S.coins),S.gems,!!S.lord,housing()]);
+ if(k==='dungeon')return k+JSON.stringify([S.dg.runs.map(r=>r.uid),S.dg.prog,mem(),S.gems,S.inv.potion_s||0,S.inv.potion_m||0,S.inv.potion_l||0,S.board.lv]);
+ if(k==='members')return k+JSON.stringify([S.members.map(m=>m.id+(m.busy||'')+m.lv+(m.w||'')+(m.a||'')+Math.floor(ageOf(m))+trainRole(m)),S.dead.length,Object.keys(S.inv).filter(x=>IT[x]&&IT[x].cat==='gear').map(x=>x+S.inv[x])]);
+ if(k==='lord')return k+JSON.stringify([!!S.lord,mem()]);
+ return ''}
 function closeSheet(){sheet.hidden=true;cur=null;layoutOverlay()}
 function sheetOpen(k){return cur&&(!k||cur.key===k)}
 function refreshSheet(k){if(cur&&cur.key===k&&!busyInput)draw()}
@@ -1067,6 +1074,7 @@ setInterval(()=>{
  const nb=$('#nBoard');nb.classList.toggle('locked',!S.board.on);const away=S.board.quests.filter(q=>q.st==='away').length,bd=nb.querySelector('.badge');bd.hidden=!away;bd.textContent=away;
  const nd=$('#nDg');nd.classList.toggle('locked',!dgUnlocked());const bd2=nd.querySelector('.badge');bd2.hidden=!S.dg.runs.length;bd2.textContent=S.dg.runs.length;
  if(!cur&&S.notices.length&&L.st!=='down')openNotice();
+ if(cur&&!busyInput){const sg=sheetSig();if(sg&&sg!==lastSig)draw()}
  tickSheet();checkTut();
  if(++saveT%20===0)save();
 },250);
