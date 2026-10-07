@@ -1,0 +1,399 @@
+<title>몬스터 퍼즐 던전</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* 게임 소개 페이지 — 게임 세계에 맞춰 단일 다크 테마로 의도적으로 고정 */
+:root{
+  --night:#0C0719; --panel:#171032; --panel-2:#211648; --sunk:#0A0617;
+  --line:#2E1F55; --line-2:#3F2B6E;
+  --ink:#F1EDFB; --ink-2:#BFB2E0; --muted:#8B7DB4; --faint:#6A5E90;
+  --violet:#9B6BE0; --violet-soft:#2A1B4F;
+  --fire:#F2564B; --water:#46A8F0; --wood:#4FC87A; --light:#F5CC45; --dark:#9B6BE0; --heal:#FF7BA6;
+  --gold:#FFC24D; --gold-2:#FF8A3D;
+  --cell:54px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--night);color:var(--ink);
+  font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  font-size:15px;line-height:1.78;font-weight:300;-webkit-font-smoothing:antialiased;
+  word-break:keep-all;overflow-wrap:break-word}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+strong{font-weight:600}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+/* 배경 분위기 */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(760px 420px at 18% -8%, rgba(155,107,224,.20), transparent 62%),
+    radial-gradient(620px 380px at 88% 4%, rgba(70,168,240,.13), transparent 60%),
+    radial-gradient(900px 520px at 50% 108%, rgba(242,86,75,.09), transparent 64%);}
+.wrap{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:0 22px 72px}
+
+/* ---------- 히어로 ---------- */
+.hero{padding:64px 0 46px;text-align:center}
+.eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--violet);
+  font-weight:600;margin:0 0 20px}
+h1{font-family:"Black Han Sans",system-ui,sans-serif;font-weight:400;
+  font-size:clamp(42px,9vw,78px);line-height:1.04;margin:0 0 16px;letter-spacing:-.01em;
+  background:linear-gradient(170deg,#FFFFFF 8%,#D9C9FF 52%,#9B6BE0 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-shadow:0 0 70px rgba(155,107,224,.28)}
+.tagline{font-size:17px;color:var(--ink-2);margin:0 auto 34px;max-width:34ch;font-weight:300}
+
+/* 보드 데모 */
+.boardwrap{display:flex;justify-content:center;margin:0 0 38px}
+.board{position:relative;display:grid;grid-template-columns:repeat(6,var(--cell));
+  grid-template-rows:repeat(5,var(--cell));gap:5px;padding:11px;
+  background:var(--sunk);border:1px solid var(--line);border-radius:15px;
+  box-shadow:0 26px 70px -28px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.04)}
+@media(max-width:620px){:root{--cell:min(13vw,54px)}}
+.orb{border-radius:50%;display:grid;place-items:center;font-size:19px;
+  background:radial-gradient(circle at 33% 28%, rgba(255,255,255,.45), rgba(255,255,255,0) 54%), var(--c);
+  box-shadow:inset 0 -4px 7px rgba(0,0,0,.34), 0 2px 4px rgba(0,0,0,.35)}
+.trail{position:absolute;inset:11px;pointer-events:none}
+.trail svg{width:100%;height:100%;display:block;overflow:visible}
+.traveler{position:absolute;width:var(--cell);height:var(--cell);border-radius:50%;
+  left:11px;top:11px;display:grid;place-items:center;font-size:19px;z-index:3;
+  background:radial-gradient(circle at 33% 28%, rgba(255,255,255,.55), rgba(255,255,255,0) 54%), var(--fire);
+  box-shadow:inset 0 -4px 7px rgba(0,0,0,.34), 0 0 22px rgba(242,86,75,.75);
+  animation:travel 5.2s cubic-bezier(.5,0,.5,1) infinite}
+@keyframes travel{
+  0%,6%   {transform:translate(0,0) scale(1.1)}
+  20%     {transform:translate(calc(var(--cell) + 5px), calc(var(--cell) + 5px)) scale(1.1)}
+  34%     {transform:translate(calc(2*(var(--cell) + 5px)), calc(2*(var(--cell) + 5px))) scale(1.1)}
+  48%     {transform:translate(calc(3*(var(--cell) + 5px)), calc(2*(var(--cell) + 5px))) scale(1.1)}
+  62%,74% {transform:translate(calc(4*(var(--cell) + 5px)), calc(2*(var(--cell) + 5px))) scale(1.1)}
+  86%,100%{transform:translate(0,0) scale(1.1)}
+}
+.hint{font-size:12px;color:var(--faint);margin:14px 0 0;letter-spacing:.02em}
+
+/* ---------- PLAY 버튼 ---------- */
+.cta{display:inline-flex;align-items:center;gap:14px;text-decoration:none;
+  background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#2B1500;
+  font-size:19px;font-weight:700;padding:19px 42px 19px 34px;border-radius:999px;
+  box-shadow:0 14px 42px -10px rgba(255,160,60,.6), 0 0 0 0 rgba(255,194,77,.55);
+  animation:breathe 2.8s ease-in-out infinite;transition:transform .16s ease, box-shadow .16s ease}
+.cta:hover{transform:translateY(-3px) scale(1.025);
+  box-shadow:0 22px 56px -10px rgba(255,160,60,.78), 0 0 0 7px rgba(255,194,77,.12);
+  animation-play-state:paused}
+.cta:active{transform:translateY(-1px) scale(.995)}
+.cta .ico{width:34px;height:34px;border-radius:50%;background:rgba(43,21,0,.17);
+  display:grid;place-items:center;flex:none}
+.cta .ico svg{width:14px;height:14px;margin-left:2px}
+.cta .sub{display:block;font-size:11.5px;font-weight:500;opacity:.72;letter-spacing:.04em;margin-top:-3px}
+@keyframes breathe{
+  0%,100%{box-shadow:0 14px 42px -10px rgba(255,160,60,.6), 0 0 0 0 rgba(255,194,77,.5)}
+  50%    {box-shadow:0 14px 42px -10px rgba(255,160,60,.6), 0 0 0 13px rgba(255,194,77,0)}
+}
+.ctanote{font-size:12.5px;color:var(--muted);margin:15px 0 0}
+.ctanote b{color:var(--ink-2);font-weight:500}
+
+/* ---------- 스펙 칩 ---------- */
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:34px 0 0}
+.chip{font-size:12px;color:var(--ink-2);border:1px solid var(--line);background:rgba(23,16,50,.6);
+  border-radius:999px;padding:6px 15px;white-space:nowrap}
+.chip b{color:var(--ink);font-weight:600}
+
+/* ---------- 섹션 ---------- */
+section{margin:0 0 58px;scroll-margin-top:20px}
+.shead{display:flex;align-items:baseline;gap:14px;margin:0 0 8px;
+  padding-bottom:14px;border-bottom:1px solid var(--line)}
+.shead .no{font-family:"Black Han Sans",sans-serif;font-size:15px;color:var(--violet);
+  letter-spacing:.04em;flex:none;opacity:.9}
+.shead h2{font-size:22px;font-weight:600;margin:0;letter-spacing:-.015em}
+.lead{color:var(--ink-2);margin:18px 0 22px;max-width:64ch;font-size:15.5px}
+p{margin:0 0 15px;max-width:66ch}
+h3{font-size:15px;font-weight:600;margin:28px 0 9px;color:var(--ink)}
+
+/* 카드 그리드 */
+.grid{display:grid;gap:11px;margin:20px 0}
+.g2{grid-template-columns:repeat(auto-fit,minmax(236px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(186px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:17px 19px}
+.card .t{font-size:14px;font-weight:600;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+.card .d{font-size:13px;color:var(--muted);line-height:1.68;margin:0}
+.card .ic{font-size:17px}
+
+/* 코어 루프 */
+.loop{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:9px;margin:22px 0}
+.loop .s{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 15px;position:relative}
+.loop .s .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--violet);font-weight:600;letter-spacing:.1em}
+.loop .s .t{font-size:13.5px;font-weight:600;margin:5px 0 3px}
+.loop .s .d{font-size:11.5px;color:var(--muted);line-height:1.6}
+
+/* 속성 */
+.elems{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px;margin:20px 0}
+.el{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px;text-align:center}
+.el .o{width:38px;height:38px;border-radius:50%;margin:0 auto 9px;display:grid;place-items:center;font-size:17px;
+  background:radial-gradient(circle at 33% 28%, rgba(255,255,255,.45), rgba(255,255,255,0) 54%), var(--c);
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.32)}
+.el .n{font-size:13px;font-weight:600}
+.el .r{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* 공식 */
+.formula{background:var(--sunk);border:1px solid var(--line);border-radius:11px;
+  padding:19px 21px;margin:20px 0;overflow-x:auto}
+.formula .eq{font-family:"IBM Plex Mono",monospace;font-size:13.5px;line-height:2.1;
+  white-space:nowrap;font-weight:500;color:var(--ink)}
+.formula .eq .v{color:var(--gold)}
+.formula .eq .op{color:var(--muted)}
+.formula .cap{font-size:11.5px;color:var(--faint);margin-top:11px;white-space:normal;line-height:1.65}
+
+/* 표 */
+.tw{overflow-x:auto;margin:18px 0;border:1px solid var(--line);border-radius:11px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:400px}
+th{text-align:left;font-size:11px;letter-spacing:.07em;color:var(--faint);font-weight:600;
+  padding:11px 15px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+td{padding:10px 15px;border-bottom:1px solid var(--line);color:var(--ink-2)}
+tbody tr:last-child td{border-bottom:0}
+td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+.num{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+
+/* 개발 기록 */
+.tl{margin:22px 0;position:relative;padding-left:26px}
+.tl::before{content:"";position:absolute;left:5px;top:7px;bottom:7px;width:1px;background:var(--line-2)}
+.tl .it{position:relative;padding:0 0 19px}
+.tl .it:last-child{padding-bottom:0}
+.tl .it::before{content:"";position:absolute;left:-24px;top:7px;width:9px;height:9px;border-radius:50%;
+  background:var(--panel);border:2px solid var(--line-2)}
+.tl .it.now::before{background:var(--gold);border-color:var(--gold);box-shadow:0 0 0 4px rgba(255,194,77,.14)}
+.tl .v{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--violet);font-weight:600;letter-spacing:.06em}
+.tl .it.now .v{color:var(--gold)}
+.tl .t{font-size:14px;font-weight:600;margin:1px 0 3px}
+.tl .d{font-size:12.5px;color:var(--muted);line-height:1.7;max-width:60ch}
+
+/* 하단 CTA */
+.endcta{text-align:center;background:linear-gradient(180deg,var(--panel),rgba(23,16,50,0));
+  border:1px solid var(--line);border-top-color:var(--line-2);border-radius:16px;padding:42px 26px 38px;margin-top:8px}
+.endcta h2{font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:27px;margin:0 0 9px;letter-spacing:-.01em}
+.endcta p{color:var(--ink-2);margin:0 auto 26px;max-width:40ch;font-size:14.5px}
+footer{text-align:center;font-size:11.5px;color:var(--faint);margin-top:34px;line-height:1.9}
+footer a{color:var(--muted)}
+
+@media (prefers-reduced-motion:reduce){
+  .cta{animation:none} .traveler{animation:none} *{transition:none!important}
+}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <p class="eyebrow">Personal Project · Web Puzzle RPG</p>
+  <h1>몬스터 퍼즐 던전</h1>
+  <p class="tagline">구슬을 맞춰 던전을 정복하는 심플 퍼즐 RPG</p>
+
+  <div class="boardwrap">
+    <div class="board" aria-label="6x5 구슬 보드 — 드래그 경로 예시">
+      <div class="trail" aria-hidden="true">
+        <svg viewBox="0 0 349 290" preserveAspectRatio="none">
+          <path d="M27,27 L86,86 L145,145 L204,145 L263,145"
+                fill="none" stroke="#F2564B" stroke-width="3" stroke-linecap="round"
+                stroke-dasharray="5 7" opacity=".62"/>
+          <circle cx="263" cy="145" r="7" fill="none" stroke="#F2564B" stroke-width="2.5" opacity=".62"/>
+        </svg>
+      </div>
+      <div class="traveler" aria-hidden="true">🔥</div>
+      <div class="orb" style="--c:var(--water)">💧</div>
+      <div class="orb" style="--c:var(--wood)">🌿</div>
+      <div class="orb" style="--c:var(--light)">✨</div>
+      <div class="orb" style="--c:var(--heal)">❤️</div>
+      <div class="orb" style="--c:var(--dark)">🌑</div>
+      <div class="orb" style="--c:var(--wood)">🌿</div>
+
+      <div class="orb" style="--c:var(--light)">✨</div>
+      <div class="orb" style="--c:var(--water)">💧</div>
+      <div class="orb" style="--c:var(--dark)">🌑</div>
+      <div class="orb" style="--c:var(--wood)">🌿</div>
+      <div class="orb" style="--c:var(--fire)">🔥</div>
+      <div class="orb" style="--c:var(--heal)">❤️</div>
+
+      <div class="orb" style="--c:var(--dark)">🌑</div>
+      <div class="orb" style="--c:var(--heal)">❤️</div>
+      <div class="orb" style="--c:var(--water)">💧</div>
+      <div class="orb" style="--c:var(--light)">✨</div>
+      <div class="orb" style="--c:var(--wood)">🌿</div>
+      <div class="orb" style="--c:var(--water)">💧</div>
+
+      <div class="orb" style="--c:var(--wood)">🌿</div>
+      <div class="orb" style="--c:var(--fire)">🔥</div>
+      <div class="orb" style="--c:var(--light)">✨</div>
+      <div class="orb" style="--c:var(--dark)">🌑</div>
+      <div class="orb" style="--c:var(--heal)">❤️</div>
+      <div class="orb" style="--c:var(--fire)">🔥</div>
+
+      <div class="orb" style="--c:var(--heal)">❤️</div>
+      <div class="orb" style="--c:var(--dark)">🌑</div>
+      <div class="orb" style="--c:var(--wood)">🌿</div>
+      <div class="orb" style="--c:var(--water)">💧</div>
+      <div class="orb" style="--c:var(--light)">✨</div>
+      <div class="orb" style="--c:var(--dark)">🌑</div>
+    </div>
+  </div>
+  <p class="hint">구슬 하나를 잡고 보드를 가로질러 끈다 — 지나간 칸이 차례로 밀려난다</p>
+
+  <div style="margin-top:34px">
+    <a class="cta" href="https://see2you.github.io/HyeonPortfolio/%EC%8A%B5%EC%9E%91/monster_puzzle_dungeon%20Ver%205_%EC%8A%B5%EC%9E%91.html" target="_blank" rel="noopener">
+      <span class="ico"><svg viewBox="0 0 12 14" aria-hidden="true"><path d="M0 0 L12 7 L0 14 Z" fill="#2B1500"/></svg></span>
+      <span>지금 플레이하기<span class="sub">PLAY THE DEMO</span></span>
+    </a>
+    <p class="ctanote">브라우저에서 <b>바로 실행</b> · 설치·로그인 없음 · PC와 모바일 모두 동작</p>
+  </div>
+
+  <div class="chips">
+    <span class="chip">장르 <b>매치3 퍼즐 RPG</b></span>
+    <span class="chip">보드 <b>6 × 5 · 6속성</b></span>
+    <span class="chip">편성 <b>3인 · 리더 1</b></span>
+    <span class="chip">구조 <b>무한 스테이지</b></span>
+    <span class="chip">개발 <b>기획·구현 1인</b></span>
+    <span class="chip">기술 <b>단일 HTML · 의존성 0</b></span>
+  </div>
+</header>
+
+<!-- 01 -->
+<section>
+  <div class="shead"><span class="no">01</span><h2>이 게임의 한 가지</h2></div>
+  <p class="lead">구슬을 <strong>두 칸 맞바꾸는</strong> 게 아니라, 하나를 잡고 <strong>보드 전체를 훑는다.</strong> 이 조작 하나가 게임의 모든 결정을 끌고 간다.</p>
+
+  <p>일반적인 매치3는 인접한 두 칸을 교환한다. 플레이어가 한 턴에 내리는 결정은 사실상 "어느 쌍을 바꿀까" 하나뿐이고, 잘하는 사람과 처음 하는 사람의 차이는 한 수 정도로 좁다.</p>
+
+  <p>이 게임은 구슬 하나를 집어 제한 시간 안에 원하는 경로로 끌고 다닌다. 지나간 칸의 구슬들이 차례로 뒤로 밀려나면서, <strong>한 번의 드래그로 보드 전체를 재배치</strong>할 수 있다. 같은 보드에서 누군가는 1콤보를, 누군가는 6콤보를 만든다.</p>
+
+  <div class="grid g3">
+    <div class="card"><p class="t"><span class="ic">🎯</span>경로가 곧 설계</p><p class="d">어디를 지나갈지가 그대로 결과가 된다. 손이 빠른 게 아니라 길을 먼저 보는 쪽이 이긴다.</p></div>
+    <div class="card"><p class="t"><span class="ic">⏱</span>제한 시간의 압박</p><p class="d">구슬을 잡는 순간 타이머가 흐른다. 완벽한 수를 찾다 보면 시간이 끝난다.</p></div>
+    <div class="card"><p class="t"><span class="ic">🔗</span>연쇄의 쾌감</p><p class="d">구슬이 터진 자리로 위쪽이 떨어지며 새 매치가 성립한다. 설계한 연쇄가 터질 때가 이 게임의 정점.</p></div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section>
+  <div class="shead"><span class="no">02</span><h2>코어 루프</h2></div>
+  <p class="lead">퍼즐 한 번이 전투 한 턴이고, 전투의 결과가 다음 퍼즐의 난이도를 정한다.</p>
+  <div class="loop">
+    <div class="s"><div class="n">01</div><div class="t">퍼즐</div><div class="d">제한 시간 안에 구슬을 끌어 매치를 만든다</div></div>
+    <div class="s"><div class="n">02</div><div class="t">전투</div><div class="d">매치된 속성의 몬스터가 공격 · 회복 구슬은 팀을 치유</div></div>
+    <div class="s"><div class="n">03</div><div class="t">반격</div><div class="d">정해진 턴 안에 처치하지 못하면 적의 강공격</div></div>
+    <div class="s"><div class="n">04</div><div class="t">보상</div><div class="d">처치한 적의 속성 정수를 획득</div></div>
+    <div class="s"><div class="n">05</div><div class="t">강화</div><div class="d">정수로 장비를 제작·합성해 다음 스테이지로</div></div>
+  </div>
+</section>
+
+<!-- 03 -->
+<section>
+  <div class="shead"><span class="no">03</span><h2>6속성과 편성</h2></div>
+  <p class="lead">보드에는 다섯 공격 속성과 회복 구슬이 섞여 떨어진다. 편성한 세 몬스터의 속성이 곧 공격 수단이다.</p>
+
+  <div class="elems">
+    <div class="el"><div class="o" style="--c:var(--fire)">🔥</div><div class="n">불꽃</div><div class="r">공격</div></div>
+    <div class="el"><div class="o" style="--c:var(--water)">💧</div><div class="n">물</div><div class="r">공격</div></div>
+    <div class="el"><div class="o" style="--c:var(--wood)">🌿</div><div class="n">숲</div><div class="r">공격</div></div>
+    <div class="el"><div class="o" style="--c:var(--light)">✨</div><div class="n">빛</div><div class="r">공격</div></div>
+    <div class="el"><div class="o" style="--c:var(--dark)">🌑</div><div class="n">어둠</div><div class="r">공격</div></div>
+    <div class="el"><div class="o" style="--c:var(--heal)">❤️</div><div class="n">회복</div><div class="r">팀 HP 회복</div></div>
+  </div>
+
+  <p>몬스터 셋을 고르면 <strong>가장 먼저 고른 하나가 리더</strong>가 된다. 세 속성을 어떻게 섞느냐가 곧 덱 구성이다. 한 속성에 몰면 그 색이 떴을 때 폭발적이지만 안 뜨면 아무것도 못 한다. 넓게 퍼뜨리면 안정적인 대신 한 방이 없다. 회복 구슬을 전력으로 볼 것인지, 보험으로 볼 것인지도 편성 단계에서 정해진다.</p>
+</section>
+
+<!-- 04 -->
+<section>
+  <div class="shead"><span class="no">04</span><h2>데미지 설계</h2></div>
+  <p class="lead">같은 세 개를 맞춰도 <strong>몇 개를 한 번에 지웠는지</strong>와 <strong>몇 콤보가 났는지</strong>에 따라 결과가 크게 달라진다.</p>
+
+  <div class="formula">
+    <div class="eq">그룹 데미지 <span class="op">=</span> 속성 공격력 <span class="op">×</span> [ 1 <span class="op">+</span> 0.25 <span class="op">×</span> (<span class="v">지운 구슬 수</span> <span class="op">−</span> 3) ]</div>
+    <div class="eq">최종 데미지 <span class="op">=</span> Σ 그룹 데미지 <span class="op">×</span> [ 1 <span class="op">+</span> 0.25 <span class="op">×</span> (<span class="v">총 콤보 수</span> <span class="op">−</span> 1) ]</div>
+    <div class="cap">3개 매치가 기준점 1.0배. 구슬이 하나 늘 때마다, 콤보가 하나 늘 때마다 같은 폭(0.25)으로 올라간다 — 플레이어가 "구슬 하나 더 = 콤보 하나 더"로 직관적으로 환산할 수 있게 계수를 통일했다.</div>
+  </div>
+
+  <div class="tw"><table>
+    <thead><tr><th>상황</th><th class="num">구슬 배율</th><th class="num">콤보 배율</th><th class="num">합계</th></tr></thead>
+    <tbody>
+      <tr><td>3개 1콤보</td><td class="num">1.00×</td><td class="num">1.00×</td><td class="num">1.00×</td></tr>
+      <tr><td>5개 1콤보</td><td class="num">1.50×</td><td class="num">1.00×</td><td class="num">1.50×</td></tr>
+      <tr><td>3개 4콤보</td><td class="num">1.00×</td><td class="num">1.75×</td><td class="num">1.75×</td></tr>
+      <tr><td>6개 6콤보</td><td class="num">1.75×</td><td class="num">2.25×</td><td class="num">3.94×</td></tr>
+    </tbody>
+  </table></div>
+  <p>연쇄를 설계할 줄 아는 플레이어는 같은 공격력으로 네 배 가까운 피해를 낸다. <strong>성장이 아니라 숙련이 보상받는 구조</strong>를 의도했다.</p>
+</section>
+
+<!-- 05 -->
+<section>
+  <div class="shead"><span class="no">05</span><h2>성장과 경제</h2></div>
+  <p class="lead">확률도 뽑기도 없다. 재료는 하나, 투입한 만큼 정확히 돌아온다.</p>
+
+  <div class="grid g2">
+    <div class="card"><p class="t"><span class="ic">💠</span>속성 정수</p><p class="d">적을 처치하면 그 적의 속성에 맞는 정수를 얻는다. 게임 내 유일한 재화다.</p></div>
+    <div class="card"><p class="t"><span class="ic">⚒</span>제작</p><p class="d">같은 속성 정수 5개로 장비 하나를 만든다. 성공률 100% — 실패로 날리는 일이 없다.</p></div>
+    <div class="card"><p class="t"><span class="ic">🔀</span>합성</p><p class="d">같은 장비가 중복되면 합쳐서 상위 등급으로 올린다. 중복이 쓰레기가 되지 않는다.</p></div>
+    <div class="card"><p class="t"><span class="ic">🛡</span>장착 제한</p><p class="d">장비는 같은 속성 몬스터만 착용한다. 단, 회복 장비는 누구나 착용 가능.</p></div>
+  </div>
+
+  <p>속성 제한을 둔 이유는 <strong>편성과 파밍을 하나로 묶기 위해서</strong>다. 불꽃 몬스터를 주력으로 쓰기로 했다면 불꽃 정수를 모아야 하고, 그러려면 불꽃 속성 적이 나오는 구간을 반복해야 한다. 어떤 적을 사냥할지가 덱 구성에서 역산된다.</p>
+</section>
+
+<!-- 06 -->
+<section>
+  <div class="shead"><span class="no">06</span><h2>난이도 — 끝이 없는 등반</h2></div>
+  <p class="lead">클리어가 없다. 어디까지 올라갔는가가 점수다.</p>
+
+  <div class="tw"><table>
+    <tbody>
+      <tr><td>스테이지</td><td>무한. 진행할수록 적의 HP와 공격력이 상승</td></tr>
+      <tr><td>티어</td><td>10스테이지마다 한 단계. 티어가 바뀔 때 난이도가 계단식으로 뛴다</td></tr>
+      <tr><td>턴 제한</td><td>적마다 정해진 턴 안에 처치하지 못하면 <strong>강공격</strong>이 들어온다</td></tr>
+      <tr><td>실패</td><td>팀 HP가 0이 되면 런 종료. 도달 스테이지가 기록으로 남는다</td></tr>
+    </tbody>
+  </table></div>
+
+  <p>턴 제한을 둔 건 "천천히 안전하게"라는 선택지를 없애기 위해서다. 적당히 3개씩 맞춰도 언젠가는 이기는 구조라면 퍼즐을 잘 풀 이유가 없다. <strong>정해진 턴 안에 끝내야 하므로 매 턴 최선의 경로를 찾아야 하고</strong>, 그래야 앞서 설계한 콤보 배율이 의미를 갖는다.</p>
+</section>
+
+<!-- 07 -->
+<section>
+  <div class="shead"><span class="no">07</span><h2>개발 기록</h2></div>
+  <p class="lead">기획부터 구현까지 혼자 진행했다. 외부 라이브러리 없이 HTML 파일 하나로 동작한다.</p>
+
+  <div class="tl">
+    <div class="it">
+      <div class="v">Ver 1 – 4</div>
+      <div class="t">코어 검증</div>
+      <div class="d">드래그 조작과 매치 판정이 그 자체로 재미있는지부터 확인한 초기 반복 버전.</div>
+    </div>
+    <div class="it">
+      <div class="v">Ver 5</div>
+      <div class="t">시스템 완성 — 현재 공개 데모</div>
+      <div class="d">몬스터 편성, 무한 스테이지와 티어, 턴 제한 반격, 정수·장비 경제, 랭킹 기록까지 한 바퀴를 모두 연결했다. 게임으로서 완결된 첫 버전.</div>
+    </div>
+    <div class="it now">
+      <div class="v">Ver 6</div>
+      <div class="t">손맛 — 작업 중</div>
+      <div class="d">Ver 5는 구슬이 순간이동했다. 잡은 구슬이 손가락을 지연 없이 따라가고, 밀려나는 구슬이 90ms에 걸쳐 미끄러지며, 낙하는 실제 거리에 비례하도록 렌더 레이어를 다시 썼다. 구슬이 터질 때는 콤보 수에 따라 보드가 3단계로 흔들린다. 게임 규칙은 한 줄도 바꾸지 않았다.</div>
+    </div>
+    <div class="it">
+      <div class="v">Next</div>
+      <div class="t">Unity 이식</div>
+      <div class="d">검증이 끝난 규칙을 그대로 옮겨 모바일 빌드로 만드는 것이 다음 단계.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 하단 CTA -->
+<div class="endcta">
+  <h2>직접 끌어보는 게 가장 빠릅니다</h2>
+  <p>설명보다 한 번의 드래그가 더 많은 걸 말해줍니다. 3분이면 충분합니다.</p>
+  <a class="cta" href="https://see2you.github.io/HyeonPortfolio/%EC%8A%B5%EC%9E%91/monster_puzzle_dungeon%20Ver%205_%EC%8A%B5%EC%9E%91.html" target="_blank" rel="noopener">
+    <span class="ico"><svg viewBox="0 0 12 14" aria-hidden="true"><path d="M0 0 L12 7 L0 14 Z" fill="#2B1500"/></svg></span>
+    <span>데모 플레이하기<span class="sub">PLAY THE DEMO</span></span>
+  </a>
+  <p class="ctanote" style="margin-top:17px">공개 데모는 <b>Ver 5</b> 기준입니다</p>
+</div>
+
+<footer>
+  몬스터 퍼즐 던전 · 개인 프로젝트 · 기획 및 구현 현<br>
+  <a href="https://see2you.github.io/HyeonPortfolio/" target="_blank" rel="noopener">see2you.github.io/HyeonPortfolio</a>
+</footer>
+
+</div>
