@@ -66,5 +66,8 @@
   const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ const n=+e.target.id.slice(1); let idx=0; starts.forEach((s,i)=>{ if(n>=s) idx=i; }); links.forEach((a,i)=>a.classList.toggle('on',i===idx)); } }); },{rootMargin:'-40% 0px -55% 0px'});
   document.querySelectorAll('.slide').forEach(s=>io.observe(s));
 </script>
+ <!-- 방문자 카운터 (GoatCounter) -->
+<script data-goatcounter="https://hyeonportfolio.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script> 
 </body>
 </html>
