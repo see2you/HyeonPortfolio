@@ -19,9 +19,10 @@
   .notice b { color:#CFEF20; margin-right:8px; }
   .toolbar { display:flex; justify-content:space-between; align-items:center; margin:22px 0 10px; font-size:.85rem; color:var(--muted); }
   .toolbar button { font:inherit; color:var(--accent); background:none; border:1px solid var(--line); border-radius:6px; padding:3px 10px; cursor:pointer; margin-left:6px; }
-  .hero { display:flex; justify-content:space-between; align-items:center; background:#1f2328; color:#CFEF20; font-weight:700; font-size:1.15rem; text-decoration:none; padding:16px 22px 16px 46px; border-radius:12px; margin-bottom:14px; border:1px solid #1f2328; position:relative; }
-  .hero::before { content:""; position:absolute; left:22px; top:50%; width:8px; height:8px; margin-top:-5px; border-right:2px solid #CFEF20; border-bottom:2px solid #CFEF20; transform:rotate(-45deg); }
+  .hero { display:flex; justify-content:space-between; align-items:flex-start; background:#1f2328; color:#CFEF20; font-weight:700; font-size:1.15rem; text-decoration:none; padding:16px 22px 16px 46px; border-radius:12px; margin-bottom:14px; border:1px solid #1f2328; position:relative; }
+  .hero::before { content:""; position:absolute; left:22px; top:24px; width:8px; height:8px; border-right:2px solid #CFEF20; border-bottom:2px solid #CFEF20; transform:rotate(-45deg); }
   .hero:hover { background:#2b3038; }
+  .hero .hm { display:flex; margin-top:4px; font-size:.85rem; }
   .hero .arrow { font-weight:400; color:#CFEF20; }
   details.proj { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
   details.proj > summary { list-style:none; cursor:pointer; padding:16px 22px 14px 46px; position:relative; background:#1f2328; color:#CFEF20; }
@@ -71,7 +72,7 @@
 
 <div class="toolbar"><span>프로젝트 5개 · 문서 57건</span><span><button id="openAll">모두 펼치기</button><button id="closeAll">모두 접기</button></span></div>
 
-<a class="hero" href="portfolio.html">프로젝트 경력 및 업무요약 보기 (PPT 양식) <span class="arrow">→</span></a>
+<a class="hero" href="portfolio.html"><span class="ht">프로젝트 경력 및 업무요약 보기<span class="hm"><span class="period">PPT 양식</span></span></span><span class="arrow">→</span></a>
 
 <details class="proj">
   <summary>
