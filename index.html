@@ -19,7 +19,8 @@
   .notice b { color:#CFEF20; margin-right:8px; }
   .toolbar { display:flex; justify-content:space-between; align-items:center; margin:22px 0 10px; font-size:.85rem; color:var(--muted); }
   .toolbar button { font:inherit; color:var(--accent); background:none; border:1px solid var(--line); border-radius:6px; padding:3px 10px; cursor:pointer; margin-left:6px; }
-  .hero { display:flex; justify-content:space-between; align-items:center; background:#1f2328; color:#CFEF20; font-weight:700; font-size:1.15rem; text-decoration:none; padding:16px 22px; border-radius:12px; margin-bottom:14px; border:1px solid #1f2328; }
+  .hero { display:flex; justify-content:space-between; align-items:center; background:#1f2328; color:#CFEF20; font-weight:700; font-size:1.15rem; text-decoration:none; padding:16px 22px 16px 46px; border-radius:12px; margin-bottom:14px; border:1px solid #1f2328; position:relative; }
+  .hero::before { content:""; position:absolute; left:22px; top:50%; width:8px; height:8px; margin-top:-5px; border-right:2px solid #CFEF20; border-bottom:2px solid #CFEF20; transform:rotate(-45deg); }
   .hero:hover { background:#2b3038; }
   .hero .arrow { font-weight:400; color:#CFEF20; }
   details.proj { background:var(--card); border:1px solid var(--line); border-radius:12px; margin-bottom:14px; overflow:hidden; }
