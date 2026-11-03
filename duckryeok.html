@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>이 사람의 덕력은? — 김현 PORTFOLIO</title>
+<style>
+  :root { --bg:#0f1115; --card:#181b21; --text:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --lime:#CFEF20; --ink:#0b0d10; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); line-height:1.65; font-size:15px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif; }
+  a { color:inherit; }
+  header.top { position:sticky; top:0; z-index:10; background:rgba(15,17,21,.94); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
+  .bar { max-width:1100px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .brand { font-weight:800; color:var(--lime); letter-spacing:.04em; white-space:nowrap; }
+  .brand small { color:var(--muted); font-weight:500; margin-left:8px; letter-spacing:0; }
+  nav { display:flex; gap:4px; flex-wrap:wrap; }
+  nav a { color:var(--muted); text-decoration:none; font-size:.8rem; padding:4px 9px; border-radius:6px; border:1px solid transparent; }
+  nav a:hover { color:var(--lime); border-color:var(--lime); }
+  .tools { margin-left:auto; }
+  .tools a { font-size:.8rem; color:var(--lime); border:1px solid var(--lime); border-radius:6px; padding:4px 10px; text-decoration:none; }
+  .tools a:hover { background:var(--lime); color:var(--ink); }
+  main { max-width:1100px; margin:0 auto; padding:26px 20px 80px; }
+  section { scroll-margin-top:84px; margin-bottom:56px; }
+  h2.st { display:flex; align-items:baseline; gap:12px; margin:0 0 16px; font-size:1.05rem; letter-spacing:.06em; color:var(--lime); flex-wrap:wrap; }
+  h2.st small { color:var(--muted); font-weight:500; letter-spacing:0; font-size:.85rem; }
+
+  /* hero */
+  .hero { display:grid; grid-template-columns:1.15fr 1fr; border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+  .hl { background:var(--lime); color:var(--ink); padding:40px 40px 34px; display:flex; flex-direction:column; justify-content:center;
+        background-image:linear-gradient(rgba(0,0,0,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.07) 1px,transparent 1px); background-size:28px 28px; }
+  .hl .kicker { font-size:.75rem; font-weight:800; letter-spacing:.2em; }
+  .hl h1 { margin:8px 0 0; font-size:clamp(2.2rem,5.6vw,3.8rem); font-weight:900; letter-spacing:-.02em; line-height:1.08; }
+  .hl p { margin:18px 0 0; font-weight:700; }
+  .hl p.s { font-weight:500; opacity:.8; margin-top:4px; font-size:.92rem; }
+  .hr { background:#000; padding:28px 30px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge { width:100%; max-width:340px; }
+  .gauge .track { fill:none; stroke:#262b33; stroke-width:16; stroke-linecap:round; }
+  .gauge .fill { fill:none; stroke:var(--lime); stroke-width:16; stroke-linecap:round; stroke-dasharray:283; stroke-dashoffset:283; transition:stroke-dashoffset 2.2s cubic-bezier(.2,.8,.2,1); }
+  .gauge.go .fill { stroke-dashoffset:0; }
+  .gauge text { fill:#fff; font-weight:900; text-anchor:middle; font-family:inherit; }
+  .gv { font-size:34px; }
+  .gl { font-size:10px; fill:var(--muted) !important; letter-spacing:.2em; font-weight:700 !important; }
+  .verdict { margin:6px 0 0; color:var(--lime); font-weight:800; letter-spacing:.04em; text-align:center; min-height:1.6em; }
+  .verdict small { display:block; color:var(--muted); font-weight:500; letter-spacing:0; font-size:.8rem; }
+
+  /* titles */
+  .titles { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .titles span { background:var(--card); border:1px solid var(--line); border-radius:999px; padding:5px 14px; font-size:.85rem; }
+  .titles span b { color:var(--lime); }
+
+  /* media blocks */
+  .split { display:grid; grid-template-columns:minmax(0,420px) 1fr; gap:26px; align-items:start; }
+  .split.rev { grid-template-columns:1fr minmax(0,420px); }
+  .split.rev .pic { order:2; }
+  .pic { position:sticky; top:88px; margin:0; }
+  .pic img, .wide img { width:100%; height:auto; display:block; border-radius:10px; border:1px solid var(--line); cursor:zoom-in; background:#000; }
+  .pic figcaption, .wide figcaption { color:var(--muted); font-size:.8rem; margin-top:6px; }
+  .wide { margin:0 0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px 22px; }
+  .card h3 { margin:0 0 8px; font-size:1.05rem; }
+  .card p { margin:0 0 12px; color:#c9ced4; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 14px; padding:0; list-style:none; }
+  .chips li { background:#22262e; border:1px solid var(--line); border-radius:999px; padding:2px 11px; font-size:.82rem; color:var(--text); }
+  .chips li.hot { background:var(--lime); color:var(--ink); border-color:var(--lime); font-weight:700; }
+  .stack > * + * { margin-top:14px; }
+
+  /* stats */
+  .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  .stat { background:#101319; border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .stat b { display:block; font-size:1.55rem; color:var(--lime); font-variant-numeric:tabular-nums; line-height:1.2; }
+  .stat span { color:var(--muted); font-size:.8rem; }
+
+  /* bars */
+  .bars { display:grid; gap:12px; }
+  .bar-row { display:grid; grid-template-columns:110px 1fr 90px; gap:12px; align-items:center; font-size:.9rem; }
+  .meter { height:12px; background:#22262e; border-radius:999px; overflow:hidden; }
+  .meter i { display:block; height:100%; width:0; background:var(--lime); border-radius:999px; transition:width 1.6s cubic-bezier(.2,.8,.2,1); }
+  .bar-row em { font-style:normal; color:var(--lime); font-weight:800; text-align:right; font-variant-numeric:tabular-nums; }
+  .note { color:var(--muted); font-size:.8rem; margin:12px 0 0; }
+
+  /* comment */
+  .quote { border-left:4px solid var(--lime); background:var(--card); border-radius:8px; padding:18px 22px; font-size:1.02rem; }
+  .quote small { display:block; margin-top:8px; color:var(--muted); font-size:.82rem; }
+
+  footer { max-width:1100px; margin:0 auto; padding:0 20px 40px; color:var(--muted); font-size:.85rem; display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap; }
+  footer a { color:var(--lime); text-decoration:none; }
+
+  #lb { position:fixed; inset:0; background:rgba(0,0,0,.94); display:none; z-index:50; align-items:center; justify-content:center; cursor:zoom-out; }
+  #lb.on { display:flex; }
+  #lb img { max-width:100vw; max-height:100vh; object-fit:contain; }
+  #lb .hint { position:fixed; top:12px; right:16px; color:#fff; font-size:.85rem; background:rgba(255,255,255,.12); padding:4px 10px; border-radius:6px; }
+
+  @media (max-width:860px) {
+    .hero { grid-template-columns:1fr; } .hl { padding:30px 24px; }
+    .split, .split.rev { grid-template-columns:1fr; } .split.rev .pic { order:0; } .pic { position:static; max-width:420px; }
+    nav { display:none; }
+    .bar-row { grid-template-columns:84px 1fr 70px; gap:8px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gauge .fill, .meter i { transition:none; } html { scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+<header class="top"><div class="bar">
+  <div class="brand">PORTFOLIO<small>김현 · 이 사람의 덕력은?</small></div>
+  <nav><a href="#measure">측정</a><a href="#shelf">진열장</a><a href="#games">게임</a><a href="#mobile">모바일</a><a href="#report">분석표</a></nav>
+  <div class="tools"><a href="index.html">← 포트폴리오 목차</a></div>
+</div></header>
+
+<main>
+<section id="measure">
+  <div class="hero">
+    <div class="hl">
+      <span class="kicker">OTAKU POWER TEST</span>
+      <h1>이 사람의<br>덕력은?</h1>
+      <p>측정을 시작합니다. 계기판이 버틸 수 있을지는 보장하지 못합니다.</p>
+      <p class="s">진열장, 게임 선반, 모바일 계정까지 세 곳을 직접 재 봤습니다.</p>
+    </div>
+    <div class="hr">
+      <svg class="gauge" id="gauge" viewBox="0 0 220 130" aria-label="덕력 게이지">
+        <path class="track" d="M 20 110 A 90 90 0 0 1 200 110" />
+        <path class="fill" d="M 20 110 A 90 90 0 0 1 200 110" />
+        <text class="gv" id="gv" x="110" y="96">0</text>
+        <text class="gl" x="110" y="118">DUK POWER</text>
+      </svg>
+      <p class="verdict" id="verdict">측정 중…</p>
+    </div>
+  </div>
+  <div class="titles">
+    <span>공식 칭호 <b>아미보 수호자</b></span>
+    <span>공식 칭호 <b>선반 장인</b></span>
+    <span>공식 칭호 <b>한국어 패키지 수집가</b></span>
+    <span>공식 칭호 <b>니케 지휘관</b></span>
+  </div>
+</section>
+
+<section id="shelf">
+  <h2 class="st">STAGE 01 <small>진열장 · 피규어와 amiibo</small></h2>
+  <div class="split">
+    <figure class="pic"><img src="duck/shelf.webp" alt="피규어와 amiibo가 가득한 유리 진열장" loading="lazy"><figcaption>눌러서 크게 보기</figcaption></figure>
+    <div class="stack">
+      <div class="card">
+        <h3>장르를 가리지 않는 잡식성</h3>
+        <p>할로우 나이트, 만달로리안, 원피스, 울버린 컵, 트롤, 쿠로미까지 한 선반에 모여 있습니다. 게임에서 출발해 만화와 영화로 퍼져 나간 흔적입니다.</p>
+        <ul class="chips"><li>할로우 나이트</li><li>원피스</li><li>울버린</li><li>쿠로미</li><li>짱구</li><li>판다 인형</li></ul>
+      </div>
+      <div class="card">
+        <h3>측정 결과</h3>
+        <p>좋아하는 것을 모으는 데서 끝나지 않고, 보이게 정리하고 지키는 단계까지 갔습니다. 진열장 한 장만으로도 기준선을 넘었습니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="games">
+  <h2 class="st">STAGE 02 <small>게임 선반 · 한국어 패키지</small></h2>
+  <figure class="wide"><img src="duck/games.webp" alt="Switch, PS2, PSP 게임 패키지와 아이언맨 마크 1 박스" loading="lazy"><figcaption>눌러서 크게 보기</figcaption></figure>
+  <div class="card">
+    <h3>디지털 시대에 패키지를 세워 둔 사람</h3>
+    <p>붉은 패키지가 줄지어 서 있고, 그 옆으로 이전 세대 타이틀이 이어집니다. 다운로드 한 번이면 끝나는 시대에도 손으로 꽂고 꺼내는 쪽을 택했습니다. 선반의 한쪽 끝은 피규어 박스가 지키고 있습니다.</p>
+  </div>
+</section>
+
+<section id="mobile">
+  <h2 class="st">STAGE 03 <small>모바일 · 니케 계정</small></h2>
+  <div class="split rev">
+    <figure class="pic"><img src="duck/nikke.webp" alt="니케 프로필 화면" loading="lazy"><figcaption>눌러서 크게 보기</figcaption></figure>
+    <div class="stack">
+      <div class="card">
+        <h3>수집은 화면 안에서도 계속됩니다</h3>
+        <p>레벨 747, 대표 스쿼드 다섯 명이 전부 레벨 580입니다. 키우다 만 캐릭터가 하나도 없다는 뜻입니다.</p>
+        <div class="stats">
+          <div class="stat"><b>747</b><span>지휘관 레벨</span></div>
+          <div class="stat"><b>1427K</b><span>스쿼드 전투력</span></div>
+          <div class="stat"><b>199</b><span>작전인원</span></div>
+          <div class="stat"><b>034</b><span>코스튬</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>기획자의 눈으로 보면</h3>
+        <p>성장 곡선, 전투력 수치, 수집 요소의 보상 구조를 매일 직접 체감하고 있다는 뜻이기도 합니다. 밸런스를 만드는 사람은 밸런스를 가장 오래 겪어 본 사람이어야 한다고 생각합니다.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="report">
+  <h2 class="st">RESULT <small>덕력 분석표 (자체 측정)</small></h2>
+  <div class="card">
+    <div class="bars" id="bars">
+      <div class="bar-row"><span>수집력</span><div class="meter"><i data-w="98"></i></div><em data-n="98">0</em></div>
+      <div class="bar-row"><span>지속력</span><div class="meter"><i data-w="96"></i></div><em data-n="96">0</em></div>
+      <div class="bar-row"><span>정리정돈</span><div class="meter"><i data-w="90"></i></div><em data-n="90">0</em></div>
+      <div class="bar-row"><span>장르 폭</span><div class="meter"><i data-w="94"></i></div><em data-n="94">0</em></div>
+      <div class="bar-row"><span>파고드는 힘</span><div class="meter"><i data-w="99"></i></div><em data-n="99">0</em></div>
+    </div>
+    <p class="note">※ 점수는 재미로 매긴 자체 평가이며 공식 지표가 아닙니다.</p>
+  </div>
+  <div class="quote" style="margin-top:18px">
+    좋아하는 게임을 오래, 깊게 파 본 경험이 시스템과 밸런스를 보는 눈이 됩니다. 이 선반들은 그 시간의 기록입니다.
+    <small>기획자로서의 한 줄 코멘트</small>
+  </div>
+</section>
+</main>
+
+<footer><span>© Kim Hyeon</span><a href="index.html">← 포트폴리오 목차로 돌아가기</a></footer>
+
+<div id="lb"><span class="hint">클릭하거나 Esc로 닫기</span><img alt=""></div>
+
+<script data-goatcounter="https://hyeonportfolio.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script>
+(function(){
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var gauge = document.getElementById('gauge'), gv = document.getElementById('gv'), vd = document.getElementById('verdict');
+  function finish(){
+    gv.textContent = '측정 불가';
+    gv.setAttribute('style','font-size:26px');
+    vd.innerHTML = '계기판이 한계를 넘었습니다<small>측정을 중단하고 아래에서 증거를 확인해 주세요</small>';
+  }
+  function runGauge(){
+    gauge.classList.add('go');
+    if (reduce) { finish(); return; }
+    var t0 = performance.now(), dur = 2200;
+    (function step(now){
+      var p = Math.min(1, (now - t0) / dur);
+      gv.textContent = Math.round(9999 * (1 - Math.pow(1 - p, 3))).toLocaleString();
+      if (p < 1) requestAnimationFrame(step); else setTimeout(finish, 350);
+    })(t0);
+  }
+  setTimeout(runGauge, 300);
+
+  var bars = document.getElementById('bars'), done = false;
+  function runBars(){
+    if (done) return; done = true;
+    bars.querySelectorAll('i').forEach(function(i){ i.style.width = i.dataset.w + '%'; });
+    bars.querySelectorAll('em').forEach(function(e){
+      var n = +e.dataset.n, t0 = performance.now();
+      if (reduce) { e.textContent = n; return; }
+      (function s(now){ var p = Math.min(1,(now-t0)/1600); e.textContent = Math.round(n*p); if (p<1) requestAnimationFrame(s); })(t0);
+    });
+  }
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function(es, o){ if (es[0].isIntersecting) { runBars(); o.disconnect(); } }, {threshold:.3}).observe(bars);
+  } else runBars();
+
+  var lb = document.getElementById('lb'), lbi = lb.querySelector('img');
+  document.querySelectorAll('.pic img, .wide img').forEach(function(im){
+    im.addEventListener('click', function(){ lbi.src = im.src; lbi.alt = im.alt; lb.classList.add('on'); });
+  });
+  lb.addEventListener('click', function(){ lb.classList.remove('on'); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') lb.classList.remove('on'); });
+})();
+</script>
+</body>
+</html>
