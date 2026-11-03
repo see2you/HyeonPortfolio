@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>이 사람의 게임 개발 열정 — 김현 PORTFOLIO</title>
+<style>
+  :root { --bg:#0f1115; --card:#181b21; --text:#e6e8eb; --muted:#9aa3ad; --line:#2a2f37; --lime:#CFEF20; --ink:#0b0d10; --org:#2563EB; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--text); line-height:1.65; font-size:15px; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif; }
+  a { color:inherit; }
+  header.top { position:sticky; top:0; z-index:10; background:rgba(15,17,21,.94); backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
+  .bar { max-width:1100px; margin:0 auto; padding:10px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .brand { font-weight:800; color:var(--lime); letter-spacing:.04em; white-space:nowrap; }
+  .brand small { color:var(--muted); font-weight:500; margin-left:8px; letter-spacing:0; }
+  .tools { margin-left:auto; display:flex; gap:8px; }
+  .tools a { font-size:.8rem; color:var(--lime); border:1px solid var(--lime); border-radius:6px; padding:4px 10px; text-decoration:none; }
+  .tools a:hover { background:var(--lime); color:var(--ink); }
+  main { max-width:1100px; margin:0 auto; padding:26px 20px 80px; }
+  .hero { display:grid; grid-template-columns:1.15fr 1fr; border-radius:10px; overflow:hidden; border:1px solid var(--line); }
+  .hl { background:var(--lime); color:var(--ink); padding:40px; display:flex; flex-direction:column; justify-content:center;
+        background-image:linear-gradient(rgba(0,0,0,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.07) 1px,transparent 1px); background-size:28px 28px; }
+  .hl .kicker { font-size:.75rem; font-weight:800; letter-spacing:.2em; }
+  .hl h1 { margin:8px 0 0; font-size:clamp(2rem,5vw,3.4rem); font-weight:900; letter-spacing:-.02em; line-height:1.1; }
+  .hl p { margin:18px 0 0; font-weight:700; }
+  .hl p.s { font-weight:500; opacity:.8; margin-top:4px; font-size:.92rem; }
+  .hr { background:#000; padding:30px; display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-content:center; }
+  .num { text-align:center; padding:16px 6px; border:1px solid var(--line); border-radius:10px; background:#101319; }
+  .num b { display:block; font-size:2.2rem; color:var(--lime); font-variant-numeric:tabular-nums; line-height:1.1; }
+  .num span { color:var(--muted); font-size:.78rem; }
+  h2.st { display:flex; align-items:baseline; gap:12px; margin:40px 0 16px; font-size:1.05rem; letter-spacing:.06em; color:var(--lime); flex-wrap:wrap; }
+  h2.st small { color:var(--muted); font-weight:500; letter-spacing:0; font-size:.85rem; }
+  .list { display:grid; gap:14px; }
+  .proj { display:grid; grid-template-columns:80px 1fr; background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; transition:.15s; }
+  .proj:hover { border-color:var(--lime); }
+  .no { background:#101319; color:var(--lime); font-weight:900; font-size:1.9rem; display:flex; align-items:center; justify-content:center; border-right:1px solid var(--line); font-variant-numeric:tabular-nums; }
+  .pb { padding:20px 24px; }
+  .genre { color:var(--muted); font-size:.82rem; }
+  .pb h3 { margin:2px 0 6px; font-size:1.3rem; }
+  .pb p { margin:0 0 12px; color:#c9ced4; }
+  .tags { display:flex; flex-wrap:wrap; gap:6px; list-style:none; margin:0 0 14px; padding:0; }
+  .tags li { background:#22262e; border:1px solid var(--line); border-radius:999px; padding:1px 11px; font-size:.8rem; }
+  .btns { display:flex; flex-wrap:wrap; gap:8px; }
+  .btns a { font-size:.85rem; font-weight:700; text-decoration:none; padding:6px 16px; border-radius:999px; border:1px solid var(--lime); }
+  .b1 { background:var(--lime); color:var(--ink); }
+  .b2 { color:var(--lime); }
+  .btns a:hover { filter:brightness(1.1); background:var(--lime); color:var(--ink); }
+  .closing { margin-top:30px; border-left:4px solid var(--org); background:var(--card); border-radius:8px; padding:18px 22px; font-size:1.02rem; }
+  footer { max-width:1100px; margin:0 auto; padding:0 20px 40px; color:var(--muted); font-size:.85rem; display:flex; gap:12px; justify-content:space-between; flex-wrap:wrap; }
+  footer a { color:var(--lime); text-decoration:none; }
+  @media (max-width:860px) {
+    .hero { grid-template-columns:1fr; } .hl { padding:30px 24px; }
+    .proj { grid-template-columns:1fr; } .no { border-right:0; border-bottom:1px solid var(--line); padding:8px; font-size:1.3rem; justify-content:flex-start; padding-left:22px; }
+  }
+</style>
+</head>
+<body>
+<header class="top"><div class="bar">
+  <div class="brand">PORTFOLIO<small>김현 · 이 사람의 게임 개발 열정</small></div>
+  <div class="tools"><a href="duckryeok.html">이 사람의 덕력은?</a><a href="index.html">← 포트폴리오 목차</a></div>
+</div></header>
+<main>
+  <div class="hero">
+    <div class="hl">
+      <span class="kicker">PASSION FOR MAKING GAMES</span>
+      <h1>이 사람의<br>게임 개발 열정</h1>
+      <p>회사 밖에서도 계속 만들었습니다.</p>
+      <p class="s">직접 기획하고 브라우저에서 돌아가게 만든 개인 프로젝트 모음입니다.</p>
+    </div>
+    <div class="hr">
+      <div class="num"><b data-n="5">0</b><span>개인 프로젝트</span></div>
+      <div class="num"><b data-n="5">0</b><span>직접 플레이</span></div>
+      <div class="num"><b data-n="12">0</b><span>공개 문서·링크</span></div>
+    </div>
+  </div>
+
+  <h2 class="st">PROJECTS <small>눌러서 소개 문서와 프로토타입을 열어 보세요</small></h2>
+  <div class="list">
+<article class="proj"><span class="no">01</span><div class="pb"><span class="genre">2D 추리 RPG</span><h3>은빛 성배 실종사건</h3><p>사라진 은빛 성배를 단서와 증언으로 추적하는 2D 추리 RPG 프로토타입입니다.</p><ul class="tags"><li>추리</li><li>2D RPG</li></ul><div class="btns"><a class="b1" href="%EC%8A%B5%EC%9E%91/2D_silver-chalice/silver-chalice_intro.html">게임소개</a><a class="b2" href="%EC%8A%B5%EC%9E%91/2D_silver-chalice/silver-chalice.html">플레이</a></div></div></article>
+<article class="proj"><span class="no">02</span><div class="pb"><span class="genre">하이브리드 캐주얼 · 방치형 경영</span><h3>타이니 길드</h3><p>모바일 방치형 길드 경영과 자동 파견 RPG를 합친 프로토타입입니다. 파견, 전리품, 가공, 판매, 성장으로 이어지는 코어 루프와 던전 사망·세대 교체 같은 장치를 직접 설계했습니다.</p><ul class="tags"><li>방치형</li><li>길드 경영</li><li>자동 파견</li><li>경제 설계</li></ul><div class="btns"><a class="b1" href="%EC%8A%B5%EC%9E%91/tinyguild_game_intro.html">게임소개</a><a class="b2" href="%EC%8A%B5%EC%9E%91/tinyguild_prototype.html">프로토타입 플레이</a></div></div></article>
+<article class="proj"><span class="no">03</span><div class="pb"><span class="genre">장르 결합 프로토타입</span><h3>TPS × AOS</h3><p>TPS의 조준 전투와 AOS의 라인·성장 구조를 하나로 합쳐 보는 장르 결합 프로토타입입니다.</p><ul class="tags"><li>TPS</li><li>AOS</li><li>장르 결합</li></ul><div class="btns"><a class="b1" href="%EC%8A%B5%EC%9E%91/TPS_AOS_Info.html">게임소개</a><a class="b2" href="%EC%8A%B5%EC%9E%91/TPS_AOS_TEST_v3.html">프로토타입 플레이 (v3)</a></div></div></article>
+<article class="proj"><span class="no">04</span><div class="pb"><span class="genre">매치3 RPG</span><h3>몬스터 퍼즐 던전</h3><p>퍼즐앤드래곤 방식의 매치3 RPG를 브라우저에서 돌아가는 프로토타입으로 만들었습니다. 6×5 오브 보드, 콤보 배율, 보스와 난이도 구간, 장비 제작·융합까지 구현했습니다.</p><ul class="tags"><li>매치3</li><li>콤보 시스템</li><li>장비 제작·융합</li></ul><div class="btns"><a class="b1" href="%EC%8A%B5%EC%9E%91/mpd_intro.html">게임소개</a><a class="b2" href="%EC%8A%B5%EC%9E%91/monster_puzzle_dungeon%20Ver%205_%EC%8A%B5%EC%9E%91.html">퍼즐 던전 플레이</a><a class="b2" href="%EC%8A%B5%EC%9E%91/monster_puzzle_dungeon_%EA%B8%B0%ED%9A%8D%EC%A0%95%EB%A6%AC.html">기획정리</a></div></div></article>
+<article class="proj"><span class="no">05</span><div class="pb"><span class="genre">2D 액션 프로토타입</span><h3>세키로 스틱맨</h3><p>세키로의 자세·튕겨내기 전투를 2D 스틱맨 횡스크롤로 옮긴 프로토타입입니다. 자세 게이지, 튕겨내기 판정, 보스 AI와 모션 연구까지 직접 정리했습니다.</p><ul class="tags"><li>액션</li><li>튕겨내기</li><li>보스 AI</li><li>모션 연구</li></ul><div class="btns"><a class="b1" href="%EC%8A%B5%EC%9E%91/sekiro_portfolio.html">기획 분석 정리</a><a class="b2" href="%EC%8A%B5%EC%9E%91/sekiro_stickman_proto.html">프로토타입 플레이</a><a class="b2" href="%EC%8A%B5%EC%9E%91/%EC%8A%A4%ED%8B%B1%EB%A7%A8_sekiro_%EB%AA%A8%EC%85%98%EB%B7%B0%EC%96%B4.html">모션 뷰어</a></div></div></article>
+  </div>
+
+  <div class="closing">시스템을 문서로만 설계하지 않고, 실제로 돌려 보며 수치와 재미를 확인하는 것이 제 작업 방식입니다.</div>
+</main>
+<footer><span>© Kim Hyeon</span><a href="index.html">← 포트폴리오 목차로 돌아가기</a></footer>
+<script data-goatcounter="https://hyeonportfolio.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+<script>
+(function(){
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll('.num b').forEach(function(e){
+    var n = +e.dataset.n, t0 = performance.now();
+    if (reduce) { e.textContent = n; return; }
+    (function s(now){ var p = Math.min(1,(now-t0)/1200); e.textContent = Math.round(n*p); if (p<1) requestAnimationFrame(s); })(t0);
+  });
+})();
+</script>
+</body>
+</html>
