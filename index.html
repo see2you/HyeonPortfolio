@@ -52,7 +52,7 @@
   .notice b { color:var(--lime); margin-right:8px; }
 
   /* ability */
-  .abil { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .abil { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
   .ab { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:18px 20px; }
   .ab .k { color:var(--lime); font-weight:800; font-size:.85rem; letter-spacing:.06em; }
   .ab b { display:block; margin:4px 0 6px; font-size:1.05rem; }
@@ -138,12 +138,13 @@
   footer { max-width:1240px; margin:0 auto; padding:0 20px 40px; color:var(--muted); font-size:.85rem; }
   @media (max-width:900px) {
     .hero { grid-template-columns:1fr; } .hl { padding:32px 24px 52px; } .hl .yr { left:24px; } .hr { padding:28px 24px; }
-    .abil { grid-template-columns:1fr; } 
+    .abil { grid-template-columns:1fr 1fr; } 
     .docstat { grid-template-columns:1fr; }
     details.crow > summary { grid-template-columns:1fr; gap:2px; padding-right:44px; } .eng { justify-self:start; } .chev { position:absolute; right:20px; top:22px; } .cbody { grid-template-columns:1fr; gap:0; padding:0 18px 18px; }
     nav { display:none; }
   }
   
+  @media (max-width:560px) { .abil { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
@@ -176,11 +177,12 @@
 </section>
 
 <section id="ability">
-  <h2 class="st">SYSTEM DESIGN <small>기반 시스템 · 시스템 연계 · 데이터 구조</small></h2>
+  <h2 class="st">SYSTEM &amp; CONTENT DESIGN <small>기반 시스템 · 시스템 연계 · 데이터 구조 · 콘텐츠 기획</small></h2>
   <div class="abil">
     <div class="ab"><span class="k">01</span><b>기반 시스템</b><p>GPS 위치 데이터, 인앱 상점, 장비·인벤토리 같은 서비스의 뼈대가 되는 시스템을 규칙부터 설계했습니다.</p></div>
     <div class="ab"><span class="k">02</span><b>시스템 연계</b><p>경쟁 콘텐츠·거래소·PVP 등 코어 플레이와 맞물리는 콘텐츠를 연결하고 예외 처리까지 정의했습니다.</p></div>
-    <div class="ab"><span class="k">03</span><b>데이터 구조 · 밸런스</b><p>테이블 컬럼과 공식을 개발자가 바로 구현할 수 있는 단위로 작성하고, 시뮬레이터로 수치를 검증했습니다.</p></div>
+    <div class="ab"><span class="k">03</span><b>콘텐츠 기획</b><p>시스템으로 기반을 만들고, 그 위에 재미를 쌓았습니다. GPS 콘텐츠, 던전, 이벤트, PVE, PVP, 반복 콘텐츠를 기획했고, 레벨 디자인과 스토리, AI 설계까지 맡았습니다.</p></div>
+    <div class="ab"><span class="k">04</span><b>데이터 구조 · 밸런스</b><p>테이블 컬럼과 공식을 개발자가 바로 구현할 수 있는 단위로 작성하고, 시뮬레이터로 수치를 검증했습니다.</p></div>
   </div>
 </section>
 
