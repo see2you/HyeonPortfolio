@@ -81,6 +81,7 @@ h1{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(28px,5vw,
 .inv b{color:#fff6e2;font-weight:400}
 .hint{position:absolute;right:2.5%;bottom:4%;padding:.3em .8em;border-radius:4px;background:rgba(12,12,28,.72);border:1px solid rgba(226,174,96,.6);color:#fff3da}
 .toast{position:absolute;left:50%;top:24%;transform:translateX(-50%);max-width:86%;width:max-content;text-align:center;text-wrap:balance;padding:.5em 1.1em;background:rgba(30,22,12,.9);border:1px solid var(--gold);color:#fff2d2;font-family:var(--display);font-size:clamp(11px,1.7cqw,16px);white-space:normal;pointer-events:none;opacity:0;transition:opacity .25s,transform .25s}
+.toast{z-index:25}
 .toast.show{opacity:1;transform:translate(-50%,4px)}
 .toast b{color:var(--gold);font-weight:700;margin-right:.5em}
 
@@ -1490,7 +1491,7 @@ function renderPals(body){
     const sel=document.createElement('select');sel.setAttribute('aria-label',sp.name+' 배치');
     for(const [v,l] of assignOptions(p)){const o=document.createElement('option');o.value=v;o.textContent=l;if(p.assign===v)o.selected=true;sel.appendChild(o);}
     sel.disabled=!!p.faint;
-    sel.onchange=()=>{const v=sel.value;if(v==='follow')setFollow(p);else{if(p.assign==='follow')setFollow(null);const f=FACDEF[v];if(f&&f.cap&&facPals(v).length>=f.cap){toast('<b>자리가 없다</b>'+f.name+' 최대 '+f.cap+'마리');renderPanel();return;}p.assign=v;if(R.fam!=='rowen'){p.x=BASE.x;p.y=BASE.y;}}checkQuest();save();renderPanel();};
+    sel.onchange=()=>{const v=sel.value;if(v==='follow')setFollow(p);else{if(p.assign==='follow')setFollow(null);const f=FACDEF[v];if(f&&f.cap&&facPals(v).length>=f.cap){fullMsg(v);renderPanel();return;}p.assign=v;if(R.fam!=='rowen'){p.x=BASE.x;p.y=BASE.y;}}checkQuest();save();renderPanel();};
     row.appendChild(sel);body.appendChild(row);}}
 let dexRegion='rowen';
 function renderDex(body){const sub=document.createElement('p');sub.className='sub';sub.textContent=`도감 ${dexCount()} / ${DEX_ORDER.length}`;body.appendChild(sub);
@@ -1896,7 +1897,7 @@ function renderFacPanel(body,k){const f=FACDEF[k],st=S.fac[k],ws=facPals(k);
   for(const p of cand){const row=document.createElement('div');row.className='row';const on=p.assign===k,fw=facWork(p,f);
     row.innerHTML=`<div class="pi"></div><div><b>${SPECIES[p.sp].name} Lv.${p.lv}${p.rank?' '+'★'.repeat(p.rank):''}</b><p>${fw.w==='any'?'':WORKS[fw.w]+' '+stars(palWorkLv(p,fw.w))+' · '}${moodTxt(p)} · ${palState(p)}</p></div>`;
     row.querySelector('.pi').appendChild(palIcon(p.sp));
-    row.appendChild(btn(on?'빼기':'배치',()=>{if(on)p.assign='box';else{if(facPals(k).length>=f.cap)return toast('<b>자리가 없다</b>최대 '+f.cap+'마리');if(p.assign==='follow')setFollow(null);p.assign=k;if(R.fam!=='rowen'){p.x=BASE.x;p.y=BASE.y;}}renderPanel();checkQuest();save();},!on&&ws.length>=f.cap));body.appendChild(row);}}
+    row.appendChild(btn(on?'빼기':'배치',()=>{if(on)p.assign='box';else{if(facPals(k).length>=f.cap)return fullMsg(k);if(p.assign==='follow')setFollow(null);p.assign=k;if(R.fam!=='rowen'){p.x=BASE.x;p.y=BASE.y;}}renderPanel();checkQuest();save();},!on&&ws.length>=f.cap));body.appendChild(row);}}
 function craftRate(k){const f=FACDEF[k];const near=f.helper&&R.base&&Math.hypot(player.x-f.x,player.y-f.y)<50&&!dead?1:0;let rate=near+.6*workers(k).reduce((a,p)=>a+facWork(p,f).l*palEff(p),0);if(f.power&&!powered())rate=0;return rate;}
 function updateCraftProg(k){const st=S.fac[k],f=FACDEF[k],pb=$('pbody'),bar=pb.querySelector('.prog i'),tx=pb.querySelector('.prog .pt'),qn=pb.querySelector('.qnext');if(!bar||!st.queue.length)return;
   const q=st.queue[0],pc=Math.min(100,Math.round(st.prog/q.t*100)),r=craftRate(k);bar.style.width=pc+'%';
@@ -1910,10 +1911,11 @@ function renderCraftPanel(body,k){const f=FACDEF[k],st=S.fac[k],list=RECIPES[f.c
     const row=document.createElement('div');row.className='row';row.innerHTML=`<div><b>${r.name}</b><p class="cost ${has(r.cost)?'':'no'}">${costTxt(r.cost)} · ${r.t}초${extra}</p></div>`;
     row.appendChild(btn(owned?'보유 중':'제작',()=>{if(!has(r.cost)||st.queue.length>=5)return;pay(r.cost);st.queue.push(r);updateInv();renderPanel();},!ok));body.appendChild(row);}
   if(f.work&&f.cap){const h=document.createElement('p');h.className='sub';h.textContent='— 거들 몬스터 —';body.appendChild(h);renderAssignOnly(body,k);}}
+function fullMsg(k){const f=FACDEF[k],ws=facPals(k);toast(`<b>${f.name}에 자리가 없다 (${ws.length}/${f.cap})</b>일하는 중: ${ws.map(q=>SPECIES[q.sp].name).join(', ')} · 먼저 ‘빼기’로 자리를 비우자`);}
 function renderAssignOnly(body,k){const f=FACDEF[k],ws=facPals(k);const cand=S.pals.filter(p=>!p.faint&&facWork(p,f).l>0).sort((a,b)=>facWork(b,f).l-facWork(a,f).l);
   if(!cand.length){sub(body,`${f.work.map(w=>WORKS[w]).join('·')} 적성이 있는 몬스터가 없다.`);return;}
   for(const p of cand){const row=document.createElement('div');row.className='row';const on=p.assign===k,fw=facWork(p,f);row.innerHTML=`<div class="pi"></div><div><b>${SPECIES[p.sp].name} Lv.${p.lv}</b><p>${WORKS[fw.w]} ${stars(palWorkLv(p,fw.w))} · ${assignName(p.assign)}</p></div>`;row.querySelector('.pi').appendChild(palIcon(p.sp));
-    row.appendChild(btn(on?'빼기':'배치',()=>{if(on)p.assign='box';else{if(facPals(k).length>=f.cap)return;if(p.assign==='follow')setFollow(null);p.assign=k;}renderPanel();checkQuest();save();},!on&&ws.length>=f.cap));body.appendChild(row);}}
+    row.appendChild(btn(on?'빼기':'배치',()=>{if(on)p.assign='box';else{if(facPals(k).length>=f.cap)return fullMsg(k);if(p.assign==='follow')setFollow(null);p.assign=k;}renderPanel();checkQuest();save();}));body.appendChild(row);}}
 function renderWarp(body){const here=panelState&&(panelState.k==='warp'?'w_base':panelState.k);sub(body,'깨운 이동 비석 사이를 순간이동한다. 비석은 각 지역에서 찾아 E로 깨운다.');
   for(const f of ['rowen','plains','rock','lake','volcano']){const ws=WAYS.filter(w=>famOf(w.map)===f);if(!ws.length)continue;const h=document.createElement('p');h.className='sub';h.innerHTML=`<b>${FAM_NAME[f]}</b>`;body.appendChild(h);
     for(const w of ws){const on=wayOn(w),me=w.id===here,row=document.createElement('div');row.className='row';row.innerHTML=`<div><b>${on?w.name:'깨우지 않은 비석'}</b><p>${on?(me?'지금 있는 비석':'Lv '+REGIONS[w.map].lv):'그 지역에서 찾아 깨우자'}</p></div>`;row.appendChild(btn(me?'현재 위치':'이동',()=>warpToWay(w),!on||me));body.appendChild(row);}}}
