@@ -184,7 +184,7 @@ ul.tips{margin:0;padding-left:1.1em;font-size:13px;color:#d8d0e4;display:flex;fl
 .bossbar .tr{height:.65em;background:#1a1020;border-radius:2px;overflow:hidden;margin-top:.3em}
 .bossbar .tr i{display:block;height:100%;background:linear-gradient(90deg,#c0392b,#f08a3c);transition:width .15s}
 .bossbar:not([hidden])~.aim{top:15%}
-body.mobile .aim{top:auto;bottom:12%;width:min(44%,300px)}
+body.mobile .aim,body.mobile .bossbar:not([hidden])~.aim{top:auto;bottom:12%;width:min(44%,300px)}
 .story{font-family:var(--display);font-size:clamp(12px,1.9cqw,17px);line-height:1.75;color:#2d2433;white-space:pre-line;margin:.2em 0 .6em!important}
 .pbtn.big{align-self:center;font-size:1.05em;padding:.45em 1.6em;background:#7d6038;color:#fff6e2;border-color:#5a4028}
 .mctl{position:fixed;inset:0;pointer-events:none;z-index:20}
