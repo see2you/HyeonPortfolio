@@ -236,6 +236,11 @@ body.mobile .aim,body.mobile .bossbar:not([hidden])~.aim{top:auto;bottom:12%;wid
 .mb.use.lbl{font-family:var(--ui);font-size:15px}.mb.use.idle{opacity:.6}.mb:disabled{opacity:.28;pointer-events:none}
 .mb.menu{right:calc(max(14px,env(safe-area-inset-right)) + 148px);bottom:66px;width:46px;height:46px;font-size:11px}
 body.mobile{overflow:hidden;background:#000;overscroll-behavior:none}
+/* v39 모바일: 길게 눌러 선택·두 번 탭/핀치 확대 방지 — 수첩 본문 스크롤만 허용 */
+body.mobile,body.mobile *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+body.mobile .stage,body.mobile .joyzone,body.mobile .mb{touch-action:none}
+body.mobile .pbody{touch-action:pan-y}
+.stage{-webkit-touch-callout:none}
 body.mobile .page{max-width:none;height:100vh;height:100dvh;padding:0;display:flex;align-items:center;justify-content:center;gap:0}
 body.mobile .head,body.mobile .panelx{display:none}
 body.mobile .stage{width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;border:0;border-radius:0}
@@ -1286,6 +1291,8 @@ function buildRegion(R){if(R.built)return;R.built=true;R.hills=R.hillsDef||HILLS
   n=0;for(let i=0;i<R.ores*60&&n<R.ores;i++){if(tryAdd({type:'ore',x:Math.round(40+r()*(R.W-80)),y:Math.round(50+r()*(R.H-100)),hp:8,max:8,regrow:0,spr:ORE},28))n++;}
   n=0;for(let i=0;i<R.obs*60&&n<R.obs;i++){if(tryAdd({type:'obs',x:Math.round(40+r()*(R.W-80)),y:Math.round(50+r()*(R.H-100)),hp:10,max:10,regrow:0,spr:OBS},28))n++;}
   n=0;for(let i=0;i<R.bushes*60&&n<R.bushes;i++){if(tryAdd({type:'bush',x:Math.round(40+r()*(R.W-80)),y:Math.round(50+r()*(R.H-100)),ripe:true,regrow:0,v:n%4},24))n++;}
+  /* v33 시작 지점 자원: 거점 안(나무·바위가 생성되지 않는 구역)에 시작용 나무 3·바위 2를 고정 배치 — 첫 퀘스트 재료가 바로 보이게 */
+  if(R.base)for(const o of [{type:'tree',x:530,y:904},{type:'tree',x:770,y:922},{type:'tree',x:824,y:956},{type:'rock',x:862,y:1042},{type:'rock',x:944,y:1130}]){const node=o.type==='tree'?{...o,hp:5,max:5,regrow:0,spr:TS[Math.floor(hash2(o.x,o.y)*TS.length)],edge:false}:{...o,hp:6,max:6,regrow:0,spr:RS[(o.x+o.y)%RS.length]};if(!all.some(n=>Math.abs(n.x-o.x)<18&&Math.abs(n.y-o.y)<12)){all.push(node);R.nodes.push(node);}}
   for(const e of R.exits){const sx=e.dir==='left'?e.x1+30:e.dir==='right'?e.x0-30:(e.x0+e.x1)/2+44,sy=e.dir==='up'?e.y1+40:e.dir==='down'?e.y0-20:e.y0-12;R.props.push({type:'sign',x:Math.round(sx),y:Math.round(sy),to:e.to});}
   if(R.caves)for(const [x,y] of R.caves)R.props.push({type:'cave',x,y});
   if(R.fam==='plains')R.props.push({type:'altar',x:ALTAR.x,y:ALTAR.y});
@@ -1303,7 +1310,7 @@ const S={lv:1,xp:0,hp:100,food:100,inv:{},weapon:'club',pals:[],fac:{},dex:{},qu
 const EMPTYINV=()=>{const o={};for(const k in ITEMS)o[k]=0;o.berry=3;return o;};S.inv=EMPTYINV();
 for(const k in FACDEF)S.fac[k]={built:!!FACDEF[k].built,queue:[],prog:0,acc:0};
 function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify({qv:3,qid:QUESTS[S.quest].id,lv:S.lv,xp:S.xp,st:S.st,spt:S.spt,tech:S.tech,tpt:S.tpt,apt:S.apt,bl:baseLv(),ownW:S.ownW,ownA:S.ownA,hp:S.hp,food:S.food,inv:S.inv,weapon:S.weapon,quest:S.quest,time:S.time,day:S.day,uid:S.uid,dex:S.dex,stats:S.stats,visited:S.visited,guard:S.guard,met:S.met,shards:S.shards,ended:S.ended,armor:S.armor,eggs:S.eggs,raidDay:S.raidDay,tierSeen:S.tierSeen,chests:S.chests,cells:S.cells,ways:S.ways,mids:S.mids,rested:S.rested,saddle:S.saddle,region:R.id,px:player.x,py:player.y,
-  fac:Object.fromEntries(Object.entries(S.fac).map(([k,v])=>[k,{built:v.built}])),pals:S.pals.map(p=>({uid:p.uid,sp:p.sp,lv:p.lv,hp:p.hp,assign:p.assign,fed:p.fed,mood:Math.round(p.mood??100),rank:p.rank||0}))}));}catch(e){}}
+  fac:Object.fromEntries(Object.entries(S.fac).map(([k,v])=>[k,{built:v.built,bt:v.bt||0}])),pals:S.pals.map(p=>({uid:p.uid,sp:p.sp,lv:p.lv,hp:p.hp,assign:p.assign,fed:p.fed,mood:Math.round(p.mood??100),rank:p.rank||0}))}));}catch(e){}}
 function loadSave(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
 function clearSave(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
 const has=(cost)=>Object.entries(cost).every(([k,v])=>(S.inv[k]||0)>=v);
@@ -1462,11 +1469,13 @@ function showBanner(name){const b=$('banner');$('bname').textContent=name;b.clas
 function mob(t){return coarse?t.replace(/Space로 /g,'공격 버튼으로 ').replace(/Space/g,'공격').replace(/F로 /g,'구슬 버튼으로 ').replace(/에서 E/g,'에서 E 버튼').replace(/Tab/g,'수첩'):t;}
 /* materials are 'done' once the facility stands or the item is already queued at its workbench */
 function questCrafting(q){if(!q||!q.craft||!q.at)return false;const st=S.fac[q.at];return !!(st&&st.queue&&st.queue.some(r=>q.craft.includes(r.id)));}
-function questMatsDone(q){return !!(q&&((q.fac&&built(q.fac))||questCrafting(q)));}
+function buildPending(k){const st=S.fac[k];return !!(st&&!st.built&&st.bt>0);}/* 재료를 내고 짓기 시작했지만 끝나지 않은 부지(죽음·재접속·거점 이탈로 중단) — 다시 가면 무료로 이어서 짓는다 */
+function questMatsDone(q){return !!(q&&((q.fac&&(built(q.fac)||buildPending(q.fac)))||questCrafting(q)));}
 function renderQuest(){const q=QUESTS[S.quest];$('qtx').textContent=q.t;const nd=q.need&&q.need();$('qh').textContent=mob(q.h);const qn=$('qn');if(!qn)return;
   const done=questMatsDone(q),parts=[];
   if(nd)parts.push(done?`<span class="mdone">${Object.entries(nd).map(([k,v])=>`${ITEMS[k]} ${v}`).join(' · ')}</span>`:costHave(nd));
   if(questCrafting(q))parts.push('<span class="mok">제작 중</span>');
+  if(q.fac&&buildPending(q.fac))parts.push('<span class="mno">짓다 멈춤 · 부지에서 E로 이어서 짓기</span>');
   for(const st of q.steps||[]){if(st.after&&!done)continue;const ok=st.ok();parts.push(`<span class="${ok?'mok':'mno'}">${ok?'✓ ':''}${st.t}</span>`);}
   qn.hidden=!parts.length;qn.innerHTML=parts.length?'필요 '+parts.join(' · '):'';}
 function updateInv(){if(started)try{renderQuest();}catch(e){}if(typeof updateMobBtns==='function')try{updateMobBtns();}catch(e){}const el=$('inv');el.innerHTML=['wood','stone','berry','ore','obs','ingot','orb','orb2','orb3','arrow','skewer','bread','pie','potion'].filter(k=>['wood','stone','berry','orb'].includes(k)||S.inv[k]>0||(k==='arrow'&&S.weapon==='bow'))
@@ -1478,7 +1487,7 @@ function updateHud(){
   $('hpn').textContent=Math.ceil(S.hp);$('fdn').textContent=Math.ceil(S.food);
   $('hpw').classList.toggle('low',S.hp<30);$('fdw').classList.toggle('low',S.food<20);
   const ph=phaseOf(S.time),key=S.day+ph+fmtTime()+R.id+baseLv();if(key!==lastHud){lastHud=key;$('clock').textContent=`${S.day}일차 · ${fmtTime()}`;$('phase').textContent=ph;$('phase').dataset.p=ph;$('rgn').textContent=`${R.name} · Lv ${R.lv}${R.base?` · 거점 Lv ${baseLv()}`:''}`;}
-  updateXpHud();const f=follower;$('folw').hidden=!f;if(f){$('foln').textContent=`${SPECIES[f.sp].name} Lv.${f.lv}`;$('folb').style.width=(f.hp/f.max*100)+'%';}}
+  updateXpHud();const f=follower;$('folw').hidden=!f;if(f){$('foln').textContent=`${SPECIES[f.sp].name} Lv.${f.lv}`+(f.retreat?' · 물러나는 중':'');$('folb').style.width=(f.hp/f.max*100)+'%';}}
 
 /* ================= combat & capture ================= */
 function floatTxt(x,y,t,col){floats.push({x,y,t,col,life:0,rid:R.id});}
@@ -1490,7 +1499,7 @@ function elFloat(dmg,ek,byPlayer){return ek>1?[dmg+'!','#ffe04a']:ek<1?[String(d
 /* 피격 반응(임시값): 경직 — 야생 0.16초 / 우두머리·수호자 0.08초. 히트스톱·흔들림은 3타·약점·격파에만 (평타에는 없음) */
 const HITFX={stun:.16,stunElite:.08,stop3:.05,stopWeak:.05,stopKill:.06,windCancelCd:.5};
 /* 예고 중에 맞으면 공격 무산 (선제공격의 의미). 우두머리는 3타째에만 */
-function cancelAtk(m,why){if(!m.atk||m.atk.hit)return false;m.atk=null;m.cd=Math.max(m.cd,HITFX.windCancelCd);burst(m.x,m.y-monH(m.sp)*(m.elite?1.6:1)-6,'210,200,230',6,34);floatTxt(m.x,m.y-monH(m.sp)-(m.elite?22:8),'x','#c8c0e0');return true;}
+function cancelAtk(m,why){if(!m.atk||m.atk.hit)return false;m.atk=null;m.tg=null;m.cd=Math.max(m.cd,HITFX.windCancelCd);burst(m.x,m.y-monH(m.sp)*(m.elite?1.6:1)-6,'210,200,230',6,34);floatTxt(m.x,m.y-monH(m.sp)-(m.elite?22:8),'x','#c8c0e0');return true;}
 function hitWild(m,dmg,fromX,fromY,byPlayer,ek=1){
   m.hp-=dmg;m.hurt=.16;m.stun=Math.max(m.stun||0,m.elite?HITFX.stunElite:HITFX.stun);const d=Math.hypot(m.x-fromX,m.y-fromY)||1;m.kx=(m.x-fromX)/d*70;m.ky=(m.y-fromY)/d*70;
   if(!m.elite)cancelAtk(m);
@@ -1503,6 +1512,8 @@ function killWild(m){burst(m.x,m.y-8,'255,220,160',14,50);S.stats.kills++;if(!m.
   removeWild(m);toast(`<b>쓰러뜨림</b>${SPECIES[m.sp].name} Lv.${m.lv}`);}
 function removeWild(m){const i=R.wild.indexOf(m);if(i>=0)R.wild.splice(i,1);if(lastTarget===m)lastTarget=null;}
 let lastTarget=null;
+/* 동행 버디 전투(임시값, 10회차): 조준한 적 우선, 체력 30% 미만이면 플레이어 뒤로 물러나 50%까지 회복, 공격 때 앞으로 튀어나가는 반동·타격 불꽃 */
+const PALFX={retreat:.3,rejoin:.5,regen:2.2,lunge:85,aimR:150};
 /* ---- player attack: wind-up → swing → recovery, 3-hit combo ---- */
 const WKIND={club:'arc',axe:'arc',spear:'thrust',obsword:'arc',bow:'arc'};
 const COMBO=[{w:.06,s:.09,r:.22,a0:-1.6,a1:1.25,mul:.9,rad:24,kb:1,ext:6},{w:.05,s:.09,r:.22,a0:1.45,a1:-1.4,mul:.95,rad:24,kb:1,ext:8},{w:.12,s:.11,r:.3,a0:-2.3,a1:2.1,mul:1.35,rad:30,kb:1.9,ext:12}];
@@ -1620,10 +1631,29 @@ function startCapture(o){const m=o.target;if(m&&m.elite){S.inv[o.ob.k]++;updateI
   if(!m||!R.wild.includes(m)||Math.hypot(m.x-o.x1,m.y-4-o.y1)>22||m.fade<1||m.captured){burst(o.x1,o.y1,'255,230,170',6,30);return;}
   const p=captureChance(m,o.ob.mul),roll=Math.random(),ok=roll<p,shakes=ok?3:Math.max(0,Math.min(2,Math.floor((1-(roll-p)/(1-p))*3)));
   m.captured=true;captures.push({m,x:m.x,y:m.y-2,t:0,shakes,ok,ob:o.ob,rid:R.id});burst(m.x,m.y-10,'255,240,200',10,50);}
+/* 포획 연출(임시값, 10회차): 빨아들이기 suck초(몬스터가 구슬 속으로 줄어듦) → 구슬이 땅에 떨어져 한 번 튐 → 흔들림(1~3회, 각 shake초 중 .5초 기울어짐, 시작마다 먼지·정점에 흰 번쩍) → 결과(성공: 금빛 터짐·고리·히트스톱 / 실패: 구슬 파편·몬스터가 튀어나옴) */
+const CAPFX={suck:.3,drop:.2,shake:.62,swing:.5,holdOk:.4,holdNo:.22,tilt:.55,orbK:1.5};
+const ORB_COL=k=>k==='orb'?'210,200,240':k==='orb2'?'150,220,255':'190,120,230';
+function capTotal(c){return CAPFX.suck+CAPFX.drop+c.shakes*CAPFX.shake+(c.ok?CAPFX.holdOk:CAPFX.holdNo);}
+function capOrbH(T){/* 구슬 높이: 빨아들이는 동안 14, 떨어지며 0, 바닥에서 한 번 튐 */if(T<CAPFX.suck)return 14;const u=Math.min(1,(T-CAPFX.suck)/CAPFX.drop);return u<.7?14*(1-u/.7)*(1-u/.7):3*Math.sin((u-.7)/.3*Math.PI);}
+function tickCapFx(c,dt){const T=c.t;c.flash=Math.max(0,(c.flash||0)-dt);
+  if(T<CAPFX.suck){if(Math.random()<dt*60){const a=Math.random()*6.283,r=14+Math.random()*8;parts.push({x:c.x+Math.cos(a)*r,y:c.y-14+Math.sin(a)*r*.6,vx:-Math.cos(a)*r/.25,vy:-Math.sin(a)*r*.6/.25,life:0,max:.25,col:ORB_COL(c.ob.k),g:0});}return;}
+  const t0=CAPFX.suck+CAPFX.drop;if(T<t0){if(!c.landed&&T>=t0-CAPFX.drop*.3){c.landed=true;burst(c.x,c.y-1,'214,204,184',6,30);}return;}
+  const k=Math.floor((T-t0)/CAPFX.shake),w=(T-t0)-k*CAPFX.shake;
+  if(k<c.shakes){if(c.sk!==k){c.sk=k;for(let i=0;i<4;i++)parts.push({x:c.x+(i-1.5)*4,y:c.y-1,vx:(i-1.5)*30,vy:-14,life:0,max:.3,col:'214,204,184',g:40});}
+    if(w>=CAPFX.swing*.5&&!c.fl2){c.fl2=true;c.flash=.08;}if(w<CAPFX.swing*.5)c.fl2=false;}}
+function drawCapture(g,c){const T=c.t,ox=Math.round(c.x),oy=Math.round(c.y),spr=ORBS[c.ob.k==='orb'?0:c.ob.k==='orb2'?1:2],h=capOrbH(T),m=c.m;
+  if(T<CAPFX.suck){const u=T/CAPFX.suck,k=Math.max(.04,1-u*u),H=MONSPR[m.sp][0].height*(m.elite?1.6:1);
+    g.save();g.translate(ox,oy-14);g.rotate(u*u*2.2);g.scale(k,k);g.translate(-m.x,-(m.y-H*.5));monDraw(g,m);g.restore();}
+  const t0=CAPFX.suck+CAPFX.drop;let ang=0;
+  if(T>=t0){const k=Math.floor((T-t0)/CAPFX.shake),w=(T-t0)-k*CAPFX.shake;if(k<c.shakes&&w<CAPFX.swing){const v=w/CAPFX.swing;ang=Math.sin(v*Math.PI*2)*CAPFX.tilt*(1-v*.35);}
+    else if(k>=c.shakes&&c.ok){const v=(T-t0-c.shakes*CAPFX.shake)/CAPFX.holdOk;g.save();g.globalAlpha=.25+.35*Math.sin(v*Math.PI*6);g.fillStyle='rgba(255,236,160,1)';g.fillRect(ox-8,oy-14,16,16);g.restore();}}
+  /* 구슬은 1.5배로 크게 — 포획 중엔 화면의 주인공 */g.save();g.translate(ox,oy-6-h);g.rotate(ang);g.scale(CAPFX.orbK,CAPFX.orbK);g.drawImage(spr,-4,-4);if(c.flash>0){g.globalAlpha=Math.min(1,c.flash/.08)*.8;g.fillStyle='#fff';g.fillRect(-4,-4,8,8);}g.restore();}
 function endCapture(c){const m=c.m;
   if(c.ok){removeWild(m);const p=newPal(m.sp,m.lv,Math.max(1,m.hp));p.x=player.x-14;p.y=player.y+8;if(R.fam!=='rowen'){p.x=BASE.x;p.y=BASE.y;}S.pals.push(p);S.dex[m.sp]=(S.dex[m.sp]||0)+1;S.stats.caught++;
-    burst(c.x,c.y-6,'255,236,160',22,60);const cn=S.dex[m.sp],cb=capBonus(cn);toast(`<b>포획 성공!</b>${SPECIES[m.sp].name} Lv.${m.lv}${cn===1?' · 도감 등록':''}${cn===1?' · 첫 포획 보너스 ×3':cb>1?` · 같은 종 보너스 ${cn}/10`:''}`);gainXp(XP.cap(m.lv)*cb,c.x,c.y-30);checkQuest();save();}
-  else{m.captured=false;m.aggro=true;m.state='chase';m.hurt=.1;burst(c.x,c.y-6,'255,180,140',12,50);toast(`<b>빠져나왔다</b>조금 더 약하게 만들자`);}}
+    burst(c.x,c.y-6,'255,236,160',22,60);burst(c.x,c.y-6,'255,255,230',10,90);slamFx.push({x:c.x,y:c.y,r:16,t:0,col:'255,230,150'});hitStop=Math.max(hitStop,.06);shake(true);const cn=S.dex[m.sp],cb=capBonus(cn);toast(`<b>포획 성공!</b>${SPECIES[m.sp].name} Lv.${m.lv}${cn===1?' · 도감 등록':''}${cn===1?' · 첫 포획 보너스 ×3':cb>1?` · 같은 종 보너스 ${cn}/10`:''}`);gainXp(XP.cap(m.lv)*cb,c.x,c.y-30);checkQuest();save();}
+  else{m.captured=false;m.aggro=true;m.state='chase';m.hurt=.1;burst(c.x,c.y-6,ORB_COL(c.ob.k),14,70);burst(c.x,c.y-6,'255,180,140',8,50);
+    /* 구슬이 깨지며 몬스터가 플레이어 반대쪽으로 튀어나온다 */const dx=m.x-player.x,dy=m.y-player.y,d=Math.hypot(dx,dy)||1;m.h=16;m.kx=dx/d*90;m.ky=dy/d*60;m.cd=Math.max(m.cd,.6);toast(`<b>빠져나왔다</b>조금 더 약하게 만들자`);}}
 
 /* ================= interact ================= */
 let target=null;
@@ -1632,7 +1662,7 @@ function findTarget(){
   for(const n of R.nodes){if(n.type!=='bush'||!n.ripe)continue;const d=Math.hypot(n.x-player.x,(n.y-player.y)*1.2);if(d<24&&d<bd){bd=d;best={kind:'bush',ref:n,label:'열매 따기'};}}
   if(R.base)for(const k in FACDEF){const f=FACDEF[k],st=S.fac[k];if(!st.built&&!unlocked(k))continue;const big=GROUND_K(k)?14:0;let d=1e9;for(const [x,y] of (st.built&&f.multi?f.multi:[[f.x,f.y]]))d=Math.min(d,Math.hypot(x-player.x,(y-12-player.y)*1.1));if(d>34+big||d>=bd)continue;
     if(st.built){bd=d;best={kind:'fac',ref:k,label:facLabel(k)};}
-    else{bd=d;best={kind:'plot',ref:k,label:`부지 · ${f.name} 짓기`};}}
+    else{bd=d;best={kind:'plot',ref:k,label:buildPending(k)?`부지 · ${f.name} 이어서 짓기`:`부지 · ${f.name} 짓기`};}}
   for(const pr of R.props){if(pr.type==='altar'){const d=Math.hypot(pr.x-player.x,(pr.y-player.y)*1.2);if(d<36&&d<bd){bd=d;best={kind:'altar',ref:pr,label:S.ended?'큰 등불 · 타오르는 중':`큰 등불 · 등불 조각 ${S.shards||0}/5`};}continue;}if(pr.type==='portal'){const d=Math.hypot(pr.x-player.x,(pr.y-4-player.y)*1.2);if(d<34&&d<bd){bd=d;best={kind:'portal',ref:pr,label:portalOpen(R.fam)?(pr.back?'포탈 · 돌아가기':'포탈 · 수호자에게'):'닫힌 포탈'};}continue;}if(pr.type==='way'){const d=Math.hypot(pr.x-player.x,(pr.y-4-player.y)*1.2);if(d<34&&d<bd){bd=d;best={kind:'way',ref:pr,label:S.ways&&S.ways[pr.id]?'이동 비석 · 순간이동':'이동 비석 깨우기'};}continue;}if(pr.type==='chest'){if(chestOpen(pr))continue;const d=Math.hypot(pr.x-player.x,(pr.y-6-player.y)*1.2);if(d<24&&d<bd){bd=d;best={kind:'chest',ref:pr,label:pr.tier==='silver'?'은빛 보물상자 열기':'보물상자 열기'};}continue;}if(pr.type==='guide'){const d=Math.hypot(pr.x-player.x,(pr.y-player.y)*1.2);if(d<26&&d<bd){bd=d;best={kind:'guide',ref:pr,label:'이정표 읽기'};}continue;}if(pr.type!=='sign')continue;const d=Math.hypot(pr.x-player.x,(pr.y-player.y)*1.2);if(d<26&&d<bd){bd=d;best={kind:'sign',ref:pr,label:`표지판 · ${REGIONS[pr.to].name} 방면`};}}
   return best;}
 function interact(){if(player.work&&player.work.kind==='build')return;
@@ -1660,8 +1690,8 @@ function renderPanel(){if(!panelState)return;const P=panelState,body=$('pbody'),
     for(const [id,lb] of [['pals','몬스터'],['gear','장비'],['tech','기술'],['base','거점'],['dex','도감'],['map','지도'],['bag','가방']]){const b=document.createElement('button');b.type='button';b.className='tab'+(menuTab===id?' on':'');b.textContent=lb;b.onclick=()=>{menuTab=id;renderPanel();};tabs.appendChild(b);}
     if(menuTab!=='base')baseSel=null;if(menuTab==='pals')renderPals(body);else if(menuTab==='base')renderBaseTab(body);else if(menuTab==='dex')renderDex(body);else if(menuTab==='map')renderMap(body);else if(menuTab==='gear')renderGear(body);else if(menuTab==='tech')renderTech(body);else renderBag(body);}
   else if(P.kind==='build'){const f=FACDEF[P.k];$('ptitle').textContent='짓기 · '+f.name;
-    const ok=has(f.cost);body.innerHTML=`<div class="row"><div><b>${f.name}</b><p>${f.desc}</p>${f.work?`<p class="sub">일하는 적성: ${f.work.map(w=>w==='any'?'누구나':WORKS[w]).join(' · ')}${f.cap?` · 최대 ${f.cap}마리`:''}</p>`:''}<p class="costl">재료: ${costHave(f.cost)}</p></div></div>`;
-    body.appendChild(btn(ok?`짓기 · 약 ${buildDur(f)}초`:'재료가 부족하다',()=>{if(!has(f.cost))return;pay(f.cost);updateInv();const k=P.k;closePanel();startWork('build',k);},!ok));}
+    const pend=buildPending(P.k),ok=pend||has(f.cost);body.innerHTML=`<div class="row"><div><b>${f.name}</b><p>${f.desc}</p>${f.work?`<p class="sub">일하는 적성: ${f.work.map(w=>w==='any'?'누구나':WORKS[w]).join(' · ')}${f.cap?` · 최대 ${f.cap}마리`:''}</p>`:''}<p class="costl">${pend?'재료는 이미 냈다 · 짓다 멈춘 곳부터 이어서':'재료: '+costHave(f.cost)}</p></div></div>`;
+    body.appendChild(btn(pend?`이어서 짓기 · 약 ${Math.max(1,Math.ceil(buildDur(f)-S.fac[P.k].bt))}초`:ok?`짓기 · 약 ${buildDur(f)}초`:'재료가 부족하다',()=>{if(!pend){if(!has(f.cost))return;pay(f.cost);S.fac[P.k].bt=.001;save();}updateInv();const k=P.k;closePanel();startWork('build',k);},!ok));}
   else if(P.kind==='craft'){$('ptitle').textContent=FACDEF[P.k].name+' · 제작';renderCraftPanel(body,P.k);}
   else if(P.kind==='warp'){$('ptitle').textContent='이동 비석';renderWarp(body);}
   else if(P.kind==='fac'){$('ptitle').textContent=FACDEF[P.k].name;renderFacPanel(body,P.k);}}
@@ -1802,6 +1832,12 @@ function renderBossBar(){if(!boss)return;$('bossn').textContent=`${SPECIES[boss.
 function hurtPlayer(dm,fx,fy){if(pInvuln()||dead)return;if(player.work&&player.work.kind==='craft')stopWork();dm=armorRed(dm);S.hp-=dm;S.hitT=0;player.inv=.5;const d=Math.hypot(player.x-fx,player.y-fy)||1;player.kx=(player.x-fx)/d*110;player.ky=(player.y-fy)/d*110;floatTxt(player.x,player.y-36,String(dm),'#ff7a6a');hurtFlash();if(S.hp<=0)die();}
 /* 플레이어 피격: 화면 가장자리 붉은 비네트(0.3초) + 흔들림 */
 function hurtFlash(){player.hurtFx=1;shake();}
+/* 공격 대상 선택(v33): 동행 버디를 우선, 플레이어가 동행보다 확실히(85% 이내) 가까울 때만 플레이어. 대상은 공격 1회가 끝날 때까지 고정(m.tg) */
+function tgValid(tg){if(!tg)return false;if(tg===player)return !dead;if(tg===follower)return !!follower&&!follower.faint&&player.mount!==follower;return !tg.faint&&tg.assign!=='follow'&&S.pals.includes(tg);}
+function pickTarget(m,prefer){const fv=follower&&!follower.faint&&player.mount!==follower,pv=!dead;
+  const dP=pv?Math.hypot(player.x-m.x,player.y-m.y):1e9,dF=fv?Math.hypot(follower.x-m.x,follower.y-m.y):1e9;
+  if(!pv&&!fv)return null;if(!fv)return player;if(!pv)return follower;
+  return prefer?(dP<dF*.85?player:follower):(dP<=dF?player:follower);}
 function hurtFollower(dm){const f=follower;if(!f||f.faint||player.mount===f)return;f.hp-=dm;f.hurt=.14;floatTxt(f.x,f.y-22,String(dm),'#ff9a7a');if(f.hp<=0)faintPal(f);}
 function hitBoss(dmg,fx,fy,byPlayer,ek=1){if(!boss||boss.state==='calm')return;if(boss.state==='idle')bossStart();boss.hp-=dmg;boss.hurt=.14;boss.stun=Math.max(boss.stun||0,HITFX.stunElite);
   {const [tx,col]=elFloat(dmg,ek,byPlayer);floatTxt(boss.x,boss.y-MONSPR[boss.sp][0].height-6,tx,col);if(ek>1)burst(boss.x,boss.y-24,'255,224,90',10,60);}burst(boss.x,boss.y-20,'255,240,200',6,46);renderBossBar();if(boss.hp<=0)bossDefeat();}
@@ -1817,15 +1853,16 @@ function bossDefeat(){const G=boss.G;boss.atk=null;boss.state='calm';haz.length=
   S.guard[R.fam]=true;S.shards=(S.shards||0)+1;S.apt=(S.apt||0)+APT_PER_GUARD;gainXp(XP.guard,boss.x,boss.y-50);const p=newPal(boss.sp,boss.lv);p.x=boss.x;p.y=boss.y;if(R.fam!=='rowen'){p.x=BASE.x;p.y=BASE.y;}S.pals.push(p);
   addItem(R.fam==='volcano'?'obs':R.fam==='rowen'?'wood':'ore',R.fam==='rowen'?10:6,boss.x,boss.y-40);
   $('boss').hidden=true;save();setTimeout(()=>{story(`${josa(G.shard,'을','를')} 얻었다`,G.calm+` (${josa(SPECIES[boss.sp].name,'이','가')} 동료가 됐다 · 등불 조각 ${S.shards}/5 · 고대 기술 포인트 +${APT_PER_GUARD})`,'계속',()=>{boss=null;checkQuest();});},2600);}
-function bossReset(){boss.atk=null;boss.state='idle';boss.hp=boss.max;boss.x=boss.home.x;boss.y=boss.home.y;boss.dash=null;haz.length=0;shots.length=0;$('boss').hidden=true;for(const m of R.wild.slice())if(m.summoned)removeWild(m);toast('<b>수호자가 물러났다</b>다시 다가가면 싸움이 시작된다');}
+function bossReset(){if(boss)boss.tg=null;boss.atk=null;boss.state='idle';boss.hp=boss.max;boss.x=boss.home.x;boss.y=boss.home.y;boss.dash=null;haz.length=0;shots.length=0;$('boss').hidden=true;for(const m of R.wild.slice())if(m.summoned)removeWild(m);toast('<b>수호자가 물러났다</b>다시 다가가면 싸움이 시작된다');}
 /* keep a point inside the guardian's elliptical arena (dash targets used to land outside → the dash never finished and the boss froze) */
 function arenaIn(G,x,y,k){const e=Math.hypot(x-G.x,(y-G.y)*1.15)/(G.r*k);return e>1?[G.x+(x-G.x)/e,G.y+(y-G.y)/e]:[x,y];}
-function bossPattern(){const G=boss.G,p=G.pats[boss.pi++%G.pats.length],enr=boss.hp<boss.max*.5,dm=G.dmg;
-  if(p==='circles'){const n=enr?6:4;for(let i=0;i<n;i++){const a=Math.random()*6.283,r=i===0?0:20+Math.random()*50;haz.push({k:'circle',x:player.x+Math.cos(a)*r,y:player.y+Math.sin(a)*r*.7,r:22,t:0,T:enr?.8:1.1,dmg:dm});}}
+function bossTg(){if(!boss)return player;if(!tgValid(boss.tg))boss.tg=pickTarget(boss,true)||player;return boss.tg;}
+function bossPattern(){const G=boss.G,p=G.pats[boss.pi++%G.pats.length],enr=boss.hp<boss.max*.5,dm=G.dmg,T=bossTg();boss.tg=null;/* 패턴 1회 = 공격 1회: 다음 대상은 새로 고른다 */
+  if(p==='circles'){const n=enr?6:4;for(let i=0;i<n;i++){const a=Math.random()*6.283,r=i===0?0:20+Math.random()*50;haz.push({k:'circle',x:T.x+Math.cos(a)*r,y:T.y+Math.sin(a)*r*.7,r:22,t:0,T:enr?.8:1.1,dmg:dm});}}
   else if(p==='ring'){haz.push({k:'ring',x:boss.x,y:boss.y,r:enr?90:72,t:0,T:1.1,dmg:Math.round(dm*1.2)});}
-  else if(p==='line'){const dx=player.x-boss.x,dy=player.y-boss.y,d=Math.hypot(dx,dy)||1;for(let i=1;i<=6;i++)haz.push({k:'circle',x:boss.x+dx/d*i*26,y:boss.y+dy/d*i*26,r:16,t:-i*.12,T:.9,dmg:dm});}
-  else if(p==='dash'){const dx=player.x-boss.x,dy=player.y-boss.y,d=Math.hypot(dx,dy)||1,L=Math.min(260,d+70);const [x1,y1]=arenaIn(G,boss.x+dx/d*L,boss.y+dy/d*L,.92);haz.push({k:'line',x0:boss.x,y0:boss.y,x1,y1,w:30,t:0,T:enr?.6:.85,dmg:Math.round(dm*1.3),boss:true});}
-  else if(p==='shots'){const n=enr?7:5,base=Math.atan2(player.y-boss.y,player.x-boss.x);for(let i=0;i<n;i++){const a=base+(i-(n-1)/2)*.22;shots.push({x:boss.x,y:boss.y-14,vx:Math.cos(a)*110,vy:Math.sin(a)*110,life:0,dmg:Math.round(dm*.8),col:R.fam==='lake'?'170,220,255':'255,240,200'});}}
+  else if(p==='line'){const dx=T.x-boss.x,dy=T.y-boss.y,d=Math.hypot(dx,dy)||1;for(let i=1;i<=6;i++)haz.push({k:'circle',x:boss.x+dx/d*i*26,y:boss.y+dy/d*i*26,r:16,t:-i*.12,T:.9,dmg:dm});}
+  else if(p==='dash'){const dx=T.x-boss.x,dy=T.y-boss.y,d=Math.hypot(dx,dy)||1,L=Math.min(260,d+70);const [x1,y1]=arenaIn(G,boss.x+dx/d*L,boss.y+dy/d*L,.92);haz.push({k:'line',x0:boss.x,y0:boss.y,x1,y1,w:30,t:0,T:enr?.6:.85,dmg:Math.round(dm*1.3),boss:true});}
+  else if(p==='shots'){const n=enr?7:5,base=Math.atan2(T.y-boss.y,T.x-boss.x);for(let i=0;i<n;i++){const a=base+(i-(n-1)/2)*.22;shots.push({x:boss.x,y:boss.y-14,vx:Math.cos(a)*110,vy:Math.sin(a)*110,life:0,dmg:Math.round(dm*.8),col:R.fam==='lake'?'170,220,255':'255,240,200'});}}
   else if(p==='summon'){const cnt=R.wild.filter(m=>m.summoned).length;if(cnt<3)for(let i=0;i<2;i++){const sp=G.summon,lv=4,mx=maxHpOf(sp,lv),x=boss.x+(Math.random()-.5)*80,y=boss.y+30+Math.random()*30;R.wild.push({sp,lv,hp:mx,max:mx,x,y,home:{x,y},def:{area:[0,0,0,0]},state:'chase',aggro:true,tx:x,ty:y,timer:0,anim:0,face:'left',hurt:0,cd:1,kx:0,ky:0,fade:1,summoned:true});burst(x,y-6,'150,230,120',10,40);}}
   else if(p==='warp'){for(let i=0;i<30;i++){const a=Math.random()*6.283,r=Math.random()*G.r*.8,x=G.x+Math.cos(a)*r,y=G.y+Math.sin(a)*r*.7;if(inWater(R,x,y,-6)){burst(boss.x,boss.y-10,'200,230,255',14,50);boss.x=x;boss.y=y;burst(x,y-10,'200,230,255',14,50);break;}}}
   boss.patT=enr?1.7:2.3;}
@@ -1845,12 +1882,13 @@ function updateBoss(dt,paused){
   if(b.dash){const dx=b.dash.x1-b.x,dy=b.dash.y1-b.y,d=Math.hypot(dx,dy),st=320*dt;b.face=dx<0?'left':'right';b.moving=true;b.dash.t=(b.dash.t||0)+dt;
     if(d<=st||b.dash.t>1.4){b.x=b.dash.x1;b.y=b.dash.y1;b.dash=null;}else{b.x+=dx/d*st;b.y+=dy/d*st;}
     if(b.dash&&!b.dash.hit&&Math.hypot(player.x-b.x,player.y-b.y)<bossR()+8){b.dash.hit=true;hurtPlayer(b.dash.dmg,b.x,b.y);}
+    if(b.dash&&follower&&!follower.faint&&player.mount!==follower&&!b.dash.fhit&&Math.hypot(follower.x-b.x,follower.y-b.y)<bossR()+8){b.dash.fhit=true;hurtFollower(b.dash.dmg);}
     [b.x,b.y]=arenaIn(b.G,b.x,b.y,.97);return;}
   if(b.stun>0){b.stun-=dt;b.moving=false;b.patT-=dt;if(b.patT<=0)bossPattern();return;}/* 피격 경직: 걸음·근접만 멈추고 패턴 박자는 유지 */
-  const dx=player.x-b.x,dy=player.y-b.y,d=Math.hypot(dx,dy)||1;b.face=dx<0?'left':'right';
+  const T=bossTg(),dx=T.x-b.x,dy=T.y-b.y,d=Math.hypot(dx,dy)||1;b.face=dx<0?'left':'right';
   const keep=sp.aquatic?60:bossR()+4,reachB=bossR()+12;/* stop inside melee reach so a parked guardian still swings */
-  if(b.atk){const A=b.atk;A.t+=dt;b.moving=false;if(!A.hit&&A.t>=A.wind){A.hit=true;burst(b.x+A.ux*bossR(),b.y-8,'255,230,200',10,60);if(Math.hypot(player.x-b.x,player.y-b.y)<reachB+6)hurtPlayer(Math.round(b.G.dmg*.7),b.x,b.y);}
-    if(A.t>=A.wind+.25)b.atk=null;b.patT-=dt;if(b.patT<=0)bossPattern();return;}
+  if(b.atk){const A=b.atk;A.t+=dt;b.moving=false;if(!A.hit&&A.t>=A.wind){A.hit=true;burst(b.x+A.ux*bossR(),b.y-8,'255,230,200',10,60);if(Math.hypot(player.x-b.x,player.y-b.y)<reachB+6)hurtPlayer(Math.round(b.G.dmg*.7),b.x,b.y);if(follower&&!follower.faint&&player.mount!==follower&&Math.hypot(follower.x-b.x,follower.y-b.y)<reachB+6)hurtFollower(Math.round(b.G.dmg*.7));}
+    if(A.t>=A.wind+.25){b.atk=null;b.tg=null;}b.patT-=dt;if(b.patT<=0)bossPattern();return;}
   if(d>keep){const nx=b.x+dx/d*sp.spd*.6*dt,ny=b.y+dy/d*sp.spd*.6*dt;const e1=Math.hypot(nx-b.G.x,(ny-b.G.y)*1.15);if((e1<b.G.r||e1<Math.hypot(b.x-b.G.x,(b.y-b.G.y)*1.15))&&(!sp.aquatic||inWater(R,nx,ny,-4))){b.x=nx;b.y=ny;b.moving=true;}else b.moving=false;}else b.moving=false;
   if(d<reachB&&b.cd<=0){b.cd=1.2+ATKP.guardWind;b.atk={t:0,wind:ATKP.guardWind,ux:dx/d,uy:dy/d,hit:false};}/* 근접 공격도 웅크림·'!' 예고 뒤에 */
   b.patT-=dt;if(b.patT<=0)bossPattern();}
@@ -1864,10 +1902,19 @@ function drawHazards(g,cx,cy,t){
 /* 야생 몬스터 예고 바닥 표시: 돌진 경로(붉은 띠)·내려찍기 범위(붉은 원). 예고가 진행될수록 안쪽이 차오른다 */
 const slamFx=[];/* 내려찍기 충격파: 0.3초 동안 바닥 원이 바깥으로 퍼지며 사라진다 (3D에서도 보이도록 점으로 그림) */
 function tickSlamFx(dt){for(const f of slamFx.slice()){f.t+=dt;if(f.t>.3)slamFx.splice(slamFx.indexOf(f),1);}}
-function drawSlamFx(g){for(const f of slamFx){const u=f.t/.3,rr=f.r*(.7+.6*u),a=1-u;g.fillStyle=`rgba(255,236,200,${a})`;for(let i=0;i<28;i++){const an=i/28*6.283;g.fillRect(Math.round(f.x+Math.cos(an)*rr)-1,Math.round(f.y+Math.sin(an)*rr*.7)-1,3,2);}}}
-function drawWildTells(g){for(const m of R.wild){const A=m.atk;if(!A||A.hit||m.fade<1||m.captured)continue;const u=clamp(A.t/A.wind,0,1);
+function drawSlamFx(g){for(const f of slamFx){const u=f.t/.3,rr=f.r*(.7+.6*u),a=1-u;g.fillStyle=`rgba(${f.col||'255,236,200'},${a})`;for(let i=0;i<28;i++){const an=i/28*6.283;g.fillRect(Math.round(f.x+Math.cos(an)*rr)-1,Math.round(f.y+Math.sin(an)*rr*.7)-1,3,2);}}}
+function drawWildTells(g){for(const m of R.wild){const A=m.atk;if(!A||m.fade<1||m.captured)continue;
+    if(A.hit){if(A.air){/* 급강하·튀어오르기 착지 표시: 따라오는 동안은 옅은 점선 원, 낙하가 시작되면 밝아지며 안쪽이 찬다 */const P=ATKP[A.kind],u=A.lock?clamp((A.at-P.rise*P.track)/(P.rise*(1-P.track)+P.drop),0,1):0,leap=A.kind==='leap',c=leap?'120,200,255':'255,120,80',r=A.zr+2;
+        g.fillStyle=`rgba(${leap?'80,160,230':'230,60,40'},${.1+.2*u})`;pe(g,Math.round(A.zx),Math.round(A.zy),Math.max(1,Math.round(r*u)),Math.max(1,Math.round(r*.7*u)));
+        g.fillStyle=`rgba(${c},${A.lock?.95:.55})`;for(let i=0;i<16;i++){const an=i/16*6.283;g.fillRect(Math.round(A.zx+Math.cos(an)*r)-1,Math.round(A.zy+Math.sin(an)*r*.7)-1,2,2);}}continue;}
+    const u=clamp(A.t/A.wind,0,1);
     if(A.kind==='charge'){const L=ATKP.charge.spd*ATKP.charge.t*(m.elite?1.1:1)+8,w=m.elite?16:11,a=Math.atan2(A.uy,A.ux);g.save();g.translate(m.x,m.y);g.rotate(a);g.fillStyle=`rgba(230,60,40,${.1+.12*u})`;g.fillRect(4,-w/2,L,w);g.fillStyle=`rgba(255,140,100,${.22+.3*u})`;g.fillRect(4,-w/2,L*u,w);g.restore();}
-    else if(A.kind==='slam'){g.fillStyle=`rgba(230,60,40,${.12+.12*u})`;pe(g,Math.round(A.zx),Math.round(A.zy),Math.round(A.zr),Math.round(A.zr*.7));g.fillStyle=`rgba(255,120,80,${.25+.3*u})`;pe(g,Math.round(A.zx),Math.round(A.zy),Math.max(1,Math.round(A.zr*u)),Math.max(1,Math.round(A.zr*.7*u)));}}}
+    else if(A.kind==='slam'){g.fillStyle=`rgba(230,60,40,${.12+.12*u})`;pe(g,Math.round(A.zx),Math.round(A.zy),Math.round(A.zr),Math.round(A.zr*.7));g.fillStyle=`rgba(255,120,80,${.25+.3*u})`;pe(g,Math.round(A.zx),Math.round(A.zy),Math.max(1,Math.round(A.zr*u)),Math.max(1,Math.round(A.zr*.7*u)));}
+    else if(A.kind==='ring'){/* 자기 둘레 원: 밖으로 나가면 피한다 */const r=A.zr;g.fillStyle=`rgba(230,60,40,${.16+.14*u})`;pe(g,Math.round(m.x),Math.round(m.y),r,Math.round(r*.7));g.fillStyle=`rgba(255,120,80,${.3+.35*u})`;pe(g,Math.round(m.x),Math.round(m.y),Math.max(1,Math.round(r*u)),Math.max(1,Math.round(r*.7*u)));
+      g.fillStyle=`rgba(255,200,170,${.6+.4*u})`;for(let i=0;i<16;i++){const an=i/16*6.283;g.fillRect(Math.round(m.x+Math.cos(an)*r)-1,Math.round(m.y+Math.sin(an)*r*.7)-1,3,2);}}
+    else if(A.kind==='sweep'){/* 앞쪽 부채꼴: 살(spokes)과 테두리 점으로 그려 3D에서도 보인다 */const P=ATKP.sweep,r=P.r*(m.elite?1.4:1),a0=Math.atan2(A.uy/.7,A.ux);g.save();g.translate(m.x,m.y);g.scale(1,.7);
+      for(let i=-5;i<=5;i++){g.save();g.rotate(a0+i/5*P.ang);g.fillStyle=`rgba(230,60,40,${.16+.16*u})`;g.fillRect(5,-1.5,r-5,3);g.fillStyle=`rgba(255,140,100,${.35+.4*u})`;g.fillRect(5,-1.5,(r-5)*u,3);g.restore();}
+      g.fillStyle=`rgba(255,210,180,${.6+.4*u})`;for(let i=-8;i<=8;i++){const an=a0+i/8*P.ang;g.fillRect(Math.round(Math.cos(an)*r)-1,Math.round(Math.sin(an)*r)-1,3,2);}g.restore();}}}
 function drawShots(g){for(const s2 of shots){if(s2.w){const x=Math.round(s2.x),y=Math.round(s2.y);g.fillStyle=`rgba(${s2.col},.45)`;g.fillRect(Math.round(x-s2.vx*.05)-2,Math.round(y-s2.vy*.05)-2,4,4);g.fillStyle=`rgba(${s2.col},.95)`;g.fillRect(x-3,y-3,6,6);g.fillStyle='rgba(255,255,255,1)';g.fillRect(x-1,y-2,2,2);continue;}g.fillStyle=`rgba(${s2.col},.95)`;g.fillRect(Math.round(s2.x)-2,Math.round(s2.y)-2,4,4);g.fillStyle='rgba(255,255,255,1)';g.fillRect(Math.round(s2.x)-1,Math.round(s2.y)-1,2,2);}}
 let storyCb=null;
 function story(title,text,btnLabel,cb){storyCb=cb||null;panelState={kind:'story'};$('panel').hidden=false;$('ptabs').innerHTML='';$('ptitle').textContent=title;const body=$('pbody');body.innerHTML='';
@@ -2107,9 +2154,18 @@ function updatePals(dt,paused){
     if(p.assign==='follow'){follower=p;
       if(player.mount===p){p.x=player.x;p.y=player.y+1;if(player.dir==='left'||player.dir==='right')p.face=player.dir;p.moving=player.moving;p.anim+=player.moving?dt*.8*(MOUNTS[p.sp]?MOUNTS[p.sp].spd:1):0;continue;}
       const bt=boss&&boss.state==='fight'&&Math.hypot(boss.x-player.x,boss.y-player.y)<220?boss:null;
-      const en=bt||((lastTarget&&R.wild.includes(lastTarget)&&!lastTarget.captured&&Math.hypot(lastTarget.x-player.x,lastTarget.y-player.y)<150)?lastTarget:R.wild.find(m=>m.aggro&&!m.captured&&Math.hypot(m.x-player.x,m.y-player.y)<120));
-      if(en&&!paused&&!TR.dir){if(palAttack(p,en,dt,1.5))continue;}
-      tx=player.x+(player.dir==='left'?16:player.dir==='right'?-16:-14);ty=player.y+(player.dir==='down'?-10:10);
+      if(p.kx||p.ky){moveEnt(p,p.kx*dt,p.ky*dt,sp.float?{float:true}:null);p.kx*=Math.pow(.001,dt);p.ky*=Math.pow(.001,dt);if(Math.abs(p.kx)<2)p.kx=0;if(Math.abs(p.ky)<2)p.ky=0;}
+      /* 조준한(이름표 뜬) 적이 싸우는 중이거나 내가 때린 적이면 그 적부터 */
+      const curAim=dead?null:aimTarget(),aimOk=curAim&&!curAim.captured&&(curAim.aggro||curAim===lastTarget)&&Math.hypot(curAim.x-player.x,curAim.y-player.y)<PALFX.aimR?curAim:null;
+      const en=bt||aimOk||((lastTarget&&R.wild.includes(lastTarget)&&!lastTarget.captured&&Math.hypot(lastTarget.x-player.x,lastTarget.y-player.y)<150)?lastTarget:R.wild.find(m=>m.aggro&&!m.captured&&Math.hypot(m.x-player.x,m.y-player.y)<120));
+      /* 체력이 낮으면 물러난다: 30% 미만에 시작, 50%까지 회복하면 복귀 */
+      if(!p.retreat&&p.hp<p.max*PALFX.retreat&&en){p.retreat=true;p.retreatT=0;toast(`<b>${sp.name}</b>체력이 낮아 뒤로 물러난다 · 회복되면 다시 싸운다`);burst(p.x,p.y-10,'255,200,170',6,30);}
+      else if(p.retreat&&p.hp>=p.max*PALFX.rejoin){p.retreat=false;toast(`<b>${sp.name}</b>다시 싸운다`);burst(p.x,p.y-10,'180,240,150',6,30);}
+      if(p.retreat){if(!paused)p.hp=Math.min(p.max,p.hp+dt*PALFX.regen);
+        let th=en;if(!th||th===boss){let bd=1e9;for(const m of R.wild){if(m.captured||!m.aggro)continue;const dm=Math.hypot(m.x-p.x,m.y-p.y);if(dm<bd){bd=dm;th=m;}}}
+        if(th){const ax=player.x-th.x,ay=player.y-th.y,ad=Math.hypot(ax,ay)||1;tx=player.x+ax/ad*26;ty=player.y+ay/ad*18;}else{tx=player.x+(player.dir==='left'?16:-16);ty=player.y+10;}}
+      else{if(en&&!paused&&!TR.dir){if(palAttack(p,en,dt,1.5))continue;}
+        tx=player.x+(player.dir==='left'?16:player.dir==='right'?-16:-14);ty=player.y+(player.dir==='down'?-10:10);}
       const d=Math.hypot(tx-p.x,ty-p.y);if(d>220){p.x=tx;p.y=ty;}
       if(d>6&&!paused){const k=d>40?1.9:1.2;const dx=tx-p.x,dy=ty-p.y;const ox=p.x,oy=p.y;moveEnt(p,dx/d*spd*k*dt,dy/d*spd*k*dt,sp.float?{float:true}:null);if(ox===p.x&&oy===p.y){p.x+=dx/d*spd*k*dt;p.y+=dy/d*spd*k*dt;}p.face=dx>0?'right':'left';p.moving=true;}else p.moving=false;continue;}
     if(follower===p)follower=null;
@@ -2127,7 +2183,11 @@ function updatePals(dt,paused){
 function palAttack(p,en,dt,sk){const sp=SPECIES[p.sp],spd=Math.max(sp.spd,24),dx=en.x-p.x,dy=en.y-p.y,d=Math.hypot(dx,dy)||1;p.face=dx>0?'right':'left';
   const reachD=en===boss?bossR()+10:16;
   if(d>reachD){moveEnt(p,dx/d*spd*sk*dt,dy/d*spd*sk*dt,sp.float?{float:true}:null);if(Math.hypot(en.x-p.x,en.y-p.y)>d-.1){p.x+=dx/d*spd*sk*dt;p.y+=dy/d*spd*sk*dt;}p.moving=true;}
-  else{p.moving=false;if(p.cd<=0){p.cd=1.1;const ek=elemMul(sp.el,SPECIES[en.sp].el),dmv=dmgRoll(sp.atk*lvMul(p.lv)*1.6*(1+.1*(p.rank||0))*ek);if(en===boss)hitBoss(dmv,p.x,p.y,false,ek);else hitWild(en,dmv,p.x,p.y,false,ek);}}return true;}
+  else{p.moving=false;if(p.cd<=0){p.cd=1.1;const ek=elemMul(sp.el,SPECIES[en.sp].el),dmv=dmgRoll(sp.atk*lvMul(p.lv)*1.6*(1+.1*(p.rank||0))*ek);
+      /* 타격 손맛: 앞으로 짧게 튀어나가는 반동 + 적 몸에 흰 불꽃·비스듬한 베기 선 */
+      p.kx=dx/d*PALFX.lunge;p.ky=dy/d*PALFX.lunge;const hx=en.x-dx/d*6,hy=en.y-10;burst(hx,hy,'255,250,220',7,55);
+      for(let i=0;i<6;i++){const u=i/5-.5;parts.push({x:hx+u*10*-(dy/d),y:hy+u*7*(dx/d),vx:dx/d*40,vy:-6,life:0,max:.16,col:'255,255,240',g:0});}
+      if(en===boss)hitBoss(dmv,p.x,p.y,false,ek);else hitWild(en,dmv,p.x,p.y,false,ek);}}return true;}
 
 /* ---- render helpers ---- */
 const FAC_SPR=()=>({campfire:CAMPF,palbox:PALBOX,bench:BENCH,log:LOGSITE,quarry:QUARRY,feed:FEED,...FSPR});
@@ -2272,18 +2332,18 @@ function renderFacPanel(body,k){const f=FACDEF[k],st=S.fac[k],ws=facPals(k);
 
 /* ---- player hands-on work: crafting / building locks movement and plays a hammer loop ---- */
 function buildDur(f){return Math.round((2.5+(f.tier||0)*1.2)*10)/10;}
-function finishBuild(k){const f=FACDEF[k];S.fac[k].built=true;gainXp(XP.build,f.x,f.y-50);unstick(player,null);for(const q of S.pals)if(!q.faint)unstick(q,q);for(const m of R.wild)unstick(m,SPECIES[m.sp]);burst(f.x,f.y-10,'255,236,190',20,50);toast('<b>완성</b>'+f.name);updateInv();checkQuest();save();}
+function finishBuild(k){const f=FACDEF[k];S.fac[k].built=true;S.fac[k].bt=0;gainXp(XP.build,f.x,f.y-50);unstick(player,null);for(const q of S.pals)if(!q.faint)unstick(q,q);for(const m of R.wild)unstick(m,SPECIES[m.sp]);burst(f.x,f.y-10,'255,236,190',20,50);toast('<b>완성</b>'+f.name);updateInv();checkQuest();save();}
 function faceTo(x,y){const dx=x-player.x,dy=y-player.y;player.dir=Math.abs(dx)>=Math.abs(dy)*1.2?(dx>0?'right':'left'):(dy>0?'down':'up');}
 function startWork(kind,k){const f=FACDEF[k];if(player.mount){const m=player.mount;player.mount=null;if(blockedAt(player.x,player.y,null))unstick(player,null);updateRideBtn();}
   player.sw=null;player.queued=false;player.moving=false;keys.clear();
-  player.work={kind,k,t:0,dur:kind==='build'?buildDur(f):0,ph:0};faceTo(f.x,f.y);renderBusy();}
-function stopWork(msg){if(!player.work)return;player.work=null;$('busy').hidden=true;if(msg)toast(msg);}
+  player.work={kind,k,t:kind==='build'?(S.fac[k].bt||0):0,dur:kind==='build'?buildDur(f):0,ph:0};faceTo(f.x,f.y);renderBusy();}
+function stopWork(msg){if(!player.work)return;const w=player.work;player.work=null;$('busy').hidden=true;if(msg)toast(msg);else if(w.kind==='build')toast(`<b>짓다 멈췄다</b>${FACDEF[w.k].name} 부지로 돌아가면 이어서 짓는다`);}
 function soloCraft(k){const f=FACDEF[k],st=S.fac[k];return f&&f.kind==='craft'&&f.helper&&st&&st.built&&st.queue.length>0&&!workers(k).length&&R.base&&Math.hypot(player.x-f.x,player.y-f.y)<50;}
 function updateWork(dt){const w=player.work;if(!w)return;if(dead||!R.base){stopWork();return;}
   const f=FACDEF[w.k];w.t+=dt;const P0=w.ph;w.ph=(w.ph+dt/.62)%1;
   if(P0<.82&&w.ph>=.82||w.ph<P0&&P0<.82){/* hammer lands */const [fx,fy]=facingVec();const hx=player.x+fx*12,hy=player.y-6+fy*6;
     for(let i=0;i<5;i++)parts.push({x:hx+(Math.random()-.5)*6,y:hy,vx:(Math.random()-.5)*60,vy:-30-Math.random()*40,life:0,max:.35+Math.random()*.2,col:w.kind==='build'?'230,210,170':'255,214,140',g:120});}
-  if(w.kind==='build'){if(w.t>=w.dur){player.work=null;$('busy').hidden=true;finishBuild(w.k);return;}}
+  if(w.kind==='build'){S.fac[w.k].bt=Math.max(.001,w.t);if(w.t>=w.dur){player.work=null;$('busy').hidden=true;finishBuild(w.k);return;}}
   else{const st=S.fac[w.k];if(!st.queue.length){stopWork();return;}if(workers(w.k).length){stopWork(`<b>${SPECIES[workers(w.k)[0].sp].name}</b>${josa(f.name,'이','가')} 맡았다 · 이제 자리를 떠도 된다`);return;}}
   renderBusy();}
 function renderBusy(){const w=player.work,el=$('busy');if(!w){el.hidden=true;return;}const f=FACDEF[w.k];let pc,txt;
@@ -2358,12 +2418,18 @@ function unstick(o,self){if(!blockedAt(o.x,o.y,self))return false;
 const WIND_FORM={quad:.3,bird:.34,bug:.34,fish:.38,sprite:.4,crab:.42,blob:.44,serpent:.46,plant:.52,golem:.6};
 function telegraphWind(m){const sp=SPECIES[m.sp];let w=(WIND_FORM[sp.form]||.4)*clamp(1.15-m.lv*.012,.78,1.15);if(m.elite)w+=.12;return clamp(w,.28,.65);}
 /* 형태별 공격 패턴(임시값, 8회차): 네발=돌진, 골렘=내려찍기(바닥 원형 경고), 뱀·방울=침 뱉기(느린 탄). 나머지는 짧은 덮치기 */
-const ATK_FORM={quad:'charge',golem:'slam',serpent:'spit',blob:'spit'};
-const ATKP={charge:{range:55,spd:215,t:.34,bonk:.55,mul:1.2,kb:140,cd:.5},slam:{r:26,off:16,mul:1.3,kb:120,rec:.42},spit:{range:118,spd:100,mul:1,rec:.25,cd:.45},guardWind:.42};
+/* 2차(10회차): 새=급강하(떠올라 착지 지점에 내려꽂기, 착지 표시가 따라오다 낙하 직전 고정), 벌레=2연속 찌르기, 게=앞쪽 부채꼴 휘두르기, 식물·정령=자기 둘레 가시·포자, 물고기=물 위로 튀어 덮치기 */
+const ATK_FORM={quad:'charge',golem:'slam',serpent:'spit',blob:'spit',bird:'dive',bug:'stab',crab:'sweep',plant:'ring',sprite:'ring',fish:'leap'};
+const ATKP={charge:{range:55,spd:215,t:.34,bonk:.55,mul:1.2,kb:140,cd:.5},slam:{r:26,off:16,mul:1.3,kb:120,rec:.42},spit:{range:118,spd:100,mul:1,rec:.25,cd:.45},guardWind:.42,
+  dive:{range:40,rise:.22,track:.6,drop:.22,h:40,r:13,mul:1.25,kb:110,rec:.35,cd:.5},leap:{range:14,rise:.12,track:.5,drop:.2,h:22,r:15,shore:14,mul:1.2,kb:100,rec:.3,cd:.3},
+  stab:{n:2,gap:.22,mul:.7,kb:55,rec:.42,cd:.2},sweep:{r:24,ang:1.05,mul:1.15,kb:100,rec:.4,cd:.2},ring:{r:22,mul:1.1,kb:90,rec:.42,cd:.3}};
+function atkRange(m,kind,reach){const e=m.elite?1.4:1;return kind==='charge'?reach+ATKP.charge.range:kind==='spit'?ATKP.spit.range:kind==='dive'?reach+ATKP.dive.range:kind==='leap'?reach+ATKP.leap.range:kind==='ring'?ATKP.ring.r*e-6:kind==='sweep'?reach+6:reach;}
+/* 범위 공격의 대상: 플레이어·동행 버디·원래 노리던 대상(습격 때는 거점 버디). 플레이어를 맞혔으면 true */
+function hitArea(m,A,inZ,mul,kb){let hp=false;const seen=new Set();for(const o of [player,follower,A.tg]){if(!o||seen.has(o))continue;seen.add(o);if(o!==player&&(o.faint||o===player.mount))continue;if(!inZ(o))continue;if(wildHitTarget(m,o,mul,kb)&&o===player)hp=true;}return hp;}
 const SPIT_COL={'물':'150,215,255','불':'255,150,70','풀':'170,230,110','땅':'214,182,120','바람':'225,242,255','바위':'205,195,182','달빛':'226,206,255'};
 function atkKind(m){return ATK_FORM[SPECIES[m.sp].form]||'lunge';}
-function wildHitTarget(m,tg,mul,kb){if(!tg)return false;const sp=SPECIES[m.sp],base=sp.atk*lvMul(m.lv)*(isNight()?1.15:1)*(m.elite?1.5:1)*mul,ddx=tg.x-m.x,ddy=tg.y-m.y,dd=Math.hypot(ddx,ddy)||1;
-  if(tg===player){if(pInvuln()||dead)return false;const dm=armorRed(dmgRoll(base*.6));S.hp-=dm;S.hitT=0;player.inv=.4;player.kx=ddx/dd*kb;player.ky=ddy/dd*kb;floatTxt(player.x,player.y-36,String(dm),'#ff7a6a');hurtFlash();if(S.hp<=0)die();return true;}
+function wildHitTarget(m,tg,mul,kb,force){/* force: 같은 공격의 2타째(벌레 연속 찌르기) — 직전 피격 무적은 무시하되 구르기 무적은 유효 */if(!tg)return false;const sp=SPECIES[m.sp],base=sp.atk*lvMul(m.lv)*(isNight()?1.15:1)*(m.elite?1.5:1)*mul,ddx=tg.x-m.x,ddy=tg.y-m.y,dd=Math.hypot(ddx,ddy)||1;
+  if(tg===player){if(dead||player.rollT>0||(player.inv>0&&!force))return false;const dm=armorRed(dmgRoll(base*.6));S.hp-=dm;S.hitT=0;player.inv=.4;player.kx=ddx/dd*kb;player.ky=ddy/dd*kb;floatTxt(player.x,player.y-36,String(dm),'#ff7a6a');hurtFlash();if(S.hp<=0)die();return true;}
   if(tg.faint)return false;const ek=elemMul(sp.el,SPECIES[tg.sp].el),dm=dmgRoll(base*ek);tg.hp-=dm;tg.hurt=.14;floatTxt(tg.x,tg.y-22,ek>1?dm+'!':String(dm),ek>1?'#ffb03a':ek<1?'#a4a2b8':'#ff9a7a');if(tg.hp<=0)faintPal(tg);return true;}
 function tgDist(m,tg){return tg===player?(dead?1e9:Math.hypot(player.x-m.x,player.y-m.y)):Math.hypot(tg.x-m.x,tg.y-m.y);}
 /* 예고가 끝나는 순간: 형태별로 덮치기 / 돌진 시작 / 내려찍기 폭발 / 침 발사 */
@@ -2375,13 +2441,38 @@ function wildStrike(m,A,reach){const sp=SPECIES[m.sp];A.hit=true;
   if(A.kind==='spit'){A.rec=ATKP.spit.rec;const tg=A.tg,ty=(tg===player?player.y:tg.y)-12,tx=tg===player?player.x:tg.x,sy=m.y-12,dx=tx-m.x,dy=ty-sy,d=Math.hypot(dx,dy)||1;
     const base=sp.atk*lvMul(m.lv)*(isNight()?1.15:1)*(m.elite?1.5:1)*ATKP.spit.mul;
     shots.push({x:m.x+dx/d*6,y:sy+dy/d*6,vx:dx/d*ATKP.spit.spd,vy:dy/d*ATKP.spit.spd,life:0,dmg:dmgRoll(base*.6),col:SPIT_COL[sp.el]||'240,230,200',w:1});burst(m.x+dx/d*6,sy,SPIT_COL[sp.el]||'240,230,200',5,30);return;}
+  if(A.kind==='dive'||A.kind==='leap'){/* 떠오르기 시작. 착지 지점은 떠 있는 동안 대상을 따라가다 낙하 직전에 고정된다(stepDive) */const P=ATKP[A.kind];A.air=1;A.at=0;A.sx=m.x;A.sy=m.y;A.zx=A.tg.x;A.zy=A.tg.y;A.zr=P.r*(m.elite?1.4:1);A.rec=P.rec;burst(m.x,m.y-2,A.kind==='leap'?'170,215,255':'220,210,190',8,40);return;}
+  if(A.kind==='stab'){A.n=0;A.rec=ATKP.stab.rec;stabHit(m,A,reach);return;}
+  if(A.kind==='sweep'){const P=ATKP.sweep,r=P.r*(m.elite?1.4:1),ca=Math.cos(P.ang);A.rec=P.rec;
+    hitArea(m,A,o=>{const dx=o.x-m.x,dy=(o.y-m.y)*1.3,d=Math.hypot(dx,dy);if(d>r)return false;if(d<6)return true;return (dx*A.ux+dy*A.uy)/d>ca;},P.mul,P.kb);
+    const a0=Math.atan2(A.uy,A.ux);for(let i=0;i<=10;i++){const an=a0+(i/10-.5)*2*P.ang,c=Math.cos(an),s=Math.sin(an)*.7;parts.push({x:m.x+c*r*.55,y:m.y-3+s*r*.55,vx:c*90,vy:s*90-10,life:0,max:.22,col:'245,235,210',g:30});}
+    m.kx=A.ux*30;m.ky=A.uy*30;return;}
+  if(A.kind==='ring'){const P=ATKP.ring,r=A.zr;A.rec=P.rec;
+    hitArea(m,A,o=>Math.hypot(o.x-m.x,(o.y-m.y)*1.3)<r,P.mul,P.kb);
+    for(let i=0;i<18;i++){const an=i/18*6.283,c=Math.cos(an),s=Math.sin(an)*.7;parts.push({x:m.x+c*6,y:m.y-6+s*6,vx:c*(r*3.2),vy:s*(r*3.2)-14,life:0,max:.3,col:A.col,g:40});}
+    slamFx.push({x:m.x,y:m.y,r:r,t:0,col:A.col});return;}
   m.kx=A.ux*(m.elite?120:95);m.ky=A.uy*(m.elite?120:95);
   if(tgDist(m,A.tg)<=reach+10)wildHitTarget(m,A.tg,1,90);}
+/* 벌레 찌르기: 앞으로 짧게 튀어나가며 찌른다. 0.18초 뒤 한 번 더(두 번째는 물러나면 빗나간다) */
+function stabHit(m,A,reach){const P=ATKP.stab;A.n++;m.kx=A.ux*70;m.ky=A.uy*70;const px=m.x+A.ux*(reach+4),py=m.y+A.uy*(reach+4)*.7-6;burst(px,py,'255,240,200',5,40);
+  if(tgDist(m,A.tg)<=reach+10)wildHitTarget(m,A.tg,P.mul,P.kb,A.n>1);}
+/* 급강하·튀어오르기: 떠오르는 동안(rise) 착지 표시가 대상을 따라가고, 낙하(drop)가 시작되면 고정 → 착지 지점 둘레에 피해·먼지·충격파 */
+function stepDive(m,A,dt){const P=ATKP[A.kind],sp=SPECIES[m.sp];A.at+=dt;
+  if(A.at<P.rise){const u=A.at/P.rise;m.h=P.h*Math.sin(u*Math.PI/2);m.moving=true;
+    if(u>=P.track){if(!A.lock){A.lock=true;}return;}/* 떠오르기 후반엔 착지 지점을 고정 — 보고 비킬 시간을 준다 */
+    let zx=A.tg.x,zy=A.tg.y;if(A.kind==='leap'){const dx=zx-m.x,dy=zy-m.y,d=Math.hypot(dx,dy)||1,L=Math.min(d,30+ATKP.leap.range);zx=m.x+dx/d*L;zy=m.y+dy/d*L;for(let k=0;k<6&&!inWater(R,zx,zy,ATKP.leap.shore);k++){zx=m.x+(zx-m.x)*.75;zy=m.y+(zy-m.y)*.75;}}/* 물가 shore px까지는 뭍으로 튀어나온다 */
+    else if(blockedAt(zx,zy,sp)){zx=A.zx;zy=A.zy;}
+    A.zx=zx;A.zy=zy;A.sx=m.x;A.sy=m.y;const dx=zx-m.x;if(Math.abs(dx)>2)m.face=dx>0?'right':'left';return;}
+  if(!A.lock){A.lock=true;A.sx=m.x;A.sy=m.y;}
+  const u=Math.min(1,(A.at-P.rise)/P.drop);m.h=P.h*(1-u*u);m.x=A.sx+(A.zx-A.sx)*u;m.y=A.sy+(A.zy-A.sy)*u;m.moving=true;
+  if(u>=1){m.h=0;A.air=0;A.t=A.wind;if(!sp.aquatic&&blockedAt(m.x,m.y,sp))unstick(m,sp);const r=A.zr,leap=A.kind==='leap';
+    const hp=hitArea(m,A,o=>Math.hypot(o.x-A.zx,(o.y-A.zy)*1.3)<r,P.mul,P.kb);
+    burst(A.zx,A.zy-2,leap?'170,215,255':'214,200,170',14,60);slamFx.push({x:A.zx,y:A.zy,r:r,t:0,col:leap?'190,225,255':'255,236,200'});if(hp)shake(true);}}
 /* 돌진 중: 직선으로 달려 대상과 스치면 한 번 맞히고, 벽·나무에 막히면 '쿵' 하고 잠깐 멈춘다 */
 function stepCharge(m,A,dt,reach){const sp=SPECIES[m.sp],st=ATKP.charge.spd*dt*(m.elite?1.1:1),ox=m.x,oy=m.y;moveEnt(m,A.ux*st,A.uy*st,sp);m.moving=true;A.dash-=dt;
   if(Math.random()<dt*40)parts.push({x:m.x-A.ux*6+(Math.random()-.5)*6,y:m.y-1,vx:-A.ux*24,vy:-10,life:0,max:.35,col:'214,204,184',g:20});
   if(!A.done&&tgDist(m,A.tg)<reach+3){A.done=true;wildHitTarget(m,A.tg,ATKP.charge.mul,ATKP.charge.kb);}
-  if(Math.hypot(m.x-ox,m.y-oy)<st*.3){A.dash=0;m.atk=null;m.stun=ATKP.charge.bonk;m.kx=-A.ux*40;m.ky=-A.uy*40;burst(m.x+A.ux*8,m.y-8,'230,220,200',12,60);for(let i=0;i<3;i++)parts.push({x:m.x,y:m.y-monH(m.sp)-4,vx:(i-1)*26,vy:-30,life:0,max:.5,col:'255,240,150',g:60});if(!dead&&Math.hypot(player.x-m.x,player.y-m.y)<120)shake(true);return;}
+  if(Math.hypot(m.x-ox,m.y-oy)<st*.3){A.dash=0;m.atk=null;m.tg=null;m.stun=ATKP.charge.bonk;m.kx=-A.ux*40;m.ky=-A.uy*40;burst(m.x+A.ux*8,m.y-8,'230,220,200',12,60);for(let i=0;i<3;i++)parts.push({x:m.x,y:m.y-monH(m.sp)-4,vx:(i-1)*26,vy:-30,life:0,max:.5,col:'255,240,150',g:60});if(!dead&&Math.hypot(player.x-m.x,player.y-m.y)<120)shake(true);return;}
   if(A.dash<=0){A.dash=0;A.t=A.wind;}}
 function goHome(m){m.atk=null;if(m.raid||Math.hypot(m.x-m.home.x,m.y-m.home.y)<40){m.state='wander';return;}m.state='return';m.timer=0;m.lastD=1e9;}
 function lineClear(x0,y0,x1,y1,self){const d=Math.hypot(x1-x0,y1-y0),n=Math.ceil(d/6);for(let i=1;i<=n;i++){const t=i/n;if(blockedAt(x0+(x1-x0)*t,y0+(y1-y0)*t,self))return false;}return true;}
@@ -2428,7 +2519,7 @@ function update(dt,t){if(lvFx>0){lvFx-=dt;for(let i=0;i<2;i++){const an=Math.ran
   for(const Rg of Object.values(REGIONS))for(const n of Rg.nodes){if(n.shake>0)n.shake-=dt;if(n.type==='bush'){if(!n.ripe){n.regrow-=dt;if(n.regrow<=0)n.ripe=true;}}else if(n.hp<=0){n.regrow-=dt;if(n.regrow<=0&&(Rg!==R||Math.hypot(n.x-player.x,n.y-player.y)>40))n.hp=n.max;}}
   spawnT-=dt;if(spawnT<=0&&started){spawnT=2.5;for(const def of R.spawnDefs){if(SPECIES[def.sp].night&&!isNight())continue;const cnt=R.wild.filter(m=>m.def===def).length;if(cnt<def.max&&Math.random()<.4)spawnWild(def);}}
   const night=isNight();
-  for(const m of R.wild.slice()){const sp=SPECIES[m.sp];m.anim+=dt;m.hurt=Math.max(0,m.hurt-dt);m.cd=Math.max(0,m.cd-dt);
+  for(const m of R.wild.slice()){const sp=SPECIES[m.sp];m.anim+=dt;m.hurt=Math.max(0,m.hurt-dt);m.cd=Math.max(0,m.cd-dt);if(m.h>0&&!(m.atk&&m.atk.air))m.h=Math.max(0,m.h-dt*160);
     if(m.captured)continue;
     if(sp.night&&!night){m.fade-=dt*.5;m.y-=dt*(sp.float?12:0);if(m.fade<=0){removeWild(m);continue;}}else if(m.fade<1)m.fade=Math.min(1,m.fade+dt);
     if(m.kx||m.ky){moveEnt(m,m.kx*dt,m.ky*dt,sp);m.kx*=Math.pow(.001,dt);m.ky*=Math.pow(.001,dt);if(Math.abs(m.kx)<2)m.kx=0;if(Math.abs(m.ky)<2)m.ky=0;}
@@ -2437,21 +2528,26 @@ function update(dt,t){if(lvFx>0){lvFx-=dt;for(let i=0;i<2;i++){const an=Math.ran
     const dp=Math.hypot(player.x-m.x,player.y-m.y);
     if(!m.aggro&&!dead&&m.state!=='flee'&&m.state!=='return'){if((night&&!sp.night&&!sp.flee&&dp<80)||(sp.terr&&dp<46)||(m.elite&&dp<110))m.aggro=true,m.state='chase';}
     if(m.state==='flee'){m.timer-=dt;const dx=m.x-player.x,dy=m.y-player.y,d=Math.hypot(dx,dy)||1;moveEnt(m,dx/d*sp.spd*1.5*dt,dy/d*sp.spd*1.5*dt,sp);m.face=dx>0?'right':'left';m.moving=true;if(m.timer<=0){m.state='wander';m.aggro=false;}continue;}
-    if(m.aggro){let tg=player,td=dead?1e9:dp;if(follower&&!follower.faint&&player.mount!==follower){const fd=Math.hypot(follower.x-m.x,follower.y-m.y);if(fd<td){tg=follower;td=fd;}}
-      if(m.raid&&R.base)for(const q of S.pals){if(q.faint||q.assign==='follow')continue;const qd=Math.hypot(q.x-m.x,q.y-m.y);if(qd<td){tg=q;td=qd;}}
+    if(m.aggro){if(!tgValid(m.tg))m.tg=null;if(!m.tg)m.tg=pickTarget(m,!!m.elite);let tg=m.tg,td=tg?tgDist(m,tg):1e9;
+      if(m.raid&&R.base&&!m.atk)for(const q of S.pals){if(q.faint||q.assign==='follow')continue;const qd=Math.hypot(q.x-m.x,q.y-m.y);if(qd<td){tg=q;td=qd;}}
+      if(m.raid)m.tg=tg;if(!tg){m.moving=false;continue;}
       if(m.raid&&td>1e8){m.moving=false;continue;}
-      if(!m.raid&&(td>240||Math.hypot(m.x-m.home.x,m.y-m.home.y)>(m.elite?240:360))){m.aggro=false;m.atk=null;m.state='return';m.tx=m.home.x;m.ty=m.home.y;m.timer=0;m.lastD=1e9;continue;}
+      if(!m.raid&&(td>240||Math.hypot(m.x-m.home.x,m.y-m.home.y)>(m.elite?240:360))){m.aggro=false;m.atk=null;m.tg=null;m.state='return';m.tx=m.home.x;m.ty=m.home.y;m.timer=0;m.lastD=1e9;continue;}
       const dx=tg.x-m.x,dy=tg.y-m.y,d=Math.hypot(dx,dy)||1;m.face=dx>0?'right':'left';
       const reach=sp.aquatic?30:13+(MONSPR[m.sp][0].width>30?4:0)+(m.elite?8:0);
       let kind=atkKind(m);if((kind==='charge'||kind==='spit')&&!m.atk&&!lineClear(m.x,m.y,tg.x,tg.y,sp))kind='lunge';
-      const range=kind==='charge'?reach+ATKP.charge.range:kind==='spit'?ATKP.spit.range:reach;
+      if(kind==='dive'&&!m.atk&&blockedAt(tg.x,tg.y,sp))kind='lunge';/* 내려앉을 수 없는 자리면 그냥 덮치기 */
+      const range=atkRange(m,kind,reach);
       if(m.atk){const A=m.atk;m.moving=false;
         if(A.dash>0){stepCharge(m,A,dt,reach);continue;}
+        if(A.air){stepDive(m,A,dt);continue;}
         A.t+=dt;if(!A.hit&&A.t>=A.wind)wildStrike(m,A,reach);
-        if(m.atk&&A.hit&&!(A.dash>0)&&A.t>=A.wind+(A.rec||.22))m.atk=null;continue;}
+        if(m.atk&&A.hit&&A.kind==='stab'&&A.n<ATKP.stab.n&&A.t>=A.wind+A.n*ATKP.stab.gap)stabHit(m,A,reach);
+        if(m.atk&&A.hit&&!(A.dash>0)&&!A.air&&A.t>=A.wind+(A.rec||.22)){m.atk=null;m.tg=null;if(sp.aquatic&&blockedAt(m.x,m.y,sp)){burst(m.x,m.y-2,'170,215,255',6,30);unstick(m,sp);}}continue;}/* 뭍에 튀어나온 물고기는 공격이 끝나면 물로 미끄러져 돌아간다 */
       if(d>range){const np=sp.aquatic||sp.float?{x:tg.x,y:tg.y}:navPoint(m,tg.x,tg.y,sp),nx=np.x-m.x,ny=np.y-m.y,nd=Math.hypot(nx,ny)||1;moveEnt(m,nx/nd*sp.spd*1.35*dt,ny/nd*sp.spd*1.35*dt,sp);m.moving=true;if(sp.aquatic&&!inWater(R,m.x+dx/d*4,m.y+dy/d*4)){m.moving=false;}}
-      else{m.moving=false;if(m.cd<=0){const wind=telegraphWind(m),A={t:0,wind,ux:dx/d,uy:dy/d,tg,hit:false,kind};m.cd=1.1+wind+(kind==='charge'?ATKP.charge.cd:kind==='spit'?ATKP.spit.cd:0);
-          if(kind==='slam'){const r=ATKP.slam.r*(m.elite?1.4:1),o=Math.min(ATKP.slam.off,d);A.zx=m.x+A.ux*o;A.zy=m.y+A.uy*o;A.zr=r;}m.atk=A;}}}
+      else{m.moving=false;if(m.cd<=0){const wind=telegraphWind(m),A={t:0,wind,ux:dx/d,uy:dy/d,tg,hit:false,kind};m.cd=1.1+wind+((ATKP[kind]&&ATKP[kind].cd)||0);
+          if(kind==='slam'){const r=ATKP.slam.r*(m.elite?1.4:1),o=Math.min(ATKP.slam.off,d);A.zx=m.x+A.ux*o;A.zy=m.y+A.uy*o;A.zr=r;}
+          if(kind==='ring'){A.zr=ATKP.ring.r*(m.elite?1.4:1);A.col=sp.form==='plant'?'150,205,90':(SPIT_COL[sp.el]||'240,230,200');}m.atk=A;}}}
     else if(m.state==='return'){const dx=m.home.x-m.x,dy=m.home.y-m.y,d=Math.hypot(dx,dy);m.hp=Math.min(m.max,m.hp+m.max*dt*.25);
       if(d<10){m.state='wander';m.timer=-1;m.moving=false;continue;}
       {const np=sp.aquatic||sp.float?m.home:navPoint(m,m.home.x,m.home.y,sp),nx=np.x-m.x,ny=np.y-m.y,nd=Math.hypot(nx,ny)||1;moveEnt(m,nx/nd*sp.spd*1.3*dt,ny/nd*sp.spd*1.3*dt,sp);m.face=nx>0?'right':'left';}m.moving=true;m.timer+=dt;
@@ -2462,7 +2558,7 @@ function update(dt,t){if(lvFx>0){lvFx-=dt;for(let i=0;i<2;i++){const an=Math.ran
       if(m.hp<m.max)m.hp=Math.min(m.max,m.hp+dt*.5);}}
   updateBoss(dt,paused||!!TR.dir);if(!paused)tickSlamFx(dt);
   for(const o of orbsFly.slice()){o.t+=dt;if(o.rid!==R.id){orbsFly.splice(orbsFly.indexOf(o),1);continue;}if(o.target&&R.wild.includes(o.target)&&!o.target.captured&&Math.hypot(o.target.x-o.x0,o.target.y-o.y0)<150){o.x1=o.target.x;o.y1=o.target.y-4;}if(o.t>=o.dur){orbsFly.splice(orbsFly.indexOf(o),1);startCapture(o);}}
-  for(const c of captures.slice()){c.t+=dt;if(c.rid!==R.id){captures.splice(captures.indexOf(c),1);c.m.captured=false;continue;}const total=c.ok?2.2:(c.shakes*.62+.55);if(c.t>=total){captures.splice(captures.indexOf(c),1);endCapture(c);}}
+  for(const c of captures.slice()){c.t+=dt;if(c.rid!==R.id){captures.splice(captures.indexOf(c),1);c.m.captured=false;continue;}tickCapFx(c,dt);if(c.t>=capTotal(c)){captures.splice(captures.indexOf(c),1);endCapture(c);}}
   updatePals(dt,paused);
   if(!paused||(started&&panelState&&panelState.kind==='craft'))updateBase(dt);
   updateRaid(dt,paused);
@@ -2507,7 +2603,9 @@ const DIG={'0':['111','101','101','101','111'],'1':['010','110','010','010','111
 function drawDigits(g,x,y,s,col){const w=s.length*4;let ox=Math.round(x-w/2);for(const ch of s){const gl=DIG[ch];if(gl){for(let r=0;r<5;r++)for(let c=0;c<3;c++)if(gl[r][c]==='1'){g.fillStyle='#1a1020';g.fillRect(ox+c+1,y+r+1,1,1);}for(let r=0;r<5;r++)for(let c=0;c<3;c++)if(gl[r][c]==='1'){g.fillStyle=col;g.fillRect(ox+c,y+r,1,1);}}ox+=4;}}
 function floatOff(o){const sp=SPECIES[o.sp];if(sp.float)return Math.round(Math.sin(o.anim*2)*2)-12;if(sp.aquatic)return Math.round(Math.sin(o.anim*3)*1)+2;return 0;}
 /* 공격 예고: 뒤로 기울며 웅크림(세로 0.85배, 발끝 기준) → 뛰쳐나가기 직전 한 번 밝게 번쩍이며 몸을 편다. '!'는 3D에서는 overlay3d가 머리 위에 그린다 */
-function monDraw(g,o){const A=o.atk;if(!A||A.hit)return monDraw0(g,o);const k=Math.min(1,A.t/A.wind),ox=Math.round(-A.ux*2*k+(k>.7?(Math.random()-.5)*1.6:0)),oy=Math.round(-A.uy*1.5*k);
+function monDraw(g,o){if(o.h>0){g.save();g.translate(0,-Math.round(o.h));monDrawA(g,o);g.restore();return;}monDrawA(g,o);}
+function monDrawA(g,o){const A=o.atk;if(A&&A.hit&&A.kind==='stab'&&A.n>0){monDraw0(g,o);const k=A.t-(A.wind+(A.n-1)*ATKP.stab.gap);if(k>=0&&k<.12){/* 찌르기 궤적: 앞쪽으로 뻗는 밝은 줄 */const spr=MONSPR[o.sp][0],L=12+10*(1-k/.12);g.save();g.translate(Math.round(o.x+A.ux*spr.width*.45),Math.round(o.y-spr.height*.4));g.rotate(Math.atan2(A.uy*.7,A.ux));g.fillStyle=`rgba(255,250,225,${.95-k/.12*.6})`;g.fillRect(0,-1,L,2);g.fillStyle='rgba(255,255,255,.9)';g.fillRect(L-4,-1,4,2);g.restore();}return;}
+  if(!A||A.hit)return monDraw0(g,o);const k=Math.min(1,A.t/A.wind),ox=Math.round(-A.ux*2*k+(k>.7?(Math.random()-.5)*1.6:0)),oy=Math.round(-A.uy*1.5*k);
   const sy=k<.7?1-.15*(k/.7):.85+.23*((k-.7)/.3),fy=o.y+1+floatOff(o);
   g.save();g.translate(ox,oy);g.translate(o.x,fy);g.scale(1,sy);g.translate(-o.x,-fy);monDraw0(g,o);const sp=o.sp,spr=(o.face==='left'?MONSPRL:MONSPR)[sp][0],sc=o.elite?1.6:1,w=Math.round(spr.width*sc),h=Math.round(spr.height*sc),x=Math.round(o.x-w/2),y=Math.round(o.y-h+1+floatOff(o));
   if(k>.62&&k<.82){g.globalAlpha=.9*Math.sin((k-.62)/.2*Math.PI);g.drawImage(o.face==='left'?MONWL[sp]:MONW[sp],x,y,w,h);g.globalAlpha=1;}
@@ -2519,7 +2617,7 @@ function monDraw1(g,o){const sp=o.sp,fr=o.moving?Math.floor(o.anim*6)%4:(SPECIES
   let bob=floatOff(o);if(o.work)bob+=Math.round(Math.abs(Math.sin(o.anim*7))*-2);
   const x=Math.round(o.x-spr.width/2),y=Math.round(o.y-spr.height+1+bob);
   if(o.fade!==undefined&&o.fade<1)g.globalAlpha=Math.max(0,o.fade);
-  if(SPECIES[sp].aquatic&&inWater(R,o.x,o.y)){g.save();g.beginPath();g.rect(x-2,y-2,spr.width+4,spr.height-3+2-bob);g.clip();g.drawImage(spr,x,y);g.restore();g.fillStyle='rgba(200,230,255,.5)';g.fillRect(x+2,Math.round(o.y-2),spr.width-4,1);}
+  if(SPECIES[sp].aquatic&&!(o.h>0)&&inWater(R,o.x,o.y)){g.save();g.beginPath();g.rect(x-2,y-2,spr.width+4,spr.height-3+2-bob);g.clip();g.drawImage(spr,x,y);g.restore();g.fillStyle='rgba(200,230,255,.5)';g.fillRect(x+2,Math.round(o.y-2),spr.width-4,1);}
   else if(o.elite){const w2=Math.round(spr.width*1.6),h2=Math.round(spr.height*1.6),ex=Math.round(o.x-w2/2),ey=Math.round(o.y-h2+1+bob);g.drawImage(spr,ex,ey,w2,h2);if(o.hurt>0){g.globalAlpha=Math.min(1,o.hurt/.16*1.8);g.drawImage(o.face==='left'?MONWL[sp]:MONW[sp],ex,ey,w2,h2);}g.globalAlpha=1;
     g.fillStyle='#f0c040';const cx2=Math.round(o.x);g.fillRect(cx2-4,ey-5,9,2);g.fillRect(cx2-4,ey-8,1,3);g.fillRect(cx2,ey-9,1,4);g.fillRect(cx2+4,ey-8,1,3);return;}
   else g.drawImage(spr,x,y);
@@ -2604,7 +2702,7 @@ function render(t){
       else{const sg=player.rvx<-.2?-1:1,hs=getSprite('hero',player.dir,true,1);sctx.translate(Math.round(player.x),Math.round(player.y)-12);sctx.rotate(sg*u*Math.PI*2);sctx.scale(1,.85);sctx.drawImage(hs,-11,-17);}
       sctx.restore();return;}
     if(player.inv>0&&Math.floor(t*30)%2)return;const lx=player.atkT>0?facingVec()[0]*2:0,ly=player.atkT>0?facingVec()[1]*2:0;sctx.drawImage(getSprite('hero',player.dir,mt?false:player.moving,mt?0:f,!!player.sw||!!player.work||(player.bowT>0&&!player.mount)),Math.round(player.x)-11+lx,Math.round(player.y)-33+ly-rh);drawWeapon(sctx);drawHammer(sctx);drawBow(sctx);drawSwingTrail(sctx,false);}});
-  for(const c of captures){if(c.rid!==R.id)continue;vis.push({y:c.y,d:()=>{const st=c.t<.35?0:Math.floor((c.t-.35)/.62),wob=(c.t>.35&&st<c.shakes)?Math.round(Math.sin((c.t-.35)/.62*Math.PI*2)*2):0;sctx.drawImage(ORBS[c.ob.k==='orb'?0:c.ob.k==='orb2'?1:2],Math.round(c.x)-4+wob,Math.round(c.y)-8);}});}
+  for(const c of captures){if(c.rid!==R.id)continue;vis.push({y:c.y,sh:()=>pe(sctx,Math.round(c.x)+1,Math.round(c.y)-1,5,2),d:()=>drawCapture(sctx,c)});}
   if(MODE3D){finish3d(vis,t,cx,cy,inView);return;}
   sctx.fillStyle=`rgba(28,18,52,${env.sh})`;for(const e of vis)e.sh&&e.sh();
   vis.sort((a,b)=>a.y-b.y);for(const e of vis)e.d();
@@ -2666,7 +2764,7 @@ function startGame(cont){
   if(sv){S.inv=Object.assign(EMPTYINV(),sv.inv||{});S.hp=sv.hp??100;S.food=sv.food??100;S.weapon=WEAPONS[sv.weapon]?sv.weapon:'club';S.quest=sv.qv>=3&&sv.qid in QIDX?QIDX[sv.qid]:(QIDX[QUEST_V2[Math.min((sv.quest||0)+(!sv.qv&&(sv.quest||0)>=7?1:0),QUEST_V2.length-1)]]??0);S.time=sv.time??5.5;S.day=sv.day||1;S.uid=sv.uid||1;S.dex=sv.dex||{};S.stats=Object.assign({caught:0,kills:0},sv.stats||{});S.visited=Object.assign({rowen:true},sv.visited||{});S.guard=sv.guard||{};S.met=sv.met||{};S.shards=sv.shards||0;S.ended=!!sv.ended;S.armor=ARMORS[sv.armor]?sv.armor:'none';S.eggs=Array.isArray(sv.eggs)?sv.eggs.filter(e=>SPECIES[e.sp]):[];S.raidDay=sv.raidDay||0;S.raid=null;S.tierSeen=sv.tierSeen??tierNow();S.chests=sv.chests||{};S.cells=sv.cells||{};S.ways=sv.ways||{};S.mids=sv.mids||{};S.rested=sv.rested||Object.assign({},sv.guard||{});S.saddle=!!sv.saddle;S.bl=clamp(sv.bl|0,1,BL_MAX);
     if(sv.lv>=1){S.lv=clamp(sv.lv|0,1,LV_MAX);S.xp=Math.max(0,sv.xp|0);}else{const st=S.stats;[S.lv,S.xp]=xpToLevel((st.caught||0)*30+(st.kills||0)*12+(st.hatched||0)*XP.hatch+Object.keys(S.guard).length*XP.guard);}
     S.st={hp:0,atk:0,def:0,work:0};if(sv.st)for(const k in S.st)S.st[k]=Math.max(0,sv.st[k]|0);S.spt=sv.spt>=0?sv.spt|0:Math.max(0,S.lv-1-stSum());S.hp=Math.min(S.hp,maxHp());
-    for(const k in S.fac)S.fac[k]={built:!!(FACDEF[k].built||(sv.fac&&sv.fac[k]&&sv.fac[k].built)),queue:[],prog:0,acc:0};
+    for(const k in S.fac)S.fac[k]={built:!!(FACDEF[k].built||(sv.fac&&sv.fac[k]&&sv.fac[k].built)),bt:(sv.fac&&sv.fac[k]&&!sv.fac[k].built&&sv.fac[k].bt>0)?sv.fac[k].bt:0,queue:[],prog:0,acc:0};
     for(const q of sv.pals||[]){if(!SPECIES[q.sp])continue;const p=newPal(q.sp,q.lv,q.hp);p.uid=q.uid;p.assign=FACDEF[q.assign]||q.assign==='box'||q.assign==='follow'?q.assign:'box';p.fed=q.fed||0;p.mood=q.mood??100;p.rank=q.rank||0;recalcMax(p);if(q.hp!==undefined)p.hp=Math.min(q.hp,p.max);S.pals.push(p);if(p.assign==='follow')follower=p;}}
   else{clearSave();S.lv=1;S.xp=0;S.st={hp:0,atk:0,def:0,work:0};S.spt=0;S.hp=100;S.food=100;S.inv=EMPTYINV();S.weapon='club';S.quest=0;S.time=5.5;S.day=1;S.uid=1;S.dex={};S.stats={caught:0,kills:0};S.visited={rowen:true};S.guard={};S.met={};S.shards=0;S.ended=false;S.armor='none';S.eggs=[];S.raidDay=0;S.raid=null;S.tierSeen=0;S.chests={};S.cells={};S.ways={};S.mids={};S.saddle=false;S.rested={};S.bl=1;
     for(const k in S.fac)S.fac[k]={built:!!FACDEF[k].built,queue:[],prog:0,acc:0};}
@@ -2713,6 +2811,11 @@ window.addEventListener('blur',()=>{keys.clear();for(const k in touch)touch[k]=f
 stage.addEventListener('pointerdown',e=>{if(e.target===view)stage.focus();});
 const UA=navigator.userAgent||'',UA_MOB=/Android|iPhone|iPad|iPod|Mobile/i.test(UA)||!!(navigator.userAgentData&&navigator.userAgentData.mobile);
 let MOBILE=false;const MENU_TXT=$('menuBtn').textContent;
+/* v39 모바일 브라우저 기본 동작 차단: 핀치 확대(gesturestart·두 손가락 touchmove), 두 번 탭 확대, 길게 눌러 선택·메뉴 */
+(()=>{const blk=e=>{if(MOBILE)e.preventDefault();};document.addEventListener('gesturestart',blk,{passive:false});document.addEventListener('gesturechange',blk,{passive:false});
+  document.addEventListener('touchmove',e=>{if(MOBILE&&e.touches.length>1)e.preventDefault();},{passive:false});
+  document.addEventListener('selectstart',blk);document.addEventListener('contextmenu',e=>{if(MOBILE||e.target.closest('.stage'))e.preventDefault();});
+  if(!document.querySelector('meta[name=viewport]')){const m=document.createElement('meta');m.name='viewport';m.content='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover';document.head.appendChild(m);}})();
 function setMobile(on){if(MOBILE===on)return;MOBILE=on;coarse=on;document.body.classList.toggle('mobile',on);$('mctl').hidden=!on;$('menuBtn').textContent=on?'수첩':MENU_TXT;MCTL_OFF=null;if(!on){JOY.on=false;JOY.id=null;JOY.x=JOY.y=0;}
   try{renderQuest();}catch(e){}if(typeof orient==='function')orient();}
 window.addEventListener('touchstart',()=>setMobile(true),{passive:true,capture:true});
@@ -2751,7 +2854,7 @@ document.addEventListener('fullscreenchange',updateMobBtns);document.addEventLis
 
 buildRegion(R);camX=clamp(640-W/2,0,R.W-W);camY=clamp(1000-H/2,0,R.H-H);
 updateInv();renderQuest();
-window.__blk=(x,y)=>blockedAt(x,y,null);window.__game={JOY,baseLv,blCap,workPals,facCount,BL_MISS,BL_CAP,checkBaseLevel,missDone,canPlace,blSteps,ATKP,ATK_FORM,atkKind,get shots(){return shots;},HITFX,telegraphWind,cancelAtk,hitWild,get wild(){return R.wild;},arrowsFly,shootArrow,swapBow,bowTarget,ARROW,get boss(){return boss;},bossPattern,bossStart,GUARD,startWork,stopWork,soloCraft,player,restAtFire,celebrate,bossDefeat,QUESTS,questTech,techWhy,TECH_NEED,baseEffInfo,checkQuest,elemMul,weakOf,EL_STRONG,WEAPONS,TECH,learnTech,hasTech,techWhy,techReady,recOk,lockMsg,unlocked,tryRoll,maxSta,STA,pInvuln,gainXp,spendStat,maxHp,atkMul,defMul,workMul,xpNeed,xpToLevel,hAt,COMBO,enterRegion,MONSPR,SPECIES,render:t=>render(t),get hitStop(){return hitStop;},buildRegionPub:buildRegion,FAMS,REGIONS,GUARD,WAYS,toggleRide,warpToWay,wayById,wakeWay,routeExit,setFollow,step(n,dt){for(let i=0;i<n;i++){TT+=dt;update(dt,TT);}},updateBase,startRaid,tierNow,built,storeCap,powered,condense,warpTo,hatch,get eggs(){return S.eggs;},renderPanel,get boss(){return boss;},GUARD,sealOf,story,S,REGIONS,get R(){return R;},player,startGame,spawnWild,throwOrb,playerAttack,interact,openPanel,openMenu,newPal,setFollow,FACDEF,get follower(){return follower;},captureChance,isNight,enterRegion,SPECIES,MONSPR,DEX_ORDER};
+window.__blk=(x,y)=>blockedAt(x,y,null);window.__game={JOY,buildPending,pickTarget,tgValid,bossTg,baseLv,blCap,workPals,facCount,BL_MISS,BL_CAP,checkBaseLevel,missDone,canPlace,blSteps,ATKP,ATK_FORM,atkKind,atkRange,stepDive,get slamFx(){return slamFx;},get shots(){return shots;},HITFX,telegraphWind,cancelAtk,hitWild,get wild(){return R.wild;},get captures(){return captures;},drawCapture,ORBS,get orbsFlyN(){return orbsFly.length;},CAPFX,arrowsFly,shootArrow,swapBow,bowTarget,ARROW,get boss(){return boss;},bossPattern,bossStart,GUARD,startWork,stopWork,soloCraft,player,restAtFire,celebrate,bossDefeat,QUESTS,questTech,techWhy,TECH_NEED,baseEffInfo,checkQuest,elemMul,weakOf,EL_STRONG,WEAPONS,TECH,learnTech,hasTech,techWhy,techReady,recOk,lockMsg,unlocked,tryRoll,maxSta,STA,pInvuln,gainXp,spendStat,maxHp,atkMul,defMul,workMul,xpNeed,xpToLevel,hAt,COMBO,enterRegion,MONSPR,SPECIES,render:t=>render(t),get hitStop(){return hitStop;},buildRegionPub:buildRegion,FAMS,REGIONS,GUARD,WAYS,toggleRide,warpToWay,wayById,wakeWay,routeExit,setFollow,step(n,dt){for(let i=0;i<n;i++){TT+=dt;update(dt,TT);}},updateBase,startRaid,tierNow,built,storeCap,powered,condense,warpTo,hatch,get eggs(){return S.eggs;},renderPanel,get boss(){return boss;},GUARD,sealOf,story,S,REGIONS,get R(){return R;},player,startGame,spawnWild,throwOrb,playerAttack,interact,openPanel,openMenu,newPal,setFollow,FACDEF,get follower(){return follower;},captureChance,isNight,enterRegion,SPECIES,MONSPR,DEX_ORDER};
 /* ================= HD-2D 3D renderer (three.js) ================= */
 const VS=1.18,PITCH=0.70,FOV=26,MAXPL=6;
 let R3=null;W2S=(x,y,up)=>{if(!R3)return [0,0];const v=R3.tmp.set(x,elev3(x,y)+up*VS,y).project(R3.cam);return [(v.x*.5+.5)*DW,(-v.y*.5+.5)*DH,v.z];};
@@ -2865,14 +2968,14 @@ function finish3d(vis,t,cx,cy,inView){
   overlay3d(t);}
 function overlay3d(t){const g=dctx;g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,DW,DH);const sc=DW/W;g.imageSmoothingEnabled=false;
   const at=(x,y,up)=>{const [a,b]=W2S(x,y,up);return [Math.round(a/sc),Math.round(b/sc)];};g.setTransform(sc,0,0,sc,0,0);
-  for(const m of R.wild){if(m.captured||m.fade<1)continue;const [x,y]=at(m.x,m.y,MONSPR[m.sp][0].height*(m.elite?1.6:1)+4-floatOff(m));
+  for(const m of R.wild){if(m.captured||m.fade<1)continue;const [x,y]=at(m.x,m.y,MONSPR[m.sp][0].height*(m.elite?1.6:1)+4-floatOff(m)+(m.h||0));
     if(m.hp<m.max||m.aggro){g.fillStyle='#1a1020';g.fillRect(x-9,y,18,3);g.fillStyle=m.aggro?'#e0685a':'#8ad06a';g.fillRect(x-8,y+1,Math.max(1,Math.round(16*m.hp/m.max)),1);}
     const A=m.atk;if(A&&!A.hit){/* 공격 예고 '!': 아지랑이 위, 체력 바와 겹치지 않게 더 위쪽·크게. 후반엔 흰색으로 깜빡 */const k=A.t/A.wind,yy=y-11,hot=k>.62&&Math.floor(t*28)%2===0;g.fillStyle='#1a1020';g.fillRect(x-2,yy-9,5,11);g.fillStyle=m.elite?(hot?'#fff0e0':'#ff6a4a'):(hot?'#fff8d0':'#ffd040');g.fillRect(x-1,yy-8,3,6);g.fillRect(x-1,yy-1,3,2);}
     else if(m.aggro){g.fillStyle='#1a1020';g.fillRect(x-1,y-8,3,7);g.fillStyle='#ff6a5a';g.fillRect(x,y-7,1,3);g.fillRect(x,y-3,1,1);}
     if(SPECIES[m.sp].rare&&!S.dex[m.sp]){const a=.6+.4*Math.sin(t*4);g.fillStyle=`rgba(255,220,120,${a})`;g.fillRect(x+10,y-2,1,3);g.fillRect(x+9,y-1,3,1);}}
   if(boss&&boss.atk&&!boss.atk.hit){/* 수호자 근접 공격 예고 '!' (빨강, 후반 흰색 깜빡) */const A=boss.atk,k=A.t/A.wind,[x,y0]=at(boss.x,boss.y,MONSPR[boss.sp][0].height*.78-floatOff(boss)),yy=y0,hot=k>.62&&Math.floor(t*28)%2===0;g.fillStyle='#1a1020';g.fillRect(x-2,yy-9,5,11);g.fillStyle=hot?'#fff0e0':'#ff6a4a';g.fillRect(x-1,yy-8,3,6);g.fillRect(x-1,yy-1,3,2);}
   for(const p of S.pals){if(p.faint||(!R.base&&p.assign!=='follow'))continue;const [x,y]=at(p.x,p.y,MONSPR[p.sp][0].height+4-floatOff(p));
-    if(p.assign==='follow'&&p!==player.mount){g.fillStyle='#1a1020';g.fillRect(x-9,y,18,3);g.fillStyle='#7ab8f0';g.fillRect(x-8,y+1,Math.max(1,Math.round(16*p.hp/p.max)),1);}
+    if(p.assign==='follow'&&p!==player.mount){g.fillStyle='#1a1020';g.fillRect(x-9,y,18,3);g.fillStyle=p.retreat?(Math.floor(t*6)%2?'#ff9a7a':'#e0685a'):'#7ab8f0';g.fillRect(x-8,y+1,Math.max(1,Math.round(16*p.hp/p.max)),1);}
     else if(p.hungry&&p.assign!=='follow'){const by=y-8+Math.round(Math.sin(t*4+p.uid));g.fillStyle='#1a1020';g.fillRect(x-3,by-1,7,7);g.fillStyle='#d8304a';g.fillRect(x-2,by+1,5,4);}}
   if(R.base)for(const k in FACDEF){const f=FACDEF[k],st=S.fac[k];if(!st.built)continue;let pc=-1,col='#f0b860';if(f.kind==='craft'&&st.queue.length)pc=st.prog/st.queue[0].t;else if(f.kind==='conv'&&st.acc>0)pc=st.acc,col='#ff9a5a';else if(f.kind==='breed'&&st.state==='ok')pc=st.acc,col='#ff9ab8';
     if(pc<0)continue;const s=facSprite(k),[x,y]=at(f.x,f.y,(s?s.height:30)+2);g.fillStyle='#1a1020';g.fillRect(x-11,y,22,4);g.fillStyle=col;g.fillRect(x-10,y+1,Math.round(20*Math.min(1,pc)),2);}
