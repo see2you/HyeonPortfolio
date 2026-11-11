@@ -1,17 +1,4 @@
-<!doctype html>
-<html lang="ko">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="버디 트래블러">
-<meta name="theme-color" content="#13111b">
-<style>html,body{margin:0;padding:0;background:#13111b}</style>
-<!-- 방문자 카운터 (GoatCounter) -->
-<script data-goatcounter="https://hyeonportfolio.goatcounter.com/count"
-        async src="https://gc.zgo.at/count.js"></script>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>버디 트래블러 3D</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2170,7 +2157,7 @@ function routeExit(target){const prev={[R.id]:null},q=[R.id];while(q.length){con
 function shortName(id,from){const T=REGIONS[id];return T.fam===from.fam&&FAMS[T.fam]?T.name.split(' · ')[1]:FAM_NAME[T.fam];}
 /* yellow arrows over the resource nodes the current quest still needs */
 const NEED_NODE={wood:'tree',stone:'rock',ore:'ore',obs:'obs',berry:'bush'},NODE_UP={tree:40,rock:14,ore:16,obs:16,bush:14};
-function drawNeedMarkers(t){if(!OPT.obj||!started||dead||TR.dir||menuOpen()||player.work)return;if(boss&&boss.state==='fight')return;const miss=questMissing();if(!miss)return;
+function drawNeedMarkers(t){if(!started||dead||TR.dir||menuOpen()||player.work)return;if(boss&&boss.state==='fight')return;const miss=questMissing();if(!miss)return;
   const types=new Set(miss.map(k=>NEED_NODE[k]).filter(Boolean));if(!types.size)return;const pick=[];
   for(const ty of types){const c=[];for(const n of R.nodes){if(n.type!==ty||n.hp<=0||(ty==='bush'&&!n.ripe))continue;const d=Math.hypot(n.x-player.x,n.y-player.y);if(d<260)c.push([d,n]);}c.sort((a,b)=>a[0]-b[0]);for(const e of c.slice(0,3))pick.push(e[1]);}
   if(!pick.length)return;const sz=Math.round(DH/30),fs=Math.max(10,Math.round(DH/44));dctx.save();dctx.font=`bold ${fs}px ${getComputedStyle(document.body).fontFamily}`;dctx.textAlign='center';dctx.textBaseline='middle';
@@ -2197,7 +2184,7 @@ function drawGuideLabels(cx,cy){if(!started)return;const sc=DW/W,fs=Math.max(11,
   for(const pr of R.props){if(pr.type!=='guide')continue;const d=Math.hypot(pr.x-player.x,(pr.y-player.y)*1.1);if(d>90)continue;const a=clamp((90-d)/30,0,1),[tx,ty]=w2s(pr.x,pr.y,36),tw=dctx.measureText(pr.t).width+fs;
     dctx.globalAlpha=a*.88;dctx.fillStyle='#2a1c14';dctx.fillRect(Math.round(tx-tw/2),Math.round(ty-fs*.75),Math.round(tw),Math.round(fs*1.5));dctx.globalAlpha=a;dctx.fillStyle='#c8945a';dctx.fillRect(Math.round(tx-tw/2),Math.round(ty+fs*.7),Math.round(tw),2);dctx.fillStyle='#fbf3dc';dctx.fillText(pr.t,Math.round(tx),Math.round(ty+1));}
   dctx.globalAlpha=1;dctx.textAlign='start';dctx.textBaseline='alphabetic';}
-const OPT_KEY='rowen-frontier-opt';const OPT=(()=>{try{return Object.assign({obj:false},JSON.parse(localStorage.getItem(OPT_KEY)||'{}'));}catch(e){return {obj:false};}})();
+const OPT_KEY='rowen-frontier-opt';const OPT=(()=>{try{return Object.assign({obj:true},JSON.parse(localStorage.getItem(OPT_KEY)||'{}'));}catch(e){return {obj:true};}})();
 function setObj(v){OPT.obj=v;try{localStorage.setItem(OPT_KEY,JSON.stringify(OPT));}catch(e){}const b=$('qview');if(b){b.textContent=v?'목표보기 ON':'목표보기';b.classList.toggle('on',v);b.setAttribute('aria-pressed',v);}toast(v?'<b>목표보기 켜짐</b>화면 가장자리에 목표 방향이 표시된다':'<b>목표보기 꺼짐</b>');}
 const LOCK_COND=['','느티를 진정시키면 건설 가능','질풍을 진정시키면 건설 가능','반석과 물안개를 진정시키면 건설 가능'];
 function drawPlotLabels(cx,cy,t){if(!R.base||!started)return;const sc=DW/W,fs=Math.max(11,Math.round(DH/36));dctx.font=`${fs}px ${getComputedStyle(document.body).fontFamily}`;dctx.textAlign='center';dctx.textBaseline='middle';
@@ -2910,4 +2897,4 @@ requestAnimationFrame(frame);
 </script>
 
 
-</html>
+</body></html>
