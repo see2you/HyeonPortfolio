@@ -5,10 +5,10 @@
    ===================================================================== */
 let win=null;
 const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['log','기록','L'],['stats','능력치','C'],['skills','스킬','K']];
-function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
-function closeWin(){stopHold();if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
+function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());kbCap=null;win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
+function closeWin(){stopHold();kbCap=null;if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
 function renderWin(){const o=win;if(!o)return;$('wKick').textContent=o.kick||'';$('wTitle').textContent=o.title;const inf=$('wInfo');inf.replaceChildren(...(o.info?o.info():[]));
-  const tb=$('wTabs');tb.replaceChildren();if(o.tabs!==false)for(const [id,n,k] of WTABS){const b=el('button','wtab'+(o.id===id?' on':''),n);b.type='button';if(k&&!document.body.classList.contains('touch'))b.appendChild(el('kbd',null,k));
+  const tb=$('wTabs');tb.replaceChildren();if(o.tabs!==false)for(const [id,n,k] of WTABS){const b=el('button','wtab'+(o.id===id?' on':''),n);b.type='button';if(k&&!document.body.classList.contains('touch'))b.appendChild(el('kbd',null,kbU(k.toLowerCase())));
     const dot=id==='stats'?S.sp>0:id==='skills'?SK.some((s,i)=>skCan(i)):id==='coll'?collCanAny():id==='enc'?enchHint():id==='craft'?craftHint():id==='log'?acqMissNew():false;if(dot)b.classList.add('dot');b.onclick=()=>({bag:openBag,enc:()=>openEnchant(),craft:openCraft,coll:openColl,log:openLog,stats:openStats,skills:openSkills})[id]();tb.appendChild(b);}
   tb.hidden=o.tabs===false;const B=$('wBody'),F=$('wFoot');
   /* v4.14: 다시 그려도 스크롤 위치 유지 (같은 창일 때) — 스킬 목록을 누르면 맨 위로 튀던 버그 */
@@ -271,7 +271,20 @@ function skWhy(i){const s=SK[i],k=skLv(i)+1;if(!tierOpen(s.tier))return SK_TIER[
   if(S.lv<skNeedLv(i,k))return '캐릭터 Lv '+skNeedLv(i,k)+' 필요';if(!S.kp)return '스킬 포인트 부족';return '';}
 
 /* ================= 설정 ================= */
-function openSettings(){if(!started)return;openWin({id:'settings',key:null,kick:'OPTIONS',title:'설정',tabs:false,info:()=>[el('span','wchip','자동 전투 · 물약 · 진행 · 화면')],render:renderSettings});}
+function openSettings(){if(!started)return;openWin({id:'settings',key:null,kick:'OPTIONS',title:'설정',tabs:false,info:()=>{const c=[el('span','wchip','자동 전투 · 물약 · 진행 · 화면')];if(!document.body.classList.contains('touch')){const b=el('button','btn alt wkset','⌨ 단축키 바꾸기');b.type='button';b.onclick=openKeyset;c.push(b);}return c;},render:renderSettings});}
+/* v4.35 단축키 바꾸기 창 — 묶음별 [키] 버튼 → 누른 키로 바꿈(겹치면 맞바꿈) · 고정 키는 회색 · 아래 고정 줄 [기본값으로](두 번) */
+function openKeyset(){if(!started)return;openWin({id:'keyset',key:null,kick:'KEY BINDINGS',title:'단축키 바꾸기',tabs:false,
+  info:()=>{const n=Object.keys(S.keymap||{}).length;return [el('span','wchip',n?'바꾼 키 '+n+'개':'모두 기본값'),el('span','wchip','한글 입력 상태에서도 같은 자리 키')];},render:renderKeyset});}
+function renderKeyset(B,F){const g=el('div','kbw');B.appendChild(g);
+  for(const [gn,L] of KEYGUIDE){const sec=el('div','kbsec');sec.appendChild(el('h4',null,gn));
+    for(const [n,...ks] of L){const r=el('div','kbr');r.appendChild(el('span','kbn',n));const one=ks.find(k=>/^[A-Z]$/.test(k));
+      if(one){const d=one.toLowerCase(),cap=kbCap===d,b=el('button','kbk'+(cap?' cap':'')+(kb(d)!==d?' chg':''),cap?'키를 누르세요…':kbU(d));b.type='button';b.dataset.act=d;
+        b.onclick=()=>{kbCap=cap?null:d;renderWin();};r.appendChild(b);r.appendChild(el('small','kbd0',kb(d)!==d?'기본 '+one:''));}
+      else{r.appendChild(el('span','kbk fix',ks.join(' / ')));r.appendChild(el('small','kbd0','고정'));}
+      sec.appendChild(r);}
+    g.appendChild(sec);}
+  let armed=false;const rb=btn('기본값으로','alt',()=>{if(!Object.keys(S.keymap||{}).length){toast('이미 기본값이다');return;}if(armed){kbReset();return;}armed=true;rb.textContent='한 번 더 누르면 되돌림';});
+  F.append(el('p','note2',kbCap?'바꿀 키를 누르세요 · Esc = 취소 · 다른 동작이 쓰던 키면 서로 맞바꿈':'[키]를 누른 뒤 새 키를 누른다 · 겹치면 맞바꿈 · 이동 WASD · 1~8 · Space · Esc는 고정'),rb);}
 function renderSettings(B,F){const C=S.cfg,g=el('div','setw');B.appendChild(g);
   const sec=n=>{const d=el('div','sec');d.appendChild(el('h4',null,n));g.appendChild(d);return d;};
   const row=(p,title,desc,opts,get,set)=>{const r=el('div','srw'),n=el('div','nm');n.append(el('b',null,title),el('small',null,desc));r.appendChild(n);const os=el('div','opts');
@@ -287,7 +300,7 @@ function renderSettings(B,F){const C=S.cfg,g=el('div','setw');B.appendChild(g);
   row(s2,'자동 진행 물약 보충','자동 진행 중 HP 물약이 '+POT_LOW.hp+'개 아래면 상점에 들러 한도까지 구입',onoff,()=>!!S.autoBuy,v=>S.autoBuy=v);
   row(s2,'긴급 귀환','자동 사냥 중 물약이 없고 HP 40% 미만이면 귀환 주문서로 귀환 (퀘스트 자동 진행 중엔 항상 켜짐)',onoff,()=>!!S.autoRet,v=>S.autoRet=v);
   let s3=sec('진행 · 성장 · 장비');
-  row(s3,'퀘스트 자동 진행','수락 → 이동 → 사냥 → 보상을 자동으로 (T)',onoff,()=>!!S.autoQ,v=>{S.autoQ=v;});
+  row(s3,'퀘스트 자동 진행',kTxt('수락 → 이동 → 사냥 → 보상을 자동으로 (T)'),onoff,()=>!!S.autoQ,v=>{S.autoQ=v;});
   row(s3,'자동 성장','능력치·스킬 포인트·스킬서·슬롯을 자동으로 쓴다',onoff,()=>!!S.autoGrow,v=>{S.autoGrow=v;if(v)autoGrowNow();});
   row(s3,'더 좋은 장비 자동 장착','얻은 장비가 지금보다 전투력이 높으면 바로 장착',onoff,()=>!!C.autoEq,v=>{C.autoEq=v;if(v)autoEquipAll();});
   row(s3,'자동 분해','무게 45% 또는 가방 90%가 넘으면 이 등급 이하를 분해 (장착·잠금·더 좋은 장비 제외 · 자동 잠금은 가방 🔒 ▾)',[[-1,'끔'],[0,'일반'],[1,'고급까지'],[2,'희귀까지']],()=>C.autoDis??-1,v=>C.autoDis=v);

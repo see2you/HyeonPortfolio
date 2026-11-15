@@ -241,7 +241,12 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .wh{display:flex;align-items:center;gap:calc(var(--u)*1.2);padding-bottom:calc(var(--u)*.6);border-bottom:1px solid rgba(232,184,100,.25)}
 .wt{display:flex;flex-direction:column}.wk{font-size:.64em;letter-spacing:.3em;color:var(--gold)}.wh h2{margin:0;font-family:var(--disp);font-size:1.5em;color:#fff2d6;line-height:1.1}
 .wi{flex:1;display:flex;gap:calc(var(--u)*.8);justify-content:flex-end;align-items:center;flex-wrap:wrap}
-.wchip{padding:.15em .8em;border-radius:999px;background:rgba(232,184,100,.1);border:1px solid rgba(232,184,100,.3);font-size:.85em;white-space:nowrap;font-variant-numeric:tabular-nums}.wchip.warn{color:#ffc070;border-color:#ffb050}.wchip.bad{color:#ff8a7a;border-color:#ff5a4a}
+.wchip{padding:.15em .8em;border-radius:999px;background:rgba(232,184,100,.1);border:1px solid rgba(232,184,100,.3);font-size:.85em;white-space:nowrap;font-variant-numeric:tabular-nums}.kbw{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(var(--u)*1.2);align-items:start}.kbsec h4{margin:0 0 .3em;color:var(--gold2);font-family:var(--disp)}
+.kbr{display:grid;grid-template-columns:1fr auto 3.6em;align-items:center;gap:.4em;padding:.18em 0;border-bottom:1px solid rgba(232,184,100,.12)}.kbn{font-size:.9em}
+.kbk{font:inherit;font-weight:700;min-width:2.6em;padding:.12em .5em;border-radius:.35em;border:1px solid rgba(232,184,100,.55);background:rgba(40,30,58,.9);color:#fff6e2;cursor:pointer;text-align:center;white-space:nowrap}
+.kbk.chg{color:#9ee07a;border-color:#9ee07a}.kbk.cap{background:#f0c870;color:#2a1808;animation:kbp 1s infinite}.kbk.fix{cursor:default;opacity:.55;font-weight:400;font-size:.85em}.kbd0{color:var(--mut);font-size:.75em}
+@keyframes kbp{50%{opacity:.6}}.keys .kset{align-self:flex-start;font-size:.85em;padding:.15em .9em;margin-top:.25em}.keys kbd.chg{color:#9ee07a;border-color:#9ee07a}.wkset{font-size:.8em;padding:.1em .9em}
+.wchip.warn{color:#ffc070;border-color:#ffb050}.wchip.bad{color:#ff8a7a;border-color:#ff5a4a}
 .wpt{display:flex;align-items:baseline;gap:.5em;padding:.15em .9em;border-radius:calc(var(--u)*.5);border:1px solid rgba(232,184,100,.35);background:rgba(40,30,20,.5)}.wpt small{color:var(--mut);font-size:.75em}.wpt b{font-family:var(--disp);font-size:1.25em;color:var(--mut)}.wpt.on{border-color:#ffd88a;box-shadow:0 0 calc(var(--u)*1) rgba(255,210,110,.3)}.wpt.on b{color:#ffe08a}
 .xpm{width:calc(var(--u)*10);height:6px;border-radius:3px;background:#1a1020;overflow:hidden}.xpm i{display:block;height:100%;background:linear-gradient(90deg,#8a5ad0,#d8a8ff)}
 .wx{width:calc(var(--u)*3.4);height:calc(var(--u)*3.4);border-radius:50%;font:inherit;font-size:1.3em;line-height:1;color:var(--gold2);background:rgba(40,30,56,.9);border:1px solid rgba(232,184,100,.5);cursor:pointer}
@@ -444,7 +449,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.34</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.35</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>

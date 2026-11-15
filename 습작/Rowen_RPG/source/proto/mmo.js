@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.34';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.35';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -811,8 +811,8 @@ function ensureFieldBosses(){if(!mobs||!started)return;for(const q of fieldBossQ
 const fieldBossInfo=()=>fieldBossQs().map(q=>eliteOf(q)).filter(Boolean);
 
 /* ================= 표시 ================= */
-function toast(msg,ok){const el=document.createElement('div');el.className='toast'+(ok?' ok':'');el.textContent=msg;const box=$('toasts');box.appendChild(el);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>el.remove(),2700);}
-function banner(a,b,lv){const el=$('banner');$('banT').textContent=a;$('banS').textContent=b||'';el.className='banner'+(lv?' lv':'');void el.offsetWidth;el.classList.add('show');}
+function toast(msg,ok){msg=kTxt(msg);const el=document.createElement('div');el.className='toast'+(ok?' ok':'');el.textContent=msg;const box=$('toasts');box.appendChild(el);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>el.remove(),2700);}
+function banner(a,b,lv){const el=$('banner');$('banT').textContent=kTxt(a);$('banS').textContent=kTxt(b||'');el.className='banner'+(lv?' lv':'');void el.offsetWidth;el.classList.add('show');}
 function floatTxt(x,y,txt,col,big){floats.push({x,y,up:30,txt,col,big,life:0,dx:rand(-6,6)});if(floats.length>60)floats.shift();}
 
 /* ================= 성장 ================= */
@@ -1205,7 +1205,7 @@ function renderQuests(){const q=curQ(),g=q.gate&&S.qs==='active'?gateState(q):nu
     if(inv){const rem=Math.max(0,inv.until-t),mm=Math.floor(rem/60),ss=Math.floor(rem%60);card('inv','침공','inv','Lv'+inv.m.lv+' '+inv.m.name,ZONES[inv.zone].name+' · '+mm+':'+String(ss).padStart(2,'0')+' 남음',hunt&&hunt.mob===inv.m?'토벌 중':'토벌 ▶',()=>goHunt(inv.zone,null,inv.m,ZONES[inv.zone].name+'(으)로 · 침공 보스 토벌'));}
     const fb=fieldBossInfo().filter(m=>!(q.type==='fboss'&&m.eliteOf===q.boss)),al=fb.filter(alive);if(al.length){const m=al.reduce((a,b)=>dist(a,player)<dist(b,player)?a:b),f=pStats(null,true).faith;card('fb','지역 보스','fb',m.name,[ZONES[m.zone].name+' · ',el('em',f>=m.fa?null:'no','신앙 '+f+'/'+m.fa),al.length>1?' · 외 '+(al.length-1):''],hunt&&hunt.mob===m?'토벌 중':'토벌 ▶',()=>goHunt(m.zone,null,m,ZONES[m.zone].name+'(으)로 · 지역 보스 토벌'));}
     else if(fb.length&&qTab==='rep'){const m=fb.reduce((a,b)=>(a.respawn-a.deadT)<(b.respawn-b.deadT)?a:b),rem=Math.max(0,m.respawn-m.deadT);card('fb','지역 보스','fb',m.name,'다시 나타나기까지 '+Math.floor(rem/60)+':'+String(Math.floor(rem%60)).padStart(2,'0'),'대기',null);}}
-  if(godUnlocked()&&!S.god&&qTab==='all')card('done','권능','god','권능을 고를 수 있다','신의 권능 선택 (P)','선택 ▶',openGods);
+  if(godUnlocked()&&!S.god&&qTab==='all')card('done','권능','god','권능을 고를 수 있다',kTxt('신의 권능 선택 (P)'),'선택 ▶',openGods);
 }
 
 /* ================= 입력 ================= */
@@ -1213,13 +1213,16 @@ const keys=new Set();let joy={on:false,id:null,ox:0,oy:0,dx:0,dy:0};
 /* v4.8.7: 한글 입력 상태에서도 단축키가 먹도록 물리 키 위치(e.code)로 판정 — 한글이면 e.key가 'ㅈ'·'Process'로 들어온다 */
 function keyOf(e){const c=e.code||'';if(c.startsWith('Key'))return c.slice(3).toLowerCase();if(c.startsWith('Digit'))return c.slice(5);if(c.startsWith('Numpad')&&/\d$/.test(c))return c.slice(-1);
   if(c==='Space')return ' ';if(c.startsWith('Arrow'))return c.toLowerCase();if(c==='Escape')return 'escape';return (e.key||'').toLowerCase();}
-addEventListener('keydown',e=>{const k=keyOf(e);if(!started||traveling)return;
+addEventListener('keydown',e=>{const k0=keyOf(e);if(!started||traveling)return;
+  /* v4.35 키 설정 창에서 [키] 버튼을 누른 뒤 다음 키 입력 = 새 키 (Esc = 취소 · 고정 키는 거절) */
+  if(kbCap){e.preventDefault();if(k0==='escape'){kbCap=null;renderWin();return;}const r=setKey(kbCap,k0);if(r===false){toastThr('이 키는 쓸 수 없다 · 이동 WASD · 스킬 1~8 · Space · Esc는 고정');return;}kbCap=null;renderWin();return;}
+  const k=kAct(k0);
   if(k==='escape'&&!$('keys').hidden){toggleKeys(false);return;}
   if(k==='escape'&&!$('menuPop').hidden){toggleMenu(false);return;}
   if(k==='escape'&&!$('npcPop').hidden){toggleNpcList(false);return;}
   if(win){if(k==='escape'||(k===win.key)){e.preventDefault();closeWin();}else{/* v4.29 창이 열려 있어도 다른 창 단축키로 바로 바꾼다 (닫고 다시 열 필요 없음) */const W={i:openBag,c:openStats,k:openSkills,j:openEnchant,u:openCraft,o:openColl,l:openLog,p:()=>{closeWin();openGods();}}[k];if(W&&k.length===1){e.preventDefault();W();}}return;}
   if(modal){if(k==='escape'&&!player.dead)closeModal();return;}
-  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k0);
   if(k===' '){const m=alive(target)?target:nearestMob(90);if(m){target=m;if(!basicAttack(m)){chase=m;}}}
   else if('12345678'.includes(k)&&k.length===1)castSlot(+k-1);else if(k==='r')toggleAuto();else if(k==='t')toggleAutoQ();else if(k==='g')questGo();
   else if(k==='q')usePot('hp');else if(k==='e')usePot('mp');else if(k==='f'){const n=npcList.filter(n=>!n.deco).sort((a,b)=>dist(a,player)-dist(b,player))[0];if(n&&dist(n,player)<60)openNpc(n.id);else toast('가까이에 대화할 사람이 없다');}
@@ -1265,12 +1268,28 @@ const KEYGUIDE=[
   ['화면',[['확대·축소','Z','휠'],['조작법','H'],['이동 · 공격 · 대화','클릭']]]];
 function fillKeys(){const box=document.querySelector('#keys .kpc');if(!box)return;box.replaceChildren();
   for(const [g,L] of KEYGUIDE){const row=el('span','kg');row.appendChild(el('b','kgh',g));const ks_=el('span','kis');row.appendChild(ks_);
-    L.forEach(([n,...ks],i)=>{const it=el('span','ki');it.append(n+' ');ks.forEach((k,j)=>{if(j)it.append('/');it.appendChild(el('kbd',null,k));});ks_.appendChild(it);});box.appendChild(row);}
-  box.appendChild(el('span','ktip','창이 열려 있을 때 — 다른 창 키 = 바로 전환 · 같은 키 · Esc = 닫기 · 창을 열어도 게임은 멈추지 않는다'));}
+    L.forEach(([n,...ks],i)=>{const it=el('span','ki');it.append(n+' ');ks.forEach((k,j)=>{if(j)it.append('/');const lk=k.toLowerCase(),ch=/^[A-Z]$/.test(k)&&typeof KB_ACTS!=='undefined'&&kb(lk)!==lk;it.appendChild(el('kbd',ch?'chg':null,ch?kbU(lk):k));});ks_.appendChild(it);});box.appendChild(row);}
+  box.appendChild(el('span','ktip','창이 열려 있을 때 — 다른 창 키 = 바로 전환 · 같은 키 · Esc = 닫기 · 창을 열어도 게임은 멈추지 않는다'));
+  const ks=el('button','btn alt kset','키 바꾸기');ks.type='button';ks.id='kSet';ks.onclick=e=>{e.stopPropagation();toggleKeys(false);openKeyset();};box.appendChild(ks);}
+/* v4.35 단축키 바꾸기: 조작법 안내(KEYGUIDE)의 한 글자 키 = 바꿀 수 있는 동작(기본 글자가 동작 id) · S.keymap={기본:새 키} · 겹치면 맞바꿈
+   keydown은 kAct(실제 키) → 동작 id(기본 글자)로 바꿔 기존 처리 코드를 그대로 쓴다 · 이동 WASD/방향키 · Space · 1~8 · Esc는 고정 */
+const KB_ACTS=KEYGUIDE.flatMap(([,L])=>L.flatMap(([,...ks])=>ks.filter(k=>/^[A-Z]$/.test(k)).map(k=>k.toLowerCase())));
+const KB_OK=new Set([...'abcdefghijklmnopqrstuvwxyz90'].filter(c=>!'wasd'.includes(c)));
+let kbCap=null;
+function kb(d){const m=S&&S.keymap;return (m&&m[d])||d;}
+function kbU(d){return kb(d).toUpperCase();}
+function kAct(k){if(!KB_OK.has(k))return k;for(const d of KB_ACTS)if(kb(d)===k)return d;return '';}
+function kTxt(s){try{return String(s).replace(/\(([A-Z])\)/g,(m,c)=>KB_ACTS.includes(c.toLowerCase())?'('+kbU(c.toLowerCase())+')':m);}catch(e){return s;}}
+function kbName(d){for(const [,L] of KEYGUIDE)for(const [n,...ks] of L)if(ks.includes(d.toUpperCase()))return n;return d;}
+function setKey(d,nk){if(!KB_OK.has(nk)||!KB_ACTS.includes(d))return false;const old=kb(d);if(old===nk)return null;const o=KB_ACTS.find(x=>x!==d&&kb(x)===nk);
+  const m=S.keymap=S.keymap||{};m[d]=nk;if(o)m[o]=old;for(const x in m)if(m[x]===x)delete m[x];save();kbRefresh();
+  toast(kbName(d)+' → '+nk.toUpperCase()+(o?' · '+kbName(o)+'은(는) '+old.toUpperCase()+'(으)로 맞바꿈':''),true);return o||'';}
+function kbReset(){S.keymap={};kbCap=null;save();kbRefresh();toast('단축키를 기본값으로 되돌렸다',true);}
+function kbRefresh(){fillKeys();const b=$('bKeys');if(b)b.title='조작법 ('+kbU('h')+')';lastQKey='';if(win)renderWin();}
 fillKeys();
 function toggleKeys(on){const k=$('keys'),b=$('bKeys');on=on??k.hidden;k.hidden=!on;b.setAttribute('aria-expanded',on);b.textContent=on?'조작법 닫기':'조작법 보기';}
 $('bKeys').onclick=e=>{e.stopPropagation();toggleKeys();};
-stage.addEventListener('pointerdown',e=>{if(!$('keys').hidden&&!e.target.closest('#bKeys'))toggleKeys(false);},true);
+stage.addEventListener('pointerdown',e=>{if(!$('keys').hidden&&!e.target.closest('#bKeys,#kSet'))toggleKeys(false);},true);
 $('bTown').onclick=goTown;$('bZoom').onclick=toggleZoom;$('bGod').onclick=openGods;$('bStat').onclick=()=>openStats();$('bSkill').onclick=()=>openSkills();$('bBag').onclick=()=>openBag();$('bSet').onclick=()=>openSettings();$('bCraft').onclick=()=>openCraft();
 /* v4.16 NPC 목록 (미니맵 아래 NPC 버튼 · N): 이 지역 NPC와 하는 일, [이동]으로 그 NPC에게 자동 이동 */
 function npcTag(id){const N=NPCS[id];if(N.shop)return '상점';if(N.forge)return '대장간';if(N.rest)return '여관';if(N.guard)return '경비대 · 토벌 의뢰';return (N.role||'').split('·')[0].trim()||'주민';}
@@ -1498,15 +1517,15 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 
 /* ================= 시작 ================= */
-async function startGame(fresh){S=fresh?migrate48(newSave(),true):loadSave()||migrate48(newSave(),true);gearDirty();if(S.map!==MAPID){$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중…';if(!MAPS[S.map].rt||!MAPS[S.map].rt.built)await buildWorld(S.map,p=>{$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});bindMap(S.map);showMapOnly();applyLook();}
+async function startGame(fresh){/* v4.35 새 게임이어도 바꾼 단축키는 이어 쓴다(키 설정은 캐릭터가 아니라 사람의 것) */const km0=fresh?(loadSave()||{}).keymap:null;S=fresh?migrate48(newSave(),true):loadSave()||migrate48(newSave(),true);if(km0)S.keymap=km0;gearDirty();if(S.map!==MAPID){$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중…';if(!MAPS[S.map].rt||!MAPS[S.map].rt.built)await buildWorld(S.map,p=>{$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});bindMap(S.map);showMapOnly();applyLook();}
   const st=pStats();player.hp=st.hp;player.mp=st.mp;
   const ok=!fresh&&!blockedAt(S.x,S.y)&&!Object.values(ZONES).some(z=>z.lv&&inR(z.r,S.x,S.y));player.x=ok?S.x:PLAZA.x;player.y=ok?S.y:PLAZA.y+40;
-  started=true;$('title').hidden=true;$('hud').hidden=false;if(document.body.classList.contains('touch')){joyz.hidden=false;joyEl.hidden=false;joyPos();}
+  started=true;kbRefresh();$('title').hidden=true;$('hud').hidden=false;if(document.body.classList.contains('touch')){joyz.hidden=false;joyEl.hidden=false;joyPos();}
   if(S.cfg&&VOL_OLD[S.cfg.volK]!=null&&!S.cfg.vol482){S.cfg.volK=VOL_OLD[S.cfg.volK];}if(S.cfg&&!S.cfg.vol483){S.cfg.vol=false;S.cfg.vol483=true;S.cfg.vol482=true;}setVolume(!!(S.cfg&&S.cfg.vol===true),S.cfg&&S.cfg.volK||VOL_LV.약);portrait('hero',$('face'),true);setZoom(S.zoom||1);zoom=zoomT;snapCam();curZone='';lastQKey='';stage.focus({preventScroll:true});
   if(fresh)setTimeout(()=>toast('왼쪽 퀘스트를 누르면 목적지로 자동 이동한다'),1200);else offlineSettle();
   if(S.migrated48){delete S.migrated48;setTimeout(()=>{banner('v4.8 장비 시스템','강화 단계를 장비로 옮기고 지금 레벨의 장비를 지급했다');toast('가방(I)에서 장비와 마법 주문서를 확인하자',true);},1600);}save();}
