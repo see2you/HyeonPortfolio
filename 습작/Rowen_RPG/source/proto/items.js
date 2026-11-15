@@ -78,7 +78,19 @@ const stonePrice=()=>40+4*S.lv;
 function normRwStk(o){if(!o)return;const conv={wsc:['stone',3],asc:['stone',3],wscB:['bls',1],ascB:['bls',1]};for(const k in conv)if(o[k]){const [nk,m]=conv[k];o[nk]=(o[nk]||0)+o[k]*m;delete o[k];}}
 const cnt=k=>{const d=STK[k];if(!d)return 0;return d.f?S[d.f]||0:(S.bag[k]||0);};
 const setCnt=(k,v)=>{const d=STK[k];if(d.f)S[d.f]=v;else S.bag[k]=v;};
-function addStk(k,n){if(n<=0)return 0;setCnt(k,cnt(k)+n);return n;}
+function addStk(k,n){if(n<=0)return 0;setCnt(k,cnt(k)+n);if(acqSrc&&acqStk(k))acqLog({cat:/^(book_|rcp)/.test(k)?'book':'mat',k,n:STK[k].n,q:n,src:acqSrc,z:acqZone});return n;}
+/* v4.31 획득 기록 — 자동 사냥 중 무엇을 어디서 얻었는지. 고급 이상 장비 · 보스 전용 장비 · 도면 · 제작 비법서 · 스킬서 · 축복 주문서만, 최근 ACQ_MAX건(새것이 앞).
+   가방 가득 · 무게 초과로 줍지 못한 장비도 '놓침'으로 남긴다. 상점 구입 · 분해 · 제작 결과 · 광물 · 강화석 · 물약은 남기지 않는다(너무 많아 정작 볼 것을 가림) */
+const ACQ_MAX=50,ACQ_MERGE=3000;let acqSrc=null,acqZone=null;
+const acqStk=k=>k==='bls'||/^rcp\d$/.test(k)||k.startsWith('book_')||/^d[wac]\d$/.test(k);
+function acqSrcOf(m){if(!m)return null;if(typeof m==='string')return m;const kind=m.inv?'침공':m.field?'필드 보스':m.eliteOf?'관문 정예':m.boss?'보스':'';return (kind?kind+' · ':'')+m.name+' Lv '+m.lv;}
+function acqZoneOf(m){if(m&&m.zone&&typeof ZALL!=='undefined'&&ZALL[m.zone])return ZALL[m.zone].name;return typeof MAPS!=='undefined'&&MAPS[MAPID]?MAPS[MAPID].name:'';}
+function withAcq(src,z,f){const a=acqSrc,b=acqZone;acqSrc=src;acqZone=z;try{return f();}finally{acqSrc=a;acqZone=b;}}
+function acqLog(e){if(!S)return;const L=S.acq||(S.acq=[]),now=Date.now(),p=L[0];
+  /* 같은 곳에서 같은 재료를 잇달아 얻으면 한 줄로 합친다(퀘스트 보상 도면 2장 등) */
+  if(p&&!e.u&&!p.u&&p.k===e.k&&p.src===e.src&&!p.miss===!e.miss&&now-p.at<ACQ_MERGE){p.q=(p.q||1)+(e.q||1);p.at=now;return;}
+  e.at=now;L.unshift(e);if(L.length>ACQ_MAX)L.length=ACQ_MAX;}
+const acqMissNew=()=>!!(S&&S.acq&&S.acq.some(e=>e.miss&&e.at>(S.acqSeen||0)));
 /* v4.9 제작 (리니지M: 일반·고급은 적은 재료로 확정, 희귀 이상은 제작 비법서 + 확률 제작). 실패하면 비법서·강화석·골드만 잃고 재료 장비는 남는다(싱글 완화). 대성공 5%: 결과물 +1~3 */
 const CRAFT_EQ=[
   {need:null,ore:t=>2+t,gold:t=>20+30*t*t,rate:1},
@@ -153,9 +165,10 @@ const weightMax=()=>1500+25*(S.st.str+S.st.vit)+15*S.lv;
 const wPct=()=>weightNow()/weightMax();
 const bagUsed=()=>S.items.length+STK_ORDER.filter(k=>cnt(k)>0).length;
 /* 획득 */
-function addItem(it,from){if(bagUsed()>=BAG_SLOTS){toastThr('가방이 가득 찼다 · 분해하거나 정리하자 (I)');return false;}
-  if(weightNow()+itemW(it)>weightMax()){toastThr('무게 초과 · '+itemName(it)+'을(를) 들 수 없다');return false;}
-  it.nw=1;S.items.push(it);STAT.drops=(STAT.drops||0)+1;lastQKey='';
+function addItem(it,from){const src=from?acqSrc||acqSrcOf(from):null,lg=src&&(it.g>=1||it.bu),rec=miss=>acqLog({cat:'eq',n:itemName(it),g:it.g,bu:it.bu?1:0,u:miss?0:it.u,miss:miss?1:0,src,z:acqZone||acqZoneOf(from)});
+  if(bagUsed()>=BAG_SLOTS){toastThr('가방이 가득 찼다 · 분해하거나 정리하자 (I)');if(lg)rec(1);return false;}
+  if(weightNow()+itemW(it)>weightMax()){toastThr('무게 초과 · '+itemName(it)+'을(를) 들 수 없다');if(lg)rec(1);return false;}
+  it.nw=1;S.items.push(it);if(lg)rec(0);STAT.drops=(STAT.drops||0)+1;lastQKey='';
   if(S.cfg.autoEq&&!isEq(it)){const s=targetSlot(it),cur=S.eq[s]&&itemById(S.eq[s]);if(!cur||cpWith(s,it.u)>cpOf()+1){equipItem(it.u,true);toast('자동 장착 · '+GRADES[it.g].n+' '+itemName(it),true);}}
   return true;}
 let toastT=0;function toastThr(m){if(t<toastT)return;toastT=t+4;toast(m);}
@@ -166,7 +179,8 @@ function dropBU(m){let L=[];if(m.eliteOf){const q=QUESTS.find(x=>x.id===m.eliteO
     if(m.field){const cq=curQ(),force=S.qs==='active'&&cq.type==='fboss'&&cq.boss===m.eliteOf;/* v4.24 천장: 같은 필드 보스에서 연속 2번 못 얻으면 3번째는 확정 */const bm=S.buMiss||(S.buMiss={}),pity=(bm[m.eliteOf]||0)>=BU_PITY-1;if(force||pity||Math.random()<BU_FIELD){bm[m.eliteOf]=0;/* 아직 컬렉션에 못 넣었고 등록할 수 있는 사본(미장착 · 미잠금)이 없는 쪽을 우선 — v4.24: 장착 중인 사본은 '갖고 있음'으로 치지 않는다 */const want=B.filter(b=>!COLL.some(c=>c.req.some((r,i)=>r.bu===b.id&&!collReg(c,i)))?false:!S.items.some(x=>x.bu===b.id&&!isEq(x)&&!x.lock));L.push(want.length?want[Math.floor(Math.random()*want.length)]:B[Math.random()<.5?0:1]);}else bm[m.eliteOf]=(bm[m.eliteOf]||0)+1;}else{L.push(B[0]);if(Math.random()<BU_FIRST_B)L.push(B[1]);}}
   else if(m.inv){const cl=QUESTS.filter((q,i)=>i<S.qi&&q.elite&&qMap(q)===MAPID).flatMap(q=>buOfQ(q.id));if(cl.length&&Math.random()<BU_INV)L.push(cl[Math.floor(Math.random()*cl.length)]);}
   L.forEach((b,i)=>{const it=newBU(b.id);if(addItem(it,m)){floatTxt(m.x,m.y-46-i*9,'★ '+b.n,GRADES[b.g].c,true);banner('보스 전용 장비',b.n+' · 신앙 +'+b.fa,true);STAT.bu=(STAT.bu||0)+1;}});}
-function dropFrom(m){dropBU(m);const tier=tierOfLv(m.lv),n=m.boss?1:Math.random()<DROP.eq?1:0;
+function dropFrom(m){return withAcq(acqSrcOf(m),acqZoneOf(m),()=>dropFrom0(m));}
+function dropFrom0(m){dropBU(m);const tier=tierOfLv(m.lv),n=m.boss?1:Math.random()<DROP.eq?1:0;
   for(let i=0;i<n;i++){const it=newItem(rollSlot(),tier,rollGrade(m.boss));if(addItem(it,m)){const G=GRADES[it.g];floatTxt(m.x,m.y-30-i*8,G.n+' '+itemName(it),G.c,it.g>=2);
       if(it.g>=3)banner(G.n+' 장비 획득',itemName(it),true);else if(it.g>=2)toast(G.n+' · '+itemName(it)+' 획득',true);else if(betterThanEq(it))toast('더 좋은 장비 · '+itemName(it)+' (가방 I)',true);}}
   {const r=(m.zone&&ZALL[m.zone]&&MAP_REG[ZALL[m.zone].map])||REG(tier),tr=r===1?1:r===2?3:5;if(Math.random()<(m.boss?1:DROP.ore)){const n=m.boss?3+2*r:1;addStk('ore'+r,n);if(m.boss||Math.random()<.3)floatTxt(m.x,m.y-34,'+'+STK['ore'+r].n+' '+n,STK['ore'+r].col);}

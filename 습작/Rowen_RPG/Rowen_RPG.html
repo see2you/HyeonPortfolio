@@ -353,6 +353,10 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .wb-craft{overflow:hidden;display:flex;flex-direction:column}.wb-craft .cfw{flex:1;min-height:0}.wb-craft .cfl{overflow:auto;min-height:0;padding-right:calc(var(--u)*.4)}
 .wb-craft .cfp{min-height:0}.cfpi{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:calc(var(--u)*.6)}
 .cfact{flex:none;display:flex;flex-direction:column;gap:calc(var(--u)*.4);padding-top:calc(var(--u)*.6);border-top:1px solid rgba(232,184,100,.22)}.cfact .btn.cfgo{margin-top:0;width:100%}.cfact .why{color:#ff9a8a;font-size:.8em}
+.wb-log{display:flex;flex-direction:column;gap:calc(var(--u)*.6);overflow:hidden}.lgl{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px}.lgem{color:var(--mut);padding:1em}
+.lgr{display:grid;grid-template-columns:.7em minmax(0,1.6fr) minmax(0,1.5fr) minmax(0,1fr) 6.5em 4.5em;align-items:center;gap:.7em;padding:.3em .7em;border-radius:6px;background:rgba(30,24,44,.6);font-size:.9em}
+.lgr.miss{background:rgba(90,30,30,.45);outline:1px solid rgba(255,120,90,.35)}.lgd{width:.6em;height:.6em;border-radius:50%}.lgn,.lgs,.lgz{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lgs,.lgz,.lga{color:var(--mut)}.lga{text-align:right;font-variant-numeric:tabular-nums}
+.lgt{font-size:.85em;text-align:center;border-radius:999px;padding:.05em .5em}.lgt.on{color:#2a1808;background:#e8b864}.lgt.bag{border:1px solid rgba(232,184,100,.4)}.lgt.gone{color:var(--mut)}.lgt.miss{color:#ffb090;border:1px solid #ff8a60}
 .wb-coll{display:flex;flex-direction:column;gap:calc(var(--u)*.6)}.cll{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*.6)}
 .clc{padding:calc(var(--u)*.6) calc(var(--u)*.8);border:1px solid rgba(232,184,100,.25);border-radius:calc(var(--u)*.6);background:rgba(20,16,30,.6)}.clc.done{border-color:#ffd88a;background:linear-gradient(180deg,rgba(90,66,30,.45),rgba(30,22,16,.6))}
 .clh{display:flex;flex-wrap:wrap;align-items:baseline;gap:.2em .6em}.clh b{font-family:var(--disp)}.clg{font-size:.7em;padding:0 .4em;border-radius:3px;background:rgba(232,184,100,.2);color:var(--gold2)}.clp{color:var(--mut);font-size:.8em}.clb{width:100%;font-size:.8em;color:#aaf5a0}.clc.done .clb{color:#ffe08a}
@@ -391,6 +395,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
       <button class="tmb" id="bEnc" type="button" title="장비 강화 (J)"><span class="ti">⬆</span><span class="tl">강화</span><kbd>J</kbd></button>
       <button class="tmb" id="bCraft" type="button" title="장비 제작 (U)"><span class="ti">⚒</span><span class="tl">제작</span><kbd>U</kbd></button>
       <button class="tmb" id="bColl" type="button" title="컬렉션 (O)"><span class="ti">❖</span><span class="tl">컬렉션</span><kbd>O</kbd></button>
+      <button class="tmb" id="bLog" type="button" title="획득 기록 (L) — 최근 얻은 장비 · 도면 · 비법서"><span class="ti">☷</span><span class="tl">기록</span><kbd>L</kbd></button>
       <button class="tmb god" id="bGod" type="button" title="신의 권능 (P)"><span class="ti">ϟ</span><span class="tl">권능</span><kbd>P</kbd></button>
       <button class="tmb" id="bSet" type="button" title="설정 — 자동 전투 · 물약 · 화면"><span class="ti">⚙</span><span class="tl">설정</span></button>
       </div>
@@ -419,7 +424,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
     <div class="nav panel np" id="nav" hidden><span class="sp"></span><span id="navT">자동 이동 중</span><button type="button" id="navX" style="pointer-events:auto">취소</button></div>
     <span class="verTag" id="verTag" aria-label="게임 버전"></span>
     <button class="kbtn" id="bKeys" type="button" aria-expanded="false" aria-controls="keys">조작법 보기</button>
-    <div class="keys panel" id="keys" hidden><b class="kh">조작법</b><span class="kpc">NPC 목록 <kbd>N</kbd> · 이동 <kbd>WASD</kbd>/<kbd>방향키</kbd> · 공격 <kbd>Space</kbd> · 스킬 <kbd>1</kbd>~<kbd>8</kbd> · 자동 <kbd>R</kbd> · 대화 <kbd>F</kbd> · 메뉴 <kbd>M</kbd> · 가방 <kbd>I</kbd> · 강화 <kbd>J</kbd> · 제작 <kbd>U</kbd> · 컬렉션 <kbd>O</kbd> · 능력치 <kbd>C</kbd> · 스킬 <kbd>K</kbd> · 권능 <kbd>P</kbd> · 첫 퀘스트 <kbd>G</kbd> · 확대·축소 <kbd>휠</kbd> · 땅/몬스터/NPC 클릭</span><span class="ktouch">이동 왼쪽 아래를 끌기 · 공격 ⚔ 버튼 · 스킬 아래 슬롯 1~8 · AUTO 자동 전투 · 땅/몬스터/NPC 터치 · 왼쪽 퀘스트를 누르면 자동 이동 · 위 메뉴 가방·능력치·스킬·권능·설정 · 두 손가락 확대는 아직 없음</span></div>
+    <div class="keys panel" id="keys" hidden><b class="kh">조작법</b><span class="kpc">NPC 목록 <kbd>N</kbd> · 이동 <kbd>WASD</kbd>/<kbd>방향키</kbd> · 공격 <kbd>Space</kbd> · 스킬 <kbd>1</kbd>~<kbd>8</kbd> · 자동 <kbd>R</kbd> · 대화 <kbd>F</kbd> · 메뉴 <kbd>M</kbd> · 가방 <kbd>I</kbd> · 강화 <kbd>J</kbd> · 제작 <kbd>U</kbd> · 컬렉션 <kbd>O</kbd> · 획득 기록 <kbd>L</kbd> · 능력치 <kbd>C</kbd> · 스킬 <kbd>K</kbd> · 권능 <kbd>P</kbd> · 첫 퀘스트 <kbd>G</kbd> · 확대·축소 <kbd>휠</kbd> · 땅/몬스터/NPC 클릭</span><span class="ktouch">이동 왼쪽 아래를 끌기 · 공격 ⚔ 버튼 · 스킬 아래 슬롯 1~8 · AUTO 자동 전투 · 땅/몬스터/NPC 터치 · 왼쪽 퀘스트를 누르면 자동 이동 · 위 메뉴 가방·능력치·스킬·권능·설정 · 두 손가락 확대는 아직 없음</span></div>
     <div class="xp np"><i id="xpB"></i><b id="xpT">0%</b></div>
   </div>
   <div class="joyz" id="joyz" hidden></div>
@@ -438,7 +443,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.30</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.31</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>
@@ -451,7 +456,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 <script>
 'use strict';
 (function(){
-const GAME_VER='v4.30';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.31';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -1639,7 +1644,19 @@ const stonePrice=()=>40+4*S.lv;
 function normRwStk(o){if(!o)return;const conv={wsc:['stone',3],asc:['stone',3],wscB:['bls',1],ascB:['bls',1]};for(const k in conv)if(o[k]){const [nk,m]=conv[k];o[nk]=(o[nk]||0)+o[k]*m;delete o[k];}}
 const cnt=k=>{const d=STK[k];if(!d)return 0;return d.f?S[d.f]||0:(S.bag[k]||0);};
 const setCnt=(k,v)=>{const d=STK[k];if(d.f)S[d.f]=v;else S.bag[k]=v;};
-function addStk(k,n){if(n<=0)return 0;setCnt(k,cnt(k)+n);return n;}
+function addStk(k,n){if(n<=0)return 0;setCnt(k,cnt(k)+n);if(acqSrc&&acqStk(k))acqLog({cat:/^(book_|rcp)/.test(k)?'book':'mat',k,n:STK[k].n,q:n,src:acqSrc,z:acqZone});return n;}
+/* v4.31 획득 기록 — 자동 사냥 중 무엇을 어디서 얻었는지. 고급 이상 장비 · 보스 전용 장비 · 도면 · 제작 비법서 · 스킬서 · 축복 주문서만, 최근 ACQ_MAX건(새것이 앞).
+   가방 가득 · 무게 초과로 줍지 못한 장비도 '놓침'으로 남긴다. 상점 구입 · 분해 · 제작 결과 · 광물 · 강화석 · 물약은 남기지 않는다(너무 많아 정작 볼 것을 가림) */
+const ACQ_MAX=50,ACQ_MERGE=3000;let acqSrc=null,acqZone=null;
+const acqStk=k=>k==='bls'||/^rcp\d$/.test(k)||k.startsWith('book_')||/^d[wac]\d$/.test(k);
+function acqSrcOf(m){if(!m)return null;if(typeof m==='string')return m;const kind=m.inv?'침공':m.field?'필드 보스':m.eliteOf?'관문 정예':m.boss?'보스':'';return (kind?kind+' · ':'')+m.name+' Lv '+m.lv;}
+function acqZoneOf(m){if(m&&m.zone&&typeof ZALL!=='undefined'&&ZALL[m.zone])return ZALL[m.zone].name;return typeof MAPS!=='undefined'&&MAPS[MAPID]?MAPS[MAPID].name:'';}
+function withAcq(src,z,f){const a=acqSrc,b=acqZone;acqSrc=src;acqZone=z;try{return f();}finally{acqSrc=a;acqZone=b;}}
+function acqLog(e){if(!S)return;const L=S.acq||(S.acq=[]),now=Date.now(),p=L[0];
+  /* 같은 곳에서 같은 재료를 잇달아 얻으면 한 줄로 합친다(퀘스트 보상 도면 2장 등) */
+  if(p&&!e.u&&!p.u&&p.k===e.k&&p.src===e.src&&!p.miss===!e.miss&&now-p.at<ACQ_MERGE){p.q=(p.q||1)+(e.q||1);p.at=now;return;}
+  e.at=now;L.unshift(e);if(L.length>ACQ_MAX)L.length=ACQ_MAX;}
+const acqMissNew=()=>!!(S&&S.acq&&S.acq.some(e=>e.miss&&e.at>(S.acqSeen||0)));
 /* v4.9 제작 (리니지M: 일반·고급은 적은 재료로 확정, 희귀 이상은 제작 비법서 + 확률 제작). 실패하면 비법서·강화석·골드만 잃고 재료 장비는 남는다(싱글 완화). 대성공 5%: 결과물 +1~3 */
 const CRAFT_EQ=[
   {need:null,ore:t=>2+t,gold:t=>20+30*t*t,rate:1},
@@ -1714,9 +1731,10 @@ const weightMax=()=>1500+25*(S.st.str+S.st.vit)+15*S.lv;
 const wPct=()=>weightNow()/weightMax();
 const bagUsed=()=>S.items.length+STK_ORDER.filter(k=>cnt(k)>0).length;
 /* 획득 */
-function addItem(it,from){if(bagUsed()>=BAG_SLOTS){toastThr('가방이 가득 찼다 · 분해하거나 정리하자 (I)');return false;}
-  if(weightNow()+itemW(it)>weightMax()){toastThr('무게 초과 · '+itemName(it)+'을(를) 들 수 없다');return false;}
-  it.nw=1;S.items.push(it);STAT.drops=(STAT.drops||0)+1;lastQKey='';
+function addItem(it,from){const src=from?acqSrc||acqSrcOf(from):null,lg=src&&(it.g>=1||it.bu),rec=miss=>acqLog({cat:'eq',n:itemName(it),g:it.g,bu:it.bu?1:0,u:miss?0:it.u,miss:miss?1:0,src,z:acqZone||acqZoneOf(from)});
+  if(bagUsed()>=BAG_SLOTS){toastThr('가방이 가득 찼다 · 분해하거나 정리하자 (I)');if(lg)rec(1);return false;}
+  if(weightNow()+itemW(it)>weightMax()){toastThr('무게 초과 · '+itemName(it)+'을(를) 들 수 없다');if(lg)rec(1);return false;}
+  it.nw=1;S.items.push(it);if(lg)rec(0);STAT.drops=(STAT.drops||0)+1;lastQKey='';
   if(S.cfg.autoEq&&!isEq(it)){const s=targetSlot(it),cur=S.eq[s]&&itemById(S.eq[s]);if(!cur||cpWith(s,it.u)>cpOf()+1){equipItem(it.u,true);toast('자동 장착 · '+GRADES[it.g].n+' '+itemName(it),true);}}
   return true;}
 let toastT=0;function toastThr(m){if(t<toastT)return;toastT=t+4;toast(m);}
@@ -1727,7 +1745,8 @@ function dropBU(m){let L=[];if(m.eliteOf){const q=QUESTS.find(x=>x.id===m.eliteO
     if(m.field){const cq=curQ(),force=S.qs==='active'&&cq.type==='fboss'&&cq.boss===m.eliteOf;/* v4.24 천장: 같은 필드 보스에서 연속 2번 못 얻으면 3번째는 확정 */const bm=S.buMiss||(S.buMiss={}),pity=(bm[m.eliteOf]||0)>=BU_PITY-1;if(force||pity||Math.random()<BU_FIELD){bm[m.eliteOf]=0;/* 아직 컬렉션에 못 넣었고 등록할 수 있는 사본(미장착 · 미잠금)이 없는 쪽을 우선 — v4.24: 장착 중인 사본은 '갖고 있음'으로 치지 않는다 */const want=B.filter(b=>!COLL.some(c=>c.req.some((r,i)=>r.bu===b.id&&!collReg(c,i)))?false:!S.items.some(x=>x.bu===b.id&&!isEq(x)&&!x.lock));L.push(want.length?want[Math.floor(Math.random()*want.length)]:B[Math.random()<.5?0:1]);}else bm[m.eliteOf]=(bm[m.eliteOf]||0)+1;}else{L.push(B[0]);if(Math.random()<BU_FIRST_B)L.push(B[1]);}}
   else if(m.inv){const cl=QUESTS.filter((q,i)=>i<S.qi&&q.elite&&qMap(q)===MAPID).flatMap(q=>buOfQ(q.id));if(cl.length&&Math.random()<BU_INV)L.push(cl[Math.floor(Math.random()*cl.length)]);}
   L.forEach((b,i)=>{const it=newBU(b.id);if(addItem(it,m)){floatTxt(m.x,m.y-46-i*9,'★ '+b.n,GRADES[b.g].c,true);banner('보스 전용 장비',b.n+' · 신앙 +'+b.fa,true);STAT.bu=(STAT.bu||0)+1;}});}
-function dropFrom(m){dropBU(m);const tier=tierOfLv(m.lv),n=m.boss?1:Math.random()<DROP.eq?1:0;
+function dropFrom(m){return withAcq(acqSrcOf(m),acqZoneOf(m),()=>dropFrom0(m));}
+function dropFrom0(m){dropBU(m);const tier=tierOfLv(m.lv),n=m.boss?1:Math.random()<DROP.eq?1:0;
   for(let i=0;i<n;i++){const it=newItem(rollSlot(),tier,rollGrade(m.boss));if(addItem(it,m)){const G=GRADES[it.g];floatTxt(m.x,m.y-30-i*8,G.n+' '+itemName(it),G.c,it.g>=2);
       if(it.g>=3)banner(G.n+' 장비 획득',itemName(it),true);else if(it.g>=2)toast(G.n+' · '+itemName(it)+' 획득',true);else if(betterThanEq(it))toast('더 좋은 장비 · '+itemName(it)+' (가방 I)',true);}}
   {const r=(m.zone&&ZALL[m.zone]&&MAP_REG[ZALL[m.zone].map])||REG(tier),tr=r===1?1:r===2?3:5;if(Math.random()<(m.boss?1:DROP.ore)){const n=m.boss?3+2*r:1;addStk('ore'+r,n);if(m.boss||Math.random()<.3)floatTxt(m.x,m.y-34,'+'+STK['ore'+r].n+' '+n,STK['ore'+r].col);}
@@ -2534,7 +2553,8 @@ function qGoal(q,n){if(q.grow)return growthGoal(q,S.sq[q.id]);if(q.type==='rep')
   if(q.type==='zone')return ZALL[q.zone].name+' 몬스터 '+n+'/'+q.n;return SPECIES[q.sp].name+' '+n+'/'+q.n;}
 function rwList(rw){const a=[];if(rw.god)a.push('권능 「'+GODS[rw.god].name+' · '+GODS[rw.god].title+'」');if(rw.xp)a.push('경험치 '+fmt(rw.xp));if(rw.gold)a.push('골드 '+fmt(rw.gold));if(rw.book)a.push('스킬서 「'+SK[skIdx(rw.book)].name+'」');if(rw.stat)a.push('능력치 포인트 +'+rw.stat);if(rw.kp)a.push('스킬 포인트 +'+rw.kp);
   if(rw.ore)a.push(STK['ore'+(MAP_REG[MAPID]||1)].n+' '+rw.ore);if(rw.dsg)a.push('장비 도면 '+rw.dsg+'장');if(rw.stk)for(const k in rw.stk)a.push(STK[k].n+' '+rw.stk[k]);if(rw.wup)a.push('무기 강화 +1');if(rw.aup)a.push('갑옷 강화 +1');if(rw.stone)a.push('강화석 '+rw.stone);if(rw.shard)a.push('권능 파편 '+rw.shard);if(rw.hp)a.push('HP 물약 '+rw.hp);if(rw.mp)a.push('MP 물약 '+rw.mp);return a;}
-function applyRw(rw){gainXp(rw.xp||0);S.gold+=rw.gold||0;STAT.rwG+=rw.gold||0;S.hpPot+=rw.hp||0;S.mpPot+=rw.mp||0;S.stone+=rw.stone||0;S.shard+=rw.shard||0;S.sp+=rw.stat||0;S.kp+=rw.kp||0;if(rw.wup&&!enchantEquipped('weapon'))toast('장착한 무기가 없거나 최대 강화라 무기 마법 주문서로 받았다',true);if(rw.aup&&!enchantEquipped('armor'))toast('장착한 갑옷이 없거나 최대 강화라 갑옷 마법 주문서로 받았다',true);if(rw.book)addStk('book_'+rw.book,1);if(rw.stk)for(const k in rw.stk)addStk(k,rw.stk[k]);if(rw.ore)addStk('ore'+(MAP_REG[MAPID]||1),rw.ore);if(rw.dsg)for(let i=0;i<rw.dsg;i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);if(rw.god)gainGod(rw.god);
+function applyRw(rw,src){return withAcq(src||'보상',acqZoneOf(null),()=>applyRw0(rw));}
+function applyRw0(rw){gainXp(rw.xp||0);S.gold+=rw.gold||0;STAT.rwG+=rw.gold||0;S.hpPot+=rw.hp||0;S.mpPot+=rw.mp||0;S.stone+=rw.stone||0;S.shard+=rw.shard||0;S.sp+=rw.stat||0;S.kp+=rw.kp||0;if(rw.wup&&!enchantEquipped('weapon'))toast('장착한 무기가 없거나 최대 강화라 무기 마법 주문서로 받았다',true);if(rw.aup&&!enchantEquipped('armor'))toast('장착한 갑옷이 없거나 최대 강화라 갑옷 마법 주문서로 받았다',true);if(rw.book)addStk('book_'+rw.book,1);if(rw.stk)for(const k in rw.stk)addStk(k,rw.stk[k]);if(rw.ore)addStk('ore'+(MAP_REG[MAPID]||1),rw.ore);if(rw.dsg)for(let i=0;i<rw.dsg;i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);if(rw.god)gainGod(rw.god);
   toast('보상 · '+rwList(rw).join(' · '),true);burst(player.x,player.y,16,'#ffe08a',30,80,4);if(S.autoGrow&&(rw.stat||rw.kp||rw.book))autoGrowNow();lastQKey='';}
 function progressKill(m){const q=curQ();
   if(S.qs==='active'){let inc=false;if(q.type==='kill'&&q.sp===m.sp)inc=true;else if(q.type==='collect'&&q.sp===m.sp&&Math.random()<q.rate){inc=true;toast(q.item+' 획득 '+(S.qn+1)+'/'+q.n);}
@@ -2582,7 +2602,7 @@ const repLv=()=>{const z=S.rq?S.rq.zone:repZoneIn(MAPID);return Math.min(S.lv,ZA
 const repRw=()=>{const L=repLv();return {xp:Math.round(need(L)*.08),gold:25*L,stone:tierOfLv(L),ore:2+2*(MAP_REG[S.rq?S.rq.map:MAPID]||1),dsg:Math.random()<.6?1:0};};
 let wantRep=null;
 function acceptRep(mid){S.rq={map:mid,zone:repZoneIn(mid),n:0,st:'active'};wantRep=null;toast('토벌 의뢰 수락 · '+ZALL[S.rq.zone].name+' 몬스터 '+REP.n+'마리');save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
-function claimRep(){if(!S.rq||S.rq.st!=='done')return;const mid=S.rq.map;applyRw(repRw());S.repR=S.repR||{};S.repR[mid]=(S.repR[mid]||0)+1;S.repN=(S.repN||0)+1;S.rq=null;hunt=null;
+function claimRep(){if(!S.rq||S.rq.st!=='done')return;const mid=S.rq.map;applyRw(repRw(),'반복 의뢰');S.repR=S.repR||{};S.repR[mid]=(S.repR[mid]||0)+1;S.repN=(S.repN||0)+1;S.rq=null;hunt=null;
   toast(MAPS[mid].name+' 토벌 의뢰 누적 '+S.repR[mid]+'회',true);growthTick();save();lastQKey='';closeModal();if(S.autoQ)later(.6,autoGo);}
 function repOffer(id){const mid=NALL[id].map,z=repZoneIn(mid),rw=repRw(),body=el('div','qbox');body.append(el('b',null,'[의뢰] '+MAPS[mid].name+' 토벌 의뢰'),el('div',null,'목표 · '+ZALL[z].name+' 아무 몬스터 '+REP.n+'마리 (Lv '+ZALL[z].lv+')'),el('div',null,'누적 '+((S.repR||{})[mid]||0)+'회 · 몇 번이고 다시 받을 수 있다'));const r=el('div','rw');for(const x of rwList(rw))r.appendChild(el('span',null,x));body.appendChild(r);
   openModal({who:id,npc:id,name:npcName(id),sub:NPCS[id].role,text:'요즘 '+ZALL[z].name+'이(가) 시끄럽다네. 아무 놈이나 '+REP.n+'마리만 정리해 주게.',body,btns:[{t:'나중에',alt:true,f:()=>{wantRep=null;closeModal();}},{t:'반복 수락',alt:true,f:()=>{S.repLoop=mid;S.autoQ=true;acceptRep(mid);}},{t:'수락',pri:true,f:()=>acceptRep(mid)}],autoBtn:S.autoQ&&wantRep===mid?()=>acceptRep(mid):null});}
@@ -2607,12 +2627,12 @@ function autoNext(){if(player.dead||modal)return;if(needShop()&&shopGo())return;
 function acceptQuest(){const q=curQ();S.qs='active';S.qn=0;if(q.rep)S.rep={zone:q.zone};if(q.unlock&&!S.maps.includes(q.unlock)){S.maps.push(q.unlock);banner('새 지역',MAPS[q.unlock].name+' · 길잡이 표석으로 이동 가능');for(const n of [2,3])if(SK_TIER[n].map===q.unlock&&tierOpen(n))toast(SK_TIER[n].n+' 스킬이 열렸다 · 스킬 수련 창(K)',true);}
   if(q.subs){for(const id of q.subs)if(!S.sq[id])S.sq[id]={st:'avail',n:0};toast((q.gate?'관문 퀘스트 · ':'')+'서브 퀘스트 '+q.subs.length+'개가 열렸다',true);}
   toast('퀘스트 수락 · '+q.title);save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
-function claimQuest(){const q=curQ();if(S.qs!=='done')return;anchor=null;hunt=null;applyRw(q.rw);
+function claimQuest(){const q=curQ();if(S.qs!=='done')return;anchor=null;hunt=null;applyRw(q.rw,'메인 「'+q.title+'」');
   if(q.rep)S.rep=null;else S.qi++;S.qs='avail';S.qn=0;save();lastQKey='';const nq=curQ(),here=modal&&modal.npc;closeModal();
   if(S.qi===QUESTS.length&&!q.rep)banner('메인 퀘스트 완료','이제 경비대의 토벌 의뢰를 반복할 수 있다');if(q.id==='q5'&&openTrials())return;/* 시련 선택 창이 먼저 — 고를 때까지 자동 진행 대기 */
   if(here&&nq.giver===here){openNpc(here);return;}if(S.autoQ)later(.6,autoGo);}
-function acceptSub(id){S.sq[id].st='active';S.sq[id].n=0;toast('서브 수락 · '+SUBQ[id].title);const gv=SUBQ[id].give;if(gv){const a=[];for(const k in gv){if(k==='stone')S.stone+=gv[k];else if(k==='gold')S.gold+=gv[k];else if(k==='dsgAny'){for(let i=0;i<gv[k];i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);}else addStk(k,gv[k]);a.push((k==='stone'?'강화석':k==='gold'?'골드':k==='dsgAny'?'장비 도면':STK[k].n)+' '+gv[k]);}toast('지급 · '+a.join(' · '),true);}if(SUBQ[id].grow)growthTick();save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
-function claimSub(id){const s=S.sq[id];if(!s||s.st!=='done')return;anchor=null;hunt=null;s.st='clear';applyRw(SUBQ[id].rw);const rw=SUBQ[id].rw;
+function acceptSub(id){S.sq[id].st='active';S.sq[id].n=0;toast('서브 수락 · '+SUBQ[id].title);const gv=SUBQ[id].give;if(gv)withAcq('수락 지급 「'+SUBQ[id].title+'」',acqZoneOf(null),()=>{const a=[];for(const k in gv){if(k==='stone')S.stone+=gv[k];else if(k==='gold')S.gold+=gv[k];else if(k==='dsgAny'){for(let i=0;i<gv[k];i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);}else addStk(k,gv[k]);a.push((k==='stone'?'강화석':k==='gold'?'골드':k==='dsgAny'?'장비 도면':STK[k].n)+' '+gv[k]);}toast('지급 · '+a.join(' · '),true);});if(SUBQ[id].grow)growthTick();save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
+function claimSub(id){const s=S.sq[id];if(!s||s.st!=='done')return;anchor=null;hunt=null;s.st='clear';applyRw(SUBQ[id].rw,(isGrowth(id)?'성장 「':'서브 「')+SUBQ[id].title+'」');const rw=SUBQ[id].rw;
   if(rw.book)toast('스킬서 「'+SK[skIdx(rw.book)].name+'」 · 가방(I)에서 사용하면 배울 수 있다',true);if(rw.stat||rw.kp)toast('능력치·스킬 포인트가 늘었다 · C · K',true);save();lastQKey='';const here=modal&&modal.npc;closeModal();
   const q=curQ();if(q.gate&&S.qs==='active'&&gateState(q).ok)banner('관문 조건 충족',q.title+' · 정예에게 도전할 수 있다');
   if(SUBQ[id].trial&&TRIALS.some(x=>subSt(x)==='avail'&&trialReady(x)))toast('다음 신의 시련을 고를 수 있다 · 퀘스트 [시련] 탭',true);
@@ -2733,13 +2753,13 @@ addEventListener('keydown',e=>{const k=keyOf(e);if(!started||traveling)return;
   if(k==='escape'&&!$('keys').hidden){toggleKeys(false);return;}
   if(k==='escape'&&!$('menuPop').hidden){toggleMenu(false);return;}
   if(k==='escape'&&!$('npcPop').hidden){toggleNpcList(false);return;}
-  if(win){if(k==='escape'||(k===win.key)){e.preventDefault();closeWin();}else{/* v4.29 창이 열려 있어도 다른 창 단축키로 바로 바꾼다 (닫고 다시 열 필요 없음) */const W={i:openBag,c:openStats,k:openSkills,j:openEnchant,u:openCraft,o:openColl,p:()=>{closeWin();openGods();}}[k];if(W&&k.length===1){e.preventDefault();W();}}return;}
+  if(win){if(k==='escape'||(k===win.key)){e.preventDefault();closeWin();}else{/* v4.29 창이 열려 있어도 다른 창 단축키로 바로 바꾼다 (닫고 다시 열 필요 없음) */const W={i:openBag,c:openStats,k:openSkills,j:openEnchant,u:openCraft,o:openColl,l:openLog,p:()=>{closeWin();openGods();}}[k];if(W&&k.length===1){e.preventDefault();W();}}return;}
   if(modal){if(k==='escape'&&!player.dead)closeModal();return;}
   if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
   if(k===' '){const m=alive(target)?target:nearestMob(90);if(m){target=m;if(!basicAttack(m)){chase=m;}}}
   else if('12345678'.includes(k)&&k.length===1)castSlot(+k-1);else if(k==='r')toggleAuto();else if(k==='t')toggleAutoQ();else if(k==='g')questGo();
   else if(k==='q')usePot('hp');else if(k==='e')usePot('mp');else if(k==='f'){const n=npcList.filter(n=>!n.deco).sort((a,b)=>dist(a,player)-dist(b,player))[0];if(n&&dist(n,player)<60)openNpc(n.id);else toast('가까이에 대화할 사람이 없다');}
-  else if(k==='c')openStats();else if(k==='k')openSkills();else if(k==='i')openBag();else if(k==='p')openGods();else if(k==='m')toggleMenu();else if(k==='n')toggleNpcList();else if(k==='u')openCraft();else if(k==='j')openEnchant();else if(k==='o')openColl();else if(k==='b')goTown();else if(k==='z')toggleZoom();else if(k==='escape'){cancelNav();chase=null;}});
+  else if(k==='c')openStats();else if(k==='k')openSkills();else if(k==='i')openBag();else if(k==='p')openGods();else if(k==='m')toggleMenu();else if(k==='n')toggleNpcList();else if(k==='u')openCraft();else if(k==='j')openEnchant();else if(k==='o')openColl();else if(k==='l')openLog();else if(k==='b')goTown();else if(k==='z')toggleZoom();else if(k==='escape'){cancelNav();chase=null;}});
 addEventListener('keyup',e=>keys.delete(keyOf(e)));
 addEventListener('blur',()=>keys.clear());
 function toggleAuto(){auto=!auto;anchor=null;if(!auto)hunt=null;toast(auto?'자동 전투 시작':'자동 전투 종료');}
@@ -2786,7 +2806,7 @@ function toggleNpcList(on){const p=$('npcPop'),b=$('bNpc');on=on??p.hidden;p.hid
   for(const id in NPCS){if(NPCS[id].deco)continue;row(npcName(id),npcTag(id),()=>goNpc(id,npcName(id)+'에게'),mark(id));}
   row('길잡이 표석','지역 이동',()=>navTo('npc','way','길잡이 표석으로'));}
 $('bNpc').onclick=e=>{e.stopPropagation();toggleNpcList();};
-document.addEventListener('pointerdown',e=>{if(!$('npcPop').hidden&&!e.target.closest('#npcPop')&&!e.target.closest('#bNpc'))toggleNpcList(false);});$('bEnc').onclick=()=>openEnchant();$('bColl').onclick=()=>openColl();
+document.addEventListener('pointerdown',e=>{if(!$('npcPop').hidden&&!e.target.closest('#npcPop')&&!e.target.closest('#bNpc'))toggleNpcList(false);});$('bEnc').onclick=()=>openEnchant();$('bColl').onclick=()=>openColl();$('bLog').onclick=()=>openLog();
 /* v4.12 메뉴: 스킬·능력치·가방·제작·컬렉션·권능·설정을 ☰ 하나로 (레드닷은 메뉴 버튼과 각 항목에) */
 function toggleMenu(on){const p=$('menuPop'),b=$('bMenu');on=on??p.hidden;p.hidden=!on;b.setAttribute('aria-expanded',on);}
 $('bMenu').onclick=e=>{e.stopPropagation();toggleMenu();};$('menuPop').addEventListener('click',e=>{if(e.target.closest('.tmb'))toggleMenu(false);});
@@ -2797,12 +2817,12 @@ document.addEventListener('pointerdown',e=>{if(!$('menuPop').hidden&&!e.target.c
    - 가방 · 능력치 · 스킬은 같은 창의 탭으로 오간다
    ===================================================================== */
 let win=null;
-const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['stats','능력치','C'],['skills','스킬','K']];
+const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['log','기록','L'],['stats','능력치','C'],['skills','스킬','K']];
 function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
 function closeWin(){stopHold();if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
 function renderWin(){const o=win;if(!o)return;$('wKick').textContent=o.kick||'';$('wTitle').textContent=o.title;const inf=$('wInfo');inf.replaceChildren(...(o.info?o.info():[]));
   const tb=$('wTabs');tb.replaceChildren();if(o.tabs!==false)for(const [id,n,k] of WTABS){const b=el('button','wtab'+(o.id===id?' on':''),n);b.type='button';if(k&&!document.body.classList.contains('touch'))b.appendChild(el('kbd',null,k));
-    const dot=id==='stats'?S.sp>0:id==='skills'?SK.some((s,i)=>skCan(i)):id==='coll'?collCanAny():id==='enc'?enchHint():id==='craft'?craftHint():false;if(dot)b.classList.add('dot');b.onclick=()=>({bag:openBag,enc:()=>openEnchant(),craft:openCraft,coll:openColl,stats:openStats,skills:openSkills})[id]();tb.appendChild(b);}
+    const dot=id==='stats'?S.sp>0:id==='skills'?SK.some((s,i)=>skCan(i)):id==='coll'?collCanAny():id==='enc'?enchHint():id==='craft'?craftHint():id==='log'?acqMissNew():false;if(dot)b.classList.add('dot');b.onclick=()=>({bag:openBag,enc:()=>openEnchant(),craft:openCraft,coll:openColl,log:openLog,stats:openStats,skills:openSkills})[id]();tb.appendChild(b);}
   tb.hidden=o.tabs===false;const B=$('wBody'),F=$('wFoot');
   /* v4.14: 다시 그려도 스크롤 위치 유지 (같은 창일 때) — 스킬 목록을 누르면 맨 위로 튀던 버그 */
   const keep=B.dataset.id===o.id?[...B.querySelectorAll('*')].filter(e=>e.scrollTop>0||e.scrollLeft>0).map(e=>[pathOf(e,B),e.scrollTop,e.scrollLeft]):[];const bs=B.dataset.id===o.id?B.scrollTop:0;
@@ -3162,6 +3182,25 @@ function renderColl(B,F){const ct=el('div','icat');for(const [i,n] of [[-1,'전�
     bb.title='등록 가능한 모든 칸을 한 번에 채운다 · 장착 · 잠금 장비는 빠진다';const bar=el('div','clbatch');bar.append(bb,el('small',null,'등록 가능한 칸을 모두 채운다 · 지키고 싶은 장비는 🔒 잠금'));F.appendChild(bar);}
   F.append(el('p','note2','지역 보스 컬렉션은 보스 전용 장비(★)로만 채운다 · 관문을 넘긴 보스는 '+Math.round(FIELD_RESP/60*10)/10+'분마다 다시 나타난다 · 등록한 장비는 사라지고 되돌릴 수 없다 · 컬렉션을 완성하면 능력치·신앙이 영구히 오른다 · 장착 중 · 잠금 장비는 등록되지 않는다 · 빨간 ! 바로 등록 가능 · 파란 + 강화하면 등록 가능 · 컬렉션에 쓸 수 있는 장비는 일괄·자동 분해에서 빠진다'));}
 
+/* ================= v4.31 획득 기록 (L) — 자동 사냥 중 무엇을 어디서 얻었는지 ================= */
+const LOGF=[['all','전체'],['eq','장비'],['mat','도면 · 주문서'],['book','비법서 · 스킬서'],['miss','놓친 것']];
+const logOk=(e,f)=>f==='all'||(f==='miss'?!!e.miss:!e.miss&&e.cat===f);
+function agoTxt(at){const s=Math.max(0,(Date.now()-at)/1000);return s<60?'방금':s<3600?Math.floor(s/60)+'분 전':s<86400?Math.floor(s/3600)+'시간 전':Math.floor(s/86400)+'일 전';}
+const LOG_T0=Date.now();
+function logSum(){const L=(S.acq||[]).filter(e=>e.at>=LOG_T0),o={eq:0,mat:0,book:0,miss:0};for(const e of L){if(e.miss)o.miss+=e.q||1;else o[e.cat]+=e.q||1;}return o;}
+function logState(e){if(e.miss)return['놓침','miss'];if(!e.u)return['',''];const it=itemById(e.u);if(!it)return['사용함','gone'];if(isEq(it))return['장착 중','on'];return[it.lock?'가방 · 🔒':'가방','bag'];}
+function openLog(){if(!started)return;openWin({id:'log',key:'l',kick:'LOOT LOG',title:'획득 기록',info:()=>{const L=S.acq||[],m=logSum(),c=[el('span','wchip','최근 '+L.length+' / '+ACQ_MAX),el('span','wchip','이번 접속 · 장비 '+m.eq+' · 도면 · 주문서 '+m.mat+' · 비법서 '+m.book)];if(m.miss)c.push(el('span','wchip warn','놓친 장비 '+m.miss));return c;},render:renderLog});}
+function renderLog(B,F){const L=S.acq||[],f=LOGF.some(x=>x[0]===S.logF)?S.logF:'all';
+  const ct=el('div','icat');for(const [id,n] of LOGF){const k=L.filter(e=>logOk(e,id)).length,b=el('button','ict'+(f===id?' on':''),n+(id==='all'?'':' '+k));b.type='button';if(id==='miss'&&L.some(e=>e.miss&&e.at>(S.acqSeen||0)))b.classList.add('dot');b.onclick=()=>{S.logF=id;save();renderWin();};ct.appendChild(b);}B.appendChild(ct);
+  const list=el('div','lgl');B.appendChild(list);const V=L.filter(e=>logOk(e,f));
+  if(!V.length)list.appendChild(el('p','lgem',L.length?'이 분류의 기록이 없다':'아직 기록이 없다 — 고급 이상 장비 · 보스 전용 장비(★) · 도면 · 제작 비법서 · 스킬서 · 축복 주문서를 얻으면 여기에 남는다'));
+  for(const e of V){const r=el('div','lgr'+(e.miss?' miss':'')),col=e.cat==='eq'?GRADES[e.g||0].c:(STK[e.k]&&STK[e.k].col)||'#e8b864',[st,sc]=logState(e);
+    const nm=el('b','lgn',(e.bu?'★ ':'')+e.n+((e.q||1)>1?' ×'+e.q:''));nm.style.color=col;const dt=el('i','lgd');dt.style.background=col;
+    r.append(dt,nm,el('span','lgs',e.src||''),el('span','lgz',e.z||''),el('span','lgt '+sc,st),el('span','lga',agoTxt(e.at)));list.appendChild(r);}
+  {let armed=false;const b=btn('기록 비우기','',()=>{if(!armed){armed=true;b.textContent='한 번 더 (비우기)';return;}S.acq=[];save();renderWin();},!L.length);
+    F.append(b,el('p','note2','자동 사냥 · 퀘스트로 얻은 것을 최근 '+ACQ_MAX+'건까지 · 고급 이상 장비 · 보스 전용 장비 · 도면 · 비법서 · 스킬서 · 축복 주문서만 (일반 장비 · 광물 · 강화석 · 물약 · 상점 구입 · 제작 결과는 남기지 않는다) · 놓친 것 = 가방 가득 · 무게 초과로 줍지 못한 장비 — 가방(I)을 정리하자'));}
+  S.acqSeen=Date.now();}
+
 
 
 /* ================= 갱신 ================= */
@@ -3337,7 +3376,7 @@ function updateHud(dt){hudT-=dt;const st=pStats();
   $('cpT').textContent=fmt(cpOf());$('goldTop').textContent=fmt(S.gold);{const zf=ZFAITH[curZone]||0,fe=$('faT');fe.textContent=st.faith;fe.parentNode.classList.toggle('low',zf>st.faith);fe.parentNode.title=zf?'이 지역 권장 신앙 '+zf:'신앙 — 등급·강화·컬렉션으로 오른다';}$('goldT').textContent=fmt(S.gold);$('bGod').classList.toggle('lock',!godUnlocked()&&!TRIALS.some(id=>S.sq[id]));
   {const p=wPct(),wt=$('wtT');wt.textContent='무게 '+Math.round(p*100)+'%';wt.className=p>=.82?'bad':p>=.5?'warn':'';$('bBag').classList.toggle('warn',p>=.5&&p<.82);$('bBag').classList.toggle('bad',p>=.82);$('bBag').classList.toggle('dot',S.items.some(it=>it.nw));}$('shB').style.width=Math.min(100,player.shield/st.hp*100)+'%';$('pHPn').textContent=S.hpPot;$('bTown').textContent='귀환 '+S.scroll;$('pHP').classList.toggle('low',S.hpPot<POT_LOW.hp);$('pMPn').textContent=S.mpPot;$('pHP').classList.toggle('autoon',!!S.autoPot);
   $('bStat').classList.toggle('gold',S.sp>0);$('bStat').classList.toggle('dot',S.sp>0);
-  if(t>=menuDotT){menuDotT=t+1;{const q=curQ();if(q.type==='fboss'&&S.qs==='active'&&hunt&&!hunt.sub&&hunt.zone===q.zone&&!alive(hunt.mob)&&qMap(q)===MAPID){const bm=eliteOf(QFB(q));if(alive(bm)){hunt.mob=bm;toast(bm.name+' 출현 · 토벌하자',true);}}}$('bEnc').classList.toggle('dot',enchHint());$('bCraft').classList.toggle('dot',craftHint());$('bColl').classList.toggle('dot',collCanAny());$('bGod').classList.toggle('dot',godHint());}$('bStatN').textContent=S.sp>0?'+'+S.sp:'';$('bSkill').classList.toggle('dot',SK.some((s,i)=>skCan(i)));
+  if(t>=menuDotT){menuDotT=t+1;{const q=curQ();if(q.type==='fboss'&&S.qs==='active'&&hunt&&!hunt.sub&&hunt.zone===q.zone&&!alive(hunt.mob)&&qMap(q)===MAPID){const bm=eliteOf(QFB(q));if(alive(bm)){hunt.mob=bm;toast(bm.name+' 출현 · 토벌하자',true);}}}$('bEnc').classList.toggle('dot',enchHint());$('bCraft').classList.toggle('dot',craftHint());$('bLog').classList.toggle('dot',acqMissNew());$('bColl').classList.toggle('dot',collCanAny());$('bGod').classList.toggle('dot',godHint());}$('bStatN').textContent=S.sp>0?'+'+S.sp:'';$('bSkill').classList.toggle('dot',SK.some((s,i)=>skCan(i)));
   const Z=ZONES[curZone];$('zoneT').replaceChildren(Z?Z.name:M.name+' 들녘');if(Z&&Z.lv)$('zoneT').appendChild(el('small',null,'Lv '+Z.lv+(ZFAITH[curZone]?' · 신앙 '+ZFAITH[curZone]:'')));
   $('bAuto').classList.toggle('on',auto);$('bAuto').setAttribute('aria-pressed',auto);$('autoQ').classList.toggle('on',!!S.autoQ);$('autoQ').setAttribute('aria-pressed',!!S.autoQ);
   const nv=$('nav');if(nav&&!player.dead){nv.hidden=false;$('navT').textContent='자동 이동 · '+nav.label;}else if(hunt){nv.hidden=false;$('navT').textContent=(hunt.sub?'서브 사냥 · ':'퀘스트 사냥 · ')+(hunt.mob?hunt.mob.name:hunt.sp?SPECIES[hunt.sp].name:ZONES[hunt.zone].name);}else nv.hidden=true;
@@ -3373,7 +3412,7 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={renderWin,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={renderWin,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 

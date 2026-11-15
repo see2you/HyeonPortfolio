@@ -4,12 +4,12 @@
    - 가방 · 능력치 · 스킬은 같은 창의 탭으로 오간다
    ===================================================================== */
 let win=null;
-const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['stats','능력치','C'],['skills','스킬','K']];
+const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['log','기록','L'],['stats','능력치','C'],['skills','스킬','K']];
 function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
 function closeWin(){stopHold();if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
 function renderWin(){const o=win;if(!o)return;$('wKick').textContent=o.kick||'';$('wTitle').textContent=o.title;const inf=$('wInfo');inf.replaceChildren(...(o.info?o.info():[]));
   const tb=$('wTabs');tb.replaceChildren();if(o.tabs!==false)for(const [id,n,k] of WTABS){const b=el('button','wtab'+(o.id===id?' on':''),n);b.type='button';if(k&&!document.body.classList.contains('touch'))b.appendChild(el('kbd',null,k));
-    const dot=id==='stats'?S.sp>0:id==='skills'?SK.some((s,i)=>skCan(i)):id==='coll'?collCanAny():id==='enc'?enchHint():id==='craft'?craftHint():false;if(dot)b.classList.add('dot');b.onclick=()=>({bag:openBag,enc:()=>openEnchant(),craft:openCraft,coll:openColl,stats:openStats,skills:openSkills})[id]();tb.appendChild(b);}
+    const dot=id==='stats'?S.sp>0:id==='skills'?SK.some((s,i)=>skCan(i)):id==='coll'?collCanAny():id==='enc'?enchHint():id==='craft'?craftHint():id==='log'?acqMissNew():false;if(dot)b.classList.add('dot');b.onclick=()=>({bag:openBag,enc:()=>openEnchant(),craft:openCraft,coll:openColl,log:openLog,stats:openStats,skills:openSkills})[id]();tb.appendChild(b);}
   tb.hidden=o.tabs===false;const B=$('wBody'),F=$('wFoot');
   /* v4.14: 다시 그려도 스크롤 위치 유지 (같은 창일 때) — 스킬 목록을 누르면 맨 위로 튀던 버그 */
   const keep=B.dataset.id===o.id?[...B.querySelectorAll('*')].filter(e=>e.scrollTop>0||e.scrollLeft>0).map(e=>[pathOf(e,B),e.scrollTop,e.scrollLeft]):[];const bs=B.dataset.id===o.id?B.scrollTop:0;
@@ -368,3 +368,22 @@ function renderColl(B,F){const ct=el('div','icat');for(const [i,n] of [[-1,'전�
   {const L=collBatchList();const bb=btn(L.length?'일괄 등록 · '+L.length+'칸':'일괄 등록할 장비 없음','pri',()=>{const r=collBatch();toast('일괄 등록 '+r.n+'개'+(r.done?' · 컬렉션 '+r.done+'개 완성':''),true);renderWin();},!L.length);
     bb.title='등록 가능한 모든 칸을 한 번에 채운다 · 장착 · 잠금 장비는 빠진다';const bar=el('div','clbatch');bar.append(bb,el('small',null,'등록 가능한 칸을 모두 채운다 · 지키고 싶은 장비는 🔒 잠금'));F.appendChild(bar);}
   F.append(el('p','note2','지역 보스 컬렉션은 보스 전용 장비(★)로만 채운다 · 관문을 넘긴 보스는 '+Math.round(FIELD_RESP/60*10)/10+'분마다 다시 나타난다 · 등록한 장비는 사라지고 되돌릴 수 없다 · 컬렉션을 완성하면 능력치·신앙이 영구히 오른다 · 장착 중 · 잠금 장비는 등록되지 않는다 · 빨간 ! 바로 등록 가능 · 파란 + 강화하면 등록 가능 · 컬렉션에 쓸 수 있는 장비는 일괄·자동 분해에서 빠진다'));}
+
+/* ================= v4.31 획득 기록 (L) — 자동 사냥 중 무엇을 어디서 얻었는지 ================= */
+const LOGF=[['all','전체'],['eq','장비'],['mat','도면 · 주문서'],['book','비법서 · 스킬서'],['miss','놓친 것']];
+const logOk=(e,f)=>f==='all'||(f==='miss'?!!e.miss:!e.miss&&e.cat===f);
+function agoTxt(at){const s=Math.max(0,(Date.now()-at)/1000);return s<60?'방금':s<3600?Math.floor(s/60)+'분 전':s<86400?Math.floor(s/3600)+'시간 전':Math.floor(s/86400)+'일 전';}
+const LOG_T0=Date.now();
+function logSum(){const L=(S.acq||[]).filter(e=>e.at>=LOG_T0),o={eq:0,mat:0,book:0,miss:0};for(const e of L){if(e.miss)o.miss+=e.q||1;else o[e.cat]+=e.q||1;}return o;}
+function logState(e){if(e.miss)return['놓침','miss'];if(!e.u)return['',''];const it=itemById(e.u);if(!it)return['사용함','gone'];if(isEq(it))return['장착 중','on'];return[it.lock?'가방 · 🔒':'가방','bag'];}
+function openLog(){if(!started)return;openWin({id:'log',key:'l',kick:'LOOT LOG',title:'획득 기록',info:()=>{const L=S.acq||[],m=logSum(),c=[el('span','wchip','최근 '+L.length+' / '+ACQ_MAX),el('span','wchip','이번 접속 · 장비 '+m.eq+' · 도면 · 주문서 '+m.mat+' · 비법서 '+m.book)];if(m.miss)c.push(el('span','wchip warn','놓친 장비 '+m.miss));return c;},render:renderLog});}
+function renderLog(B,F){const L=S.acq||[],f=LOGF.some(x=>x[0]===S.logF)?S.logF:'all';
+  const ct=el('div','icat');for(const [id,n] of LOGF){const k=L.filter(e=>logOk(e,id)).length,b=el('button','ict'+(f===id?' on':''),n+(id==='all'?'':' '+k));b.type='button';if(id==='miss'&&L.some(e=>e.miss&&e.at>(S.acqSeen||0)))b.classList.add('dot');b.onclick=()=>{S.logF=id;save();renderWin();};ct.appendChild(b);}B.appendChild(ct);
+  const list=el('div','lgl');B.appendChild(list);const V=L.filter(e=>logOk(e,f));
+  if(!V.length)list.appendChild(el('p','lgem',L.length?'이 분류의 기록이 없다':'아직 기록이 없다 — 고급 이상 장비 · 보스 전용 장비(★) · 도면 · 제작 비법서 · 스킬서 · 축복 주문서를 얻으면 여기에 남는다'));
+  for(const e of V){const r=el('div','lgr'+(e.miss?' miss':'')),col=e.cat==='eq'?GRADES[e.g||0].c:(STK[e.k]&&STK[e.k].col)||'#e8b864',[st,sc]=logState(e);
+    const nm=el('b','lgn',(e.bu?'★ ':'')+e.n+((e.q||1)>1?' ×'+e.q:''));nm.style.color=col;const dt=el('i','lgd');dt.style.background=col;
+    r.append(dt,nm,el('span','lgs',e.src||''),el('span','lgz',e.z||''),el('span','lgt '+sc,st),el('span','lga',agoTxt(e.at)));list.appendChild(r);}
+  {let armed=false;const b=btn('기록 비우기','',()=>{if(!armed){armed=true;b.textContent='한 번 더 (비우기)';return;}S.acq=[];save();renderWin();},!L.length);
+    F.append(b,el('p','note2','자동 사냥 · 퀘스트로 얻은 것을 최근 '+ACQ_MAX+'건까지 · 고급 이상 장비 · 보스 전용 장비 · 도면 · 비법서 · 스킬서 · 축복 주문서만 (일반 장비 · 광물 · 강화석 · 물약 · 상점 구입 · 제작 결과는 남기지 않는다) · 놓친 것 = 가방 가득 · 무게 초과로 줍지 못한 장비 — 가방(I)을 정리하자'));}
+  S.acqSeen=Date.now();}
