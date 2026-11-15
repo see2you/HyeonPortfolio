@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.26';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.27';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2417,7 +2417,7 @@ function renderBag(B,F){const o=win,enc=o.enc;
   for(let i=n;i<(enc?Math.max(n,24):Math.max(BAG_SLOTS,n));i++)grid.appendChild(el('div','cell empty'));
   inv.appendChild(grid);
   /* 바닥: 무게 · 칸 · 일괄 분해 */
-  const p=wPct(),wb=el('div','wbar'+(p>=.82?' bad':p>=.5?' warn':''));wb.append(el('i',null)),wb.firstChild.style.width=Math.min(100,p*100)+'%';wb.appendChild(el('b',null,'무게 '+Math.round(p*100)+'% · '+fmt(weightNow())+' / '+fmt(weightMax())));
+  const p=wPct(),wb=el('div','wbar'+(p>=.82?' bad':p>=.5?' warn':''));wb.append(el('i',null)),wb.firstChild.style.width=Math.min(100,p*100)+'%';wb.appendChild(el('b',null,Math.round(p*100)+'% · '+fmt(weightNow())+'/'+fmt(weightMax())));wb.title='무게 '+fmt(weightNow())+' / '+fmt(weightMax())+' · 50% 자연 회복 멈춤 · 82% 공격 불가';
   const fl=el('div','ifoot');fl.append(wb,el('span','slots','칸 '+bagUsed()+' / '+BAG_SLOTS));
   if(!enc){{const n=equipBetterN(),eb=btn(n?'일괄 장착 · '+n:'일괄 장착',n?'pri':'',()=>{batchEquip();renderWin();},!n);eb.title=n?'부위마다 지금보다 전투력이 높은 장비를 모두 장착한다':'지금보다 좋은 장비가 없다';if(n)eb.classList.add('dot');fl.appendChild(eb);}fl.appendChild(btn('제작','pri',()=>openCraft()));fl.appendChild(btn('컬렉션','',()=>openColl()));const db=btn('일괄 분해','',()=>bulkDisTip(db));fl.appendChild(db);}inv.appendChild(fl);
   F.append(el('p','note2','무게 50% 이상이면 자연 회복이 멈추고 · 82% 이상이면 공격·스킬을 쓸 수 없다 · 장비를 누르면 장착·강화·분해 · 장비 강화는 메뉴 → 강화(J)'));}
@@ -2619,20 +2619,20 @@ function renderCraft(B,F){const g=el('div','cfw');B.appendChild(g);const L=el('d
   sec('단계 (지역)',[1,2,3,4,5].map(t=>{const lock=t>craftTierMax(),b=el('button','cfb'+(cfT===t?' on':'')+(lock?' lock':'')+(!lock&&craftCanKT(cfK,t)?' dot':''));b.type='button';b.append(el('b',null,t+'단계'),el('span',null,TIERS[t].mat+' · '+TIERS[t].area));b.disabled=lock;b.title=lock?TIERS[t].area+' 지역을 열면 제작 가능':'';b.onclick=()=>{cfT=t;renderWin();};return b;}));
   sec('등급',[0,1,2,3,4].map(gr=>{const b=el('button','cfb grade'+(cfG===gr?' on':'')+(craftCan(cfK,cfT,gr)?' dot':''));b.type='button';b.style.setProperty('--gc',GRADES[gr].c);b.append(el('b',null,GRADES[gr].n),el('span',null,Math.round(CRAFT_EQ[gr].rate*100)+'%'+(CRAFT_EQ[gr].rcp?' · 비법서':'')));b.onclick=()=>{cfG=gr;renderWin();};return b;}));
   /* 결과 미리보기 */
-  const P=el('div','cfp');g.appendChild(P);const pv={k:cfK,t:cfT,g:cfG,en:0},G=GRADES[cfG],c=craftCheck(cfK,cfT,cfG),R=c.R;
-  const hd=el('div','cfh'),ic=el('div','cfi');ic.style.setProperty('--gc',G.c);ic.appendChild(icv(itemIcon(pv)));const nm=el('div',null);const t1=el('b',null,itemName(pv));t1.style.color=G.c;nm.append(t1,el('small',null,G.n+' · '+SLOTN[cfK]+' · '+TIERS[cfT].area+' '+cfT+'단계 · 착용 레벨 없음'));hd.append(ic,nm);P.appendChild(hd);
-  const cur=S.eq[targetSlotKind(cfK)]&&itemById(S.eq[targetSlotKind(cfK)]);P.appendChild(statLines(pv,cur||null));if(cur)P.appendChild(el('div','tt','착용 중 '+itemName(cur)+'과(와) 비교'));if(craftCan(cfK,cfT,cfG))P.appendChild(el('div','cfok','● 지금 만들 수 있다 · 착용 중인 장비보다 좋다'));
+  const P=el('div','cfp');g.appendChild(P);/* v4.27: 정보는 스크롤(.cfpi) · [제작하기]는 아래 고정 줄(.cfact) */const PI=el('div','cfpi'),ACT=el('div','cfact');P.append(PI,ACT);const pv={k:cfK,t:cfT,g:cfG,en:0},G=GRADES[cfG],c=craftCheck(cfK,cfT,cfG),R=c.R;
+  const hd=el('div','cfh'),ic=el('div','cfi');ic.style.setProperty('--gc',G.c);ic.appendChild(icv(itemIcon(pv)));const nm=el('div',null);const t1=el('b',null,itemName(pv));t1.style.color=G.c;nm.append(t1,el('small',null,G.n+' · '+SLOTN[cfK]+' · '+TIERS[cfT].area+' '+cfT+'단계 · 착용 레벨 없음'));hd.append(ic,nm);PI.appendChild(hd);
+  const cur=S.eq[targetSlotKind(cfK)]&&itemById(S.eq[targetSlotKind(cfK)]);PI.appendChild(statLines(pv,cur||null));if(cur)PI.appendChild(el('div','tt','착용 중 '+itemName(cur)+'과(와) 비교'));if(craftCan(cfK,cfT,cfG))PI.appendChild(el('div','cfok','● 지금 만들 수 있다 · 착용 중인 장비보다 좋다'));
   const need=el('div','cfn');need.appendChild(el('h4',null,'재료'));
   /* v4.15: 재료 이름 · (i)를 누르면 얻는 곳 팝업 */
   const row=(label,have,req,ok,ico,info)=>{const d=el('div','cfm'+(ok?'':' no'));const l=el('button','cfml');l.type='button';if(ico)l.appendChild(icv(stkIcon(ico),'sic'));l.append(label);
     const ib=el('button','infob','i');ib.type='button';ib.title='얻는 곳';const open=e=>{e.stopPropagation();showTip(ib,tp=>acqTip(tp,info||ico));};l.onclick=open;ib.onclick=open;d.append(l,ib,el('b',null,have+' / '+req));need.appendChild(d);};
   row(STK[c.ok_].n,cnt(c.ok_),c.ore,cnt(c.ok_)>=c.ore,c.ok_);row(STK[c.dk].n,cnt(c.dk),1,cnt(c.dk)>=1,c.dk);if(R.rcp)row(STK[R.rcp].n,cnt(R.rcp),1,cnt(R.rcp)>=1,R.rcp);row('골드',fmt(S.gold),fmt(c.gold),S.gold>=c.gold,null,'gold');
   if(R.need){const m=craftMats(cfK,cfT,R.need.g,R.need.n);row('재료 장비 · '+GRADES[R.need.g].n+' '+itemName({k:cfK,t:cfT,g:R.need.g,en:0}),m.length,R.need.n,m.length>=R.need.n,null,{eq:true,k:cfK,t:cfT,g:R.need.g});}
-  P.appendChild(need);
-  P.appendChild(el('p','note2','성공 '+Math.round(R.rate*100)+'%'+(R.rate<1?' · 실패하면 광물·도면·비법서·골드를 잃고 재료 장비는 남는다':'')+' · 대성공 '+Math.round(CRAFT_GREAT*100)+'%: +1~3 강화된 채로'+(R.need?' · 재료 장비는 강화 수치가 낮은 것부터 · 장착·잠금 장비는 쓰지 않는다':'')));
+  PI.appendChild(need);
+  PI.appendChild(el('p','note2','성공 '+Math.round(R.rate*100)+'%'+(R.rate<1?' · 실패하면 광물·도면·비법서·골드를 잃고 재료 장비는 남는다':'')+' · 대성공 '+Math.round(CRAFT_GREAT*100)+'%: +1~3 강화된 채로'+(R.need?' · 재료 장비는 강화 수치가 낮은 것부터 · 장착·잠금 장비는 쓰지 않는다':'')));
   const go=btn('제작하기','pri',()=>{const r=craftItem(cfK,cfT,cfG);if(!r)return;const fx=el('div','encfx '+(r.ok?'ok':'no'));fx.append(el('b',null,r.ok?(r.great?'대성공':'제작 성공'):'제작 실패'),el('span',null,r.ok?GRADES[r.it.g].n+' '+itemName(r.it):'재료 장비는 남았다'));renderWin();$('win').querySelector('.wbox').appendChild(fx);setTimeout(()=>fx.remove(),1400);},!c.ok);
-  go.classList.add('cfgo');P.appendChild(go);
-  if(!c.ok)P.appendChild(el('small','why',c.why.join(' · ')));
+  go.classList.add('cfgo');ACT.appendChild(go);
+  if(!c.ok)ACT.appendChild(el('small','why',c.why.join(' · ')));
   F.append(el('p','note2','빨간 점 = 지금 재료로 만들 수 있고 착용 중인 장비보다 좋은 부위 · 단계 · 등급 · 제작 = 그 지역 광물 + 그 지역 장비 도면(무기·방어구·장신구) + 골드 · 희귀 이상은 제작 비법서(지역 보스)가 더 필요한 확률 제작 · 광물·도면은 그 지역 사냥 · 퀘스트 · 토벌 의뢰 · 지역 보스로 · 착용 레벨 없음'));}
 
 /* ===== 재료 얻는 곳 (제작 창 (i)) ===== */
