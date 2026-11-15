@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.35';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.36';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2381,7 +2381,11 @@ function setKey(d,nk){if(!KB_OK.has(nk)||!KB_ACTS.includes(d))return false;const
 function kbReset(){S.keymap={};kbCap=null;save();kbRefresh();toast('단축키를 기본값으로 되돌렸다',true);}
 function kbRefresh(){fillKeys();const b=$('bKeys');if(b)b.title='조작법 ('+kbU('h')+')';lastQKey='';if(win)renderWin();}
 fillKeys();
-function toggleKeys(on){const k=$('keys'),b=$('bKeys');on=on??k.hidden;k.hidden=!on;b.setAttribute('aria-expanded',on);b.textContent=on?'조작법 닫기':'조작법 보기';}
+function toggleKeys(on){const k=$('keys'),b=$('bKeys');on=on??k.hidden;k.hidden=!on;b.setAttribute('aria-expanded',on);b.textContent=on?'조작법 닫기':'조작법 보기';if(on)popFit(k);}
+/* v4.36 작은 창(조작법 · NPC 목록 · 메뉴)은 화면 아래로 넘치지 않게 높이를 줄이고(안은 스크롤), 새로 연 창과 겹치는 다른 작은 창은 닫는다 */
+const POPS=[['keys',()=>toggleKeys(false)],['npcPop',()=>toggleNpcList(false)],['menuPop',()=>toggleMenu(false)]];
+function popFit(p){if(!p||p.hidden)return;if(p.id!=='keys'){p.style.maxHeight='';const r0=p.getBoundingClientRect(),room=innerHeight-r0.top-8;if(r0.height>room)p.style.maxHeight=Math.max(80,room)+'px';}
+  const r=p.getBoundingClientRect();for(const [id,close] of POPS){if(id===p.id)continue;const o=$(id);if(!o||o.hidden)continue;const q=o.getBoundingClientRect();if(q.left<r.right&&r.left<q.right&&q.top<r.bottom&&r.top<q.bottom)close();}}
 $('bKeys').onclick=e=>{e.stopPropagation();toggleKeys();};
 stage.addEventListener('pointerdown',e=>{if(!$('keys').hidden&&!e.target.closest('#bKeys,#kSet'))toggleKeys(false);},true);
 $('bTown').onclick=goTown;$('bZoom').onclick=toggleZoom;$('bGod').onclick=openGods;$('bStat').onclick=()=>openStats();$('bSkill').onclick=()=>openSkills();$('bBag').onclick=()=>openBag();$('bSet').onclick=()=>openSettings();$('bCraft').onclick=()=>openCraft();
@@ -2392,11 +2396,11 @@ function toggleNpcList(on){const p=$('npcPop'),b=$('bNpc');on=on??p.hidden;p.hid
   const q=curQ(),mark=id=>{const mk=npcMark(id);return mk?mk[0]:'';};
   const row=(name,tag,go,m)=>{const r=el('div','npr'),l=el('span');l.append(el('b',null,name),el('small',null,'('+tag+')'));if(m)l.appendChild(el('em',null,m==='?'?'보상':'퀘스트'));const b=el('button','btn pri','이동');b.type='button';b.onclick=()=>{toggleNpcList(false);if(player.dead)return;stopAutoQ();go();};r.append(l,b);p.appendChild(r);};
   for(const id in NPCS){if(NPCS[id].deco)continue;row(npcName(id),npcTag(id),()=>goNpc(id,npcName(id)+'에게'),mark(id));}
-  row('길잡이 표석','지역 이동',()=>navTo('npc','way','길잡이 표석으로'));}
+  row('길잡이 표석','지역 이동',()=>navTo('npc','way','길잡이 표석으로'));popFit(p);}
 $('bNpc').onclick=e=>{e.stopPropagation();toggleNpcList();};
 document.addEventListener('pointerdown',e=>{if(!$('npcPop').hidden&&!e.target.closest('#npcPop')&&!e.target.closest('#bNpc'))toggleNpcList(false);});$('bEnc').onclick=()=>openEnchant();$('bColl').onclick=()=>openColl();$('bLog').onclick=()=>openLog();
 /* v4.12 메뉴: 스킬·능력치·가방·제작·컬렉션·권능·설정을 ☰ 하나로 (레드닷은 메뉴 버튼과 각 항목에) */
-function toggleMenu(on){const p=$('menuPop'),b=$('bMenu');on=on??p.hidden;p.hidden=!on;b.setAttribute('aria-expanded',on);}
+function toggleMenu(on){const p=$('menuPop'),b=$('bMenu');on=on??p.hidden;p.hidden=!on;b.setAttribute('aria-expanded',on);if(on)popFit(p);}
 $('bMenu').onclick=e=>{e.stopPropagation();toggleMenu();};$('menuPop').addEventListener('click',e=>{if(e.target.closest('.tmb'))toggleMenu(false);});
 document.addEventListener('pointerdown',e=>{if(!$('menuPop').hidden&&!e.target.closest('.topmenu'))toggleMenu(false);});$('navX').onclick=()=>{cancelNav();};
 /* =====================================================================
@@ -2406,7 +2410,31 @@ document.addEventListener('pointerdown',e=>{if(!$('menuPop').hidden&&!e.target.c
    ===================================================================== */
 let win=null;
 const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['log','기록','L'],['stats','능력치','C'],['skills','스킬','K']];
-function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());kbCap=null;win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
+/* v4.36 창 위치 · 크기 기억 (MMORPG 라이크 UI 편집 · HUD 프리셋): 머리줄을 끌어 옮기고 [100%]로 크기(100 → 90 → 80%)를 고른다
+   - 탭으로 오가는 창(가방 · 강화 · 제작 · 컬렉션 · 기록 · 능력치 · 스킬)은 한 묶음('main'), 나머지(상점 · 설정 · 대장장이 …)는 창마다 따로
+   - S.winUi={창:{x,y,s}} — x,y는 화면 폭 · 높이 대비 비율(화면 크기가 바뀌어도 같은 자리), 머리줄은 늘 화면 안 · 키 설정처럼 새 게임에도 유지
+   - [↺] 또는 머리줄 두 번 누르기 = 그 창만 처음대로 */
+const WSIZES=[1,.9,.8];
+const winGrp=o=>WTABS.some(t=>t[0]===o.id)?'main':o.id;
+function winPos(){return win?((S.winUi||{})[winGrp(win)]||null):null;}
+function winClamp(x,y){/* 창 전체가 화면 안 — 옮겨도 동작 버튼이 화면 밖으로 나가지 않게(원칙 8) */const bx=document.querySelector('#win .wbox');if(!bx)return [x,y];bx.style.setProperty('--wx','0px');bx.style.setProperty('--wy','0px');const r=bx.getBoundingClientRect(),W=innerWidth,H=innerHeight;
+  x=Math.max(Math.min(0,-r.left),Math.min(Math.max(0,W-r.right),x));y=Math.max(Math.min(0,-r.top),Math.min(Math.max(0,H-r.bottom),y));return [Math.round(x),Math.round(y)];}
+function winApply(){const bx=document.querySelector('#win .wbox');if(!bx)return;const p=winPos()||{};const s=WSIZES.includes(p.s)?p.s:1;bx.style.setProperty('--ws',s);
+  const [x,y]=winClamp((p.x||0)*innerWidth,(p.y||0)*innerHeight);bx.style.setProperty('--wx',x+'px');bx.style.setProperty('--wy',y+'px');
+  $('wSz').textContent=Math.round(s*100)+'%';$('wRs').hidden=!(p.x||p.y||s!==1);}
+function winSet(ch){if(!win)return;const U=S.winUi=S.winUi||{},g=winGrp(win),p=Object.assign({x:0,y:0,s:1},U[g]||{},ch);if(!p.x&&!p.y&&p.s===1)delete U[g];else U[g]=p;winApply();save();}
+function winReset(){if(!win)return;if(S.winUi)delete S.winUi[winGrp(win)];winApply();save();toast('창을 처음 자리 · 크기로 되돌렸다');}
+$('wSz').onclick=()=>{const p=winPos()||{},i=WSIZES.indexOf(p.s||1);winSet({s:WSIZES[(i+1)%WSIZES.length]});};
+$('wRs').onclick=winReset;
+{let dr=null;const wh=document.querySelector('#win .wh');
+  wh.addEventListener('pointerdown',e=>{if(e.button>0||e.target.closest('button'))return;const bx=wh.parentNode,cs=getComputedStyle(bx);dr={sx:e.clientX,sy:e.clientY,ox:parseFloat(cs.getPropertyValue('--wx'))||0,oy:parseFloat(cs.getPropertyValue('--wy'))||0,mv:false,id:e.pointerId};});
+  document.addEventListener('pointermove',e=>{if(!dr||e.pointerId!==dr.id)return;const dx=e.clientX-dr.sx,dy=e.clientY-dr.sy;if(!dr.mv&&Math.hypot(dx,dy)<4)return;if(!dr.mv){dr.mv=true;hideTip();wh.parentNode.classList.add('drag');}
+    const bx=wh.parentNode,[x,y]=winClamp(dr.ox+dx,dr.oy+dy);bx.style.setProperty('--wx',x+'px');bx.style.setProperty('--wy',y+'px');});
+  document.addEventListener('pointerup',e=>{if(!dr||e.pointerId!==dr.id)return;const d=dr;dr=null;const bx=wh.parentNode;bx.classList.remove('drag');if(!d.mv||!win)return;const cs=getComputedStyle(bx);winSet({x:(parseFloat(cs.getPropertyValue('--wx'))||0)/innerWidth,y:(parseFloat(cs.getPropertyValue('--wy'))||0)/innerHeight});});
+  document.addEventListener('pointercancel',()=>{if(dr){dr=null;wh.parentNode.classList.remove('drag');}});
+  wh.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;winReset();});
+  addEventListener('resize',()=>{if(win)winApply();});}
+function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());kbCap=null;const g0=win&&winGrp(win);win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();if(g0!==winGrp(o))winApply();}
 function closeWin(){stopHold();kbCap=null;if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
 function renderWin(){const o=win;if(!o)return;$('wKick').textContent=o.kick||'';$('wTitle').textContent=o.title;const inf=$('wInfo');inf.replaceChildren(...(o.info?o.info():[]));
   const tb=$('wTabs');tb.replaceChildren();if(o.tabs!==false)for(const [id,n,k] of WTABS){const b=el('button','wtab'+(o.id===id?' on':''),n);b.type='button';if(k&&!document.body.classList.contains('touch'))b.appendChild(el('kbd',null,kbU(k.toLowerCase())));
@@ -3033,12 +3061,12 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 
 /* ================= 시작 ================= */
-async function startGame(fresh){/* v4.35 새 게임이어도 바꾼 단축키는 이어 쓴다(키 설정은 캐릭터가 아니라 사람의 것) */const km0=fresh?(loadSave()||{}).keymap:null;S=fresh?migrate48(newSave(),true):loadSave()||migrate48(newSave(),true);if(km0)S.keymap=km0;gearDirty();if(S.map!==MAPID){$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중…';if(!MAPS[S.map].rt||!MAPS[S.map].rt.built)await buildWorld(S.map,p=>{$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});bindMap(S.map);showMapOnly();applyLook();}
+async function startGame(fresh){/* v4.35 새 게임이어도 바꾼 단축키는 이어 쓴다(키 설정은 캐릭터가 아니라 사람의 것) */const sv0=fresh?(loadSave()||{}):null,km0=sv0&&sv0.keymap,wu0=sv0&&sv0.winUi;/* v4.36 창 위치 · 크기도 사람의 것 */S=fresh?migrate48(newSave(),true):loadSave()||migrate48(newSave(),true);if(km0)S.keymap=km0;if(wu0)S.winUi=wu0;gearDirty();if(S.map!==MAPID){$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중…';if(!MAPS[S.map].rt||!MAPS[S.map].rt.built)await buildWorld(S.map,p=>{$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});bindMap(S.map);showMapOnly();applyLook();}
   const st=pStats();player.hp=st.hp;player.mp=st.mp;
   const ok=!fresh&&!blockedAt(S.x,S.y)&&!Object.values(ZONES).some(z=>z.lv&&inR(z.r,S.x,S.y));player.x=ok?S.x:PLAZA.x;player.y=ok?S.y:PLAZA.y+40;
   started=true;kbRefresh();$('title').hidden=true;$('hud').hidden=false;if(document.body.classList.contains('touch')){joyz.hidden=false;joyEl.hidden=false;joyPos();}

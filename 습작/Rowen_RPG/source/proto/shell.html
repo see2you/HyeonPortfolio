@@ -238,6 +238,9 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .wbox{position:relative;width:min(96vw,calc(var(--u)*94));height:min(92vh,calc(var(--u)*52));display:flex;flex-direction:column;padding:calc(var(--u)*1.2) calc(var(--u)*1.6);font-size:calc(var(--u)*1.42);
   background:linear-gradient(180deg,rgba(26,20,40,.97),rgba(14,11,24,.97));border:1px solid rgba(232,184,100,.55);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 calc(var(--u)*2) calc(var(--u)*5) rgba(0,0,0,.6),inset 0 0 calc(var(--u)*3) rgba(232,184,100,.06)}
 .wbox::before{content:"";position:absolute;inset:5px;border:1px solid rgba(232,184,100,.16);border-radius:calc(var(--u)*.6);pointer-events:none}
+/* v4.36 창 끌어 옮기기 · 크기: --ws(크기 배율)로 창 안 단위(--u)를 다시 정하고, 위치는 translate(--wx,--wy) */.wbox{--ws:1;--u:calc(min(1vw,1.78vh)*var(--ws));transform:translate(var(--wx,0px),var(--wy,0px))}
+.wh{cursor:move;touch-action:none;user-select:none}.wbox.drag{opacity:.93}.wbox.drag .wh{cursor:grabbing}
+.wsz,.wrs{flex:none;height:calc(var(--u)*2.6);padding:0 .7em;border-radius:calc(var(--u)*1.3);font:inherit;font-size:.78em;color:var(--gold2);background:rgba(40,30,56,.9);border:1px solid rgba(232,184,100,.35);cursor:pointer}.wrs[hidden]{display:none}
 .wh{display:flex;align-items:center;gap:calc(var(--u)*1.2);padding-bottom:calc(var(--u)*.6);border-bottom:1px solid rgba(232,184,100,.25)}
 .wt{display:flex;flex-direction:column}.wk{font-size:.64em;letter-spacing:.3em;color:var(--gold)}.wh h2{margin:0;font-family:var(--disp);font-size:1.5em;color:#fff2d6;line-height:1.1}
 .wi{flex:1;display:flex;gap:calc(var(--u)*.8);justify-content:flex-end;align-items:center;flex-wrap:wrap}
@@ -441,7 +444,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   <div class="toasts" id="toasts"></div>
   <div class="modal" id="modal" hidden><div class="dlg panel" role="dialog" aria-labelledby="dlgN"><div class="pf" id="dlgF"></div><div class="bd"><h3 id="dlgN"></h3><div id="dlgB"></div><div class="btns" id="dlgA"></div></div></div></div>
   <div class="win" id="win" hidden><div class="wbox panel" role="dialog" aria-labelledby="wTitle">
-    <header class="wh"><div class="wt"><span class="wk" id="wKick"></span><h2 id="wTitle"></h2></div><div class="wi" id="wInfo"></div><button class="wx" id="wX" type="button" aria-label="닫기 (Esc)">×</button></header>
+    <header class="wh"><div class="wt"><span class="wk" id="wKick"></span><h2 id="wTitle"></h2></div><div class="wi" id="wInfo"></div><button class="wsz" id="wSz" type="button" title="창 크기 (100% → 90% → 80%)">100%</button><button class="wrs" id="wRs" type="button" title="창 위치 · 크기 처음대로 (머리줄 두 번 눌러도 됨)" hidden>↺</button><button class="wx" id="wX" type="button" aria-label="닫기 (Esc)">×</button></header>
     <nav class="wtabs" id="wTabs"></nav>
     <div class="wb" id="wBody"></div>
     <footer class="wf" id="wFoot"></footer>
@@ -449,7 +452,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.35</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.36</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>

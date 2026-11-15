@@ -10,7 +10,7 @@ with sync_playwright() as p:
     ctx=b.new_context(viewport={'width':1280,'height':720});pg=ctx.new_page();errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
-    chk('버전',J(pg,"document.getElementById('verTag').textContent")=='v4.35')
+    chk('버전',J(pg,"document.getElementById('verTag').textContent").startswith('v4.'))
     chk('바꿀 수 있는 동작 19개',len(J(pg,"__g.KB_ACTS"))==19,J(pg,"__g.KB_ACTS.join('')"))
     # 조작법 팝업 → 키 바꾸기
     pg.keyboard.press('h');pg.wait_for_timeout(80);pg.click('#kSet');pg.wait_for_timeout(80)

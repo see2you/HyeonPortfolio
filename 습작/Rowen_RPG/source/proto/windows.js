@@ -5,7 +5,31 @@
    ===================================================================== */
 let win=null;
 const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['log','기록','L'],['stats','능력치','C'],['skills','스킬','K']];
-function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());kbCap=null;win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
+/* v4.36 창 위치 · 크기 기억 (MMORPG 라이크 UI 편집 · HUD 프리셋): 머리줄을 끌어 옮기고 [100%]로 크기(100 → 90 → 80%)를 고른다
+   - 탭으로 오가는 창(가방 · 강화 · 제작 · 컬렉션 · 기록 · 능력치 · 스킬)은 한 묶음('main'), 나머지(상점 · 설정 · 대장장이 …)는 창마다 따로
+   - S.winUi={창:{x,y,s}} — x,y는 화면 폭 · 높이 대비 비율(화면 크기가 바뀌어도 같은 자리), 머리줄은 늘 화면 안 · 키 설정처럼 새 게임에도 유지
+   - [↺] 또는 머리줄 두 번 누르기 = 그 창만 처음대로 */
+const WSIZES=[1,.9,.8];
+const winGrp=o=>WTABS.some(t=>t[0]===o.id)?'main':o.id;
+function winPos(){return win?((S.winUi||{})[winGrp(win)]||null):null;}
+function winClamp(x,y){/* 창 전체가 화면 안 — 옮겨도 동작 버튼이 화면 밖으로 나가지 않게(원칙 8) */const bx=document.querySelector('#win .wbox');if(!bx)return [x,y];bx.style.setProperty('--wx','0px');bx.style.setProperty('--wy','0px');const r=bx.getBoundingClientRect(),W=innerWidth,H=innerHeight;
+  x=Math.max(Math.min(0,-r.left),Math.min(Math.max(0,W-r.right),x));y=Math.max(Math.min(0,-r.top),Math.min(Math.max(0,H-r.bottom),y));return [Math.round(x),Math.round(y)];}
+function winApply(){const bx=document.querySelector('#win .wbox');if(!bx)return;const p=winPos()||{};const s=WSIZES.includes(p.s)?p.s:1;bx.style.setProperty('--ws',s);
+  const [x,y]=winClamp((p.x||0)*innerWidth,(p.y||0)*innerHeight);bx.style.setProperty('--wx',x+'px');bx.style.setProperty('--wy',y+'px');
+  $('wSz').textContent=Math.round(s*100)+'%';$('wRs').hidden=!(p.x||p.y||s!==1);}
+function winSet(ch){if(!win)return;const U=S.winUi=S.winUi||{},g=winGrp(win),p=Object.assign({x:0,y:0,s:1},U[g]||{},ch);if(!p.x&&!p.y&&p.s===1)delete U[g];else U[g]=p;winApply();save();}
+function winReset(){if(!win)return;if(S.winUi)delete S.winUi[winGrp(win)];winApply();save();toast('창을 처음 자리 · 크기로 되돌렸다');}
+$('wSz').onclick=()=>{const p=winPos()||{},i=WSIZES.indexOf(p.s||1);winSet({s:WSIZES[(i+1)%WSIZES.length]});};
+$('wRs').onclick=winReset;
+{let dr=null;const wh=document.querySelector('#win .wh');
+  wh.addEventListener('pointerdown',e=>{if(e.button>0||e.target.closest('button'))return;const bx=wh.parentNode,cs=getComputedStyle(bx);dr={sx:e.clientX,sy:e.clientY,ox:parseFloat(cs.getPropertyValue('--wx'))||0,oy:parseFloat(cs.getPropertyValue('--wy'))||0,mv:false,id:e.pointerId};});
+  document.addEventListener('pointermove',e=>{if(!dr||e.pointerId!==dr.id)return;const dx=e.clientX-dr.sx,dy=e.clientY-dr.sy;if(!dr.mv&&Math.hypot(dx,dy)<4)return;if(!dr.mv){dr.mv=true;hideTip();wh.parentNode.classList.add('drag');}
+    const bx=wh.parentNode,[x,y]=winClamp(dr.ox+dx,dr.oy+dy);bx.style.setProperty('--wx',x+'px');bx.style.setProperty('--wy',y+'px');});
+  document.addEventListener('pointerup',e=>{if(!dr||e.pointerId!==dr.id)return;const d=dr;dr=null;const bx=wh.parentNode;bx.classList.remove('drag');if(!d.mv||!win)return;const cs=getComputedStyle(bx);winSet({x:(parseFloat(cs.getPropertyValue('--wx'))||0)/innerWidth,y:(parseFloat(cs.getPropertyValue('--wy'))||0)/innerHeight});});
+  document.addEventListener('pointercancel',()=>{if(dr){dr=null;wh.parentNode.classList.remove('drag');}});
+  wh.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;winReset();});
+  addEventListener('resize',()=>{if(win)winApply();});}
+function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());kbCap=null;const g0=win&&winGrp(win);win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();if(g0!==winGrp(o))winApply();}
 function closeWin(){stopHold();kbCap=null;if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
 function renderWin(){const o=win;if(!o)return;$('wKick').textContent=o.kick||'';$('wTitle').textContent=o.title;const inf=$('wInfo');inf.replaceChildren(...(o.info?o.info():[]));
   const tb=$('wTabs');tb.replaceChildren();if(o.tabs!==false)for(const [id,n,k] of WTABS){const b=el('button','wtab'+(o.id===id?' on':''),n);b.type='button';if(k&&!document.body.classList.contains('touch'))b.appendChild(el('kbd',null,kbU(k.toLowerCase())));
