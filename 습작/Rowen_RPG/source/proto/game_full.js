@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.27';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.28';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2297,7 +2297,7 @@ function goTown(){if(player.dead)return;if(inR(ZONES.village.r,player.x,player.y
 let zoomT=1;
 function setZoom(z){zoomT=Math.max(ZOOM.min,Math.min(ZOOM.max,Math.round(z*100)/100));if(Math.abs(zoomT-1)<.04)zoomT=1;if(S&&started){S.zoom=zoomT;save();}$('bZoom').textContent=Math.round(zoomT*100)+'%';}
 function toggleZoom(){setZoom(zoomT>1.05?1:1.4);}
-stage.addEventListener('wheel',e=>{if(!started||modal||win)return;e.preventDefault();setZoom(zoomT*(e.deltaY<0?ZOOM.step:1/ZOOM.step));},{passive:false});
+stage.addEventListener('wheel',e=>{if(!started||modal||win)return;/* v4.28 퀘스트 목록이 넘치면 휠은 목록 스크롤 */{const L=e.target.closest&&e.target.closest('#qlist');if(L&&L.scrollHeight>L.clientHeight+1)return;}e.preventDefault();setZoom(zoomT*(e.deltaY<0?ZOOM.step:1/ZOOM.step));},{passive:false});
 const ray=new T3.Raycaster(),ndc=new T3.Vector2();
 function pickAt(sx,sy){let best=null,bd=34;const test=(o,h)=>{const [x,y]=W2S(o.x,o.y,h);const d=Math.hypot(x-sx,y-sy);if(d<bd){bd=d;best=o;}};
   for(const n of npcList)if(!n.deco)test(n,n.way?22:16);for(const m of mobs)if(alive(m))test(m,MONSPR[m.sp][0].height*m.sc*.5);return best;}
