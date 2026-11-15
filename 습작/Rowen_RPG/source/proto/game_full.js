@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.23';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.24';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -1226,7 +1226,7 @@ const BU={
   b32b:{q:'q32',n:'홍염의 깃 반지',k:'ring',t:5,g:4,fa:12,x:{crit:.02}}};
 for(const id in BU)BU[id].id=id;
 const buOfQ=qid=>Object.values(BU).filter(b=>b.q===qid);
-const BU_FIRST_B=.35,BU_FIELD=.40,BU_INV=.10,FIELD_RESP=150;
+const BU_FIRST_B=.35,BU_FIELD=.40,BU_PITY=3,BU_INV=.10,FIELD_RESP=150;
 /* ===== 장비 인스턴스 ===== */
 function newItem(k,t,g){return{u:++S.nu,k,t:clamp(t,1,TIER_MAX),g:clamp(g,0,4),en:0,ff:0};}
 function newBU(id){const b=BU[id];return{u:++S.nu,k:b.k,t:b.t,g:b.g,en:0,ff:0,bu:id};}
@@ -1271,7 +1271,7 @@ function rollGrade(boss){const r=Math.random();if(!boss)return r<DROP.hi?1:0;for
 function rollSlot(){const W=DROP.slot;let s=0;for(const k in W)s+=W[k];let r=Math.random()*s;for(const k in W){r-=W[k];if(r<=0)return k;}return 'weapon';}
 /* 지역 보스 전용 장비 드롭 */
 function dropBU(m){let L=[];if(m.eliteOf){const q=QUESTS.find(x=>x.id===m.eliteOf),B=buOfQ(m.eliteOf);if(!B.length)return;
-    if(m.field){const cq=curQ(),force=S.qs==='active'&&cq.type==='fboss'&&cq.boss===m.eliteOf;if(force||Math.random()<BU_FIELD){/* 아직 컬렉션에 못 넣었고 갖고 있지 않은 쪽을 우선 */const want=B.filter(b=>!COLL.some(c=>c.req.some((r,i)=>r.bu===b.id&&!collReg(c,i)))?false:!S.items.some(x=>x.bu===b.id));L.push(want.length?want[Math.floor(Math.random()*want.length)]:B[Math.random()<.5?0:1]);}}else{L.push(B[0]);if(Math.random()<BU_FIRST_B)L.push(B[1]);}}
+    if(m.field){const cq=curQ(),force=S.qs==='active'&&cq.type==='fboss'&&cq.boss===m.eliteOf;/* v4.24 천장: 같은 필드 보스에서 연속 2번 못 얻으면 3번째는 확정 */const bm=S.buMiss||(S.buMiss={}),pity=(bm[m.eliteOf]||0)>=BU_PITY-1;if(force||pity||Math.random()<BU_FIELD){bm[m.eliteOf]=0;/* 아직 컬렉션에 못 넣었고 등록할 수 있는 사본(미장착 · 미잠금)이 없는 쪽을 우선 — v4.24: 장착 중인 사본은 '갖고 있음'으로 치지 않는다 */const want=B.filter(b=>!COLL.some(c=>c.req.some((r,i)=>r.bu===b.id&&!collReg(c,i)))?false:!S.items.some(x=>x.bu===b.id&&!isEq(x)&&!x.lock));L.push(want.length?want[Math.floor(Math.random()*want.length)]:B[Math.random()<.5?0:1]);}else bm[m.eliteOf]=(bm[m.eliteOf]||0)+1;}else{L.push(B[0]);if(Math.random()<BU_FIRST_B)L.push(B[1]);}}
   else if(m.inv){const cl=QUESTS.filter((q,i)=>i<S.qi&&q.elite&&qMap(q)===MAPID).flatMap(q=>buOfQ(q.id));if(cl.length&&Math.random()<BU_INV)L.push(cl[Math.floor(Math.random()*cl.length)]);}
   L.forEach((b,i)=>{const it=newBU(b.id);if(addItem(it,m)){floatTxt(m.x,m.y-46-i*9,'★ '+b.n,GRADES[b.g].c,true);banner('보스 전용 장비',b.n+' · 신앙 +'+b.fa,true);STAT.bu=(STAT.bu||0)+1;}});}
 function dropFrom(m){dropBU(m);const tier=tierOfLv(m.lv),n=m.boss?1:Math.random()<DROP.eq?1:0;
@@ -1968,10 +1968,13 @@ function autoBuy(){const g0=S.gold,h=buyItem('hp',POT_CAP.hp);const mpBudget=Mat
   STAT.shop++;if(h||m||s)toast('물약 보충 · HP +'+h+(m?' · MP +'+m:'')+(s?' · 주문서 +'+s:'')+' (-'+fmt(g0-S.gold)+' G)',true);else toast('골드가 부족해 물약을 사지 못했다',true);save();}
 function needShop(){if(!S.autoBuy||t<shopSkipT)return false;const low=S.hpPot<POT_LOW.hp||(S.kp+Object.keys(S.sk).length>0&&S.mpPot<POT_LOW.mp);return low&&S.gold>=potPrice('hp');}
 let shopSkipT=0,retT=0;
+/* v4.24 사냥 중 보충 (MMORPG 라이크 '물약 부족 시 귀환 · 자동 구매'): 자동 진행으로 사냥하는 동안 HP 물약이 기준(6) 아래로 내려가면
+   사냥을 멈추고 마을 상점에서 보충한 뒤 하던 일로 돌아간다. 전에는 다음 단계를 고를 때만 확인해서, 긴 수련 · 컬렉션 대기 사냥에서 물약이 바닥났다. */
+function huntResupply(){if(!S.autoQ||!auto||!hunt||nav||modal||player.dead||traveling)return false;if(hunt.mob&&S.hpPot>=2)return false;/* 보스와 싸우는 중엔 물약 2개까지 버틴다 */if(!needShop())return false;STAT.resup=(STAT.resup||0)+1;hunt=null;toast('HP 물약 '+S.hpPot+'개 · 사냥을 멈추고 물약을 보충하러 간다',true);if(shopGo())return true;autoNext();return false;}
 function shopGo(){const sid=shopId();if(!sid)return false;shopSkipT=t+60;const done=()=>{autoBuy();later(.4,()=>{if(!modal&&!player.dead)autoGo();});};
   const n=npcList.find(n=>n.id===sid);if(dist(n,player)<30){done();return true;}return navTo('npc',sid,npcName(sid)+'에게 · 물약 보충',done);}
 /* 필드에서 HP 물약이 떨어지면 귀환(주문서 있으면 즉시, 없으면 걸어서) */
-function emergencyReturn(){if(!S.autoRet||player.dead||!auto||S.hpPot>0||t<retT)return;const st=pStats();if(player.hp>st.hp*.4||inR(ZONES.village.r,player.x,player.y,0))return;retT=t+40;STAT.ret++;hunt=null;
+function emergencyReturn(){if(!(S.autoRet||S.autoQ)||player.dead||!auto||S.hpPot>0||t<retT)return;const st=pStats();if(player.hp>st.hp*.4||inR(ZONES.village.r,player.x,player.y,0))return;retT=t+40;STAT.ret++;hunt=null;
   if(S.scroll>0){goTown();toast('물약 소진 · 귀환 주문서를 사용해 마을로 돌아왔다 (상점의 긴급 귀환 설정)',true);if(S.autoQ)later(.6,()=>{shopSkipT=0;autoGo();});}else{toast('물약도 주문서도 없다 · 걸어서 마을로!',true);auto=false;shopSkipT=0;shopGo();}}
 const STAT={hpUse:0,mpUse:0,buy:0,buyG:0,killG:0,rwG:0,shop:0,ret:0,deaths:0,xpLost:0};
 function usePot(k,silent){const st=pStats();if(player.dead||t<player.potT)return false;if(k==='hp'){if(!S.hpPot){if(!silent)toast('HP 물약이 없다');return false;}if(player.hp>=st.hp)return false;S.hpPot--;STAT.hpUse++;if(S.hpPot===POT_LOW.hp-1||S.hpPot===2)toast('HP 물약 '+S.hpPot+'개 남음 · 마을 상점에서 보충',true);else if(!S.hpPot)toast('HP 물약이 떨어졌다!',true);const v=Math.max(60,st.hp*.35);player.hp=Math.min(st.hp,player.hp+v);floatTxt(player.x,player.y,'+'+Math.round(v),'#8ef07a');}
@@ -2574,7 +2577,7 @@ function renderSettings(B,F){const C=S.cfg,g=el('div','setw');B.appendChild(g);
   let s2=sec('물약 · 귀환');
   row(s2,'HP 물약 자동 사용','HP가 이 비율 아래로 떨어지면 마신다',[[.3,'30%'],[.4,'40%'],[.5,'50%'],[.6,'60%'],[0,'끔']],()=>S.autoPot?C.potAt:0,v=>{S.autoPot=v>0;if(v>0)C.potAt=v;});
   row(s2,'자동 진행 물약 보충','자동 진행 중 HP 물약이 '+POT_LOW.hp+'개 아래면 상점에 들러 한도까지 구입',onoff,()=>!!S.autoBuy,v=>S.autoBuy=v);
-  row(s2,'긴급 귀환','자동 사냥 중 물약이 없고 HP 40% 미만이면 귀환 주문서로 귀환',onoff,()=>!!S.autoRet,v=>S.autoRet=v);
+  row(s2,'긴급 귀환','자동 사냥 중 물약이 없고 HP 40% 미만이면 귀환 주문서로 귀환 (퀘스트 자동 진행 중엔 항상 켜짐)',onoff,()=>!!S.autoRet,v=>S.autoRet=v);
   let s3=sec('진행 · 성장 · 장비');
   row(s3,'퀘스트 자동 진행','수락 → 이동 → 사냥 → 보상을 자동으로 (T)',onoff,()=>!!S.autoQ,v=>{S.autoQ=v;});
   row(s3,'자동 성장','능력치·스킬 포인트·스킬서·슬롯을 자동으로 쓴다',onoff,()=>!!S.autoGrow,v=>{S.autoGrow=v;if(v)autoGrowNow();});
@@ -2749,7 +2752,7 @@ function update(dt){zoom+=(zoomT-zoom)*Math.min(1,dt*12);if(Math.abs(zoomT-zoom)
   if(Math.random()<dt*1.2)for(const L of LAVA)if(Math.hypot(L.x-player.x,L.y-player.y)<500)spawnP(L.x+rand(-L.rx,L.rx)*.7,L.y+rand(-L.ry,L.ry)*.6,2,{col:'#ff8a3a',vz:rand(20,50),g:-10,life:1.2,size:3,size1:0});
   if(Math.random()<dt*2){const w=M.way;if(Math.hypot(w.x-player.x,w.y-player.y)<400)spawnP(w.x+rand(-8,8),w.y,rand(6,30),{col:'#c8a8ff',vz:rand(10,24),g:0,life:1.4,size:3,size1:0});}
   if(started&&Math.floor(t*2)!==Math.floor((t-dt)*2)){emergencyReturn();autoDisCheck();}
-  if(started&&Math.floor(t/4)!==Math.floor((t-dt)/4)){save();ensureFieldBosses();growthTick();if(trainFor&&S.autoQ){const q=curQ();if(q.id!==trainFor||S.qs!=='active'||gateState(q).ok){trainFor=null;if(!modal&&!nav){hunt=null;autoNext();}}}}}
+  if(started&&Math.floor(t/4)!==Math.floor((t-dt)/4)){save();ensureFieldBosses();growthTick();huntResupply();if(trainFor&&S.autoQ){const q=curQ();if(q.id!==trainFor||S.qs!=='active'||gateState(q).ok){trainFor=null;if(!modal&&!nav){hunt=null;autoNext();}}}}}
 
 /* ================= 그리기 ================= */
 const tmpV=new T3.Vector3();let cssW=1,cssH=1,pr=1;const WSPRC={};

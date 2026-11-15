@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.23';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.24';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -902,10 +902,13 @@ function autoBuy(){const g0=S.gold,h=buyItem('hp',POT_CAP.hp);const mpBudget=Mat
   STAT.shop++;if(h||m||s)toast('물약 보충 · HP +'+h+(m?' · MP +'+m:'')+(s?' · 주문서 +'+s:'')+' (-'+fmt(g0-S.gold)+' G)',true);else toast('골드가 부족해 물약을 사지 못했다',true);save();}
 function needShop(){if(!S.autoBuy||t<shopSkipT)return false;const low=S.hpPot<POT_LOW.hp||(S.kp+Object.keys(S.sk).length>0&&S.mpPot<POT_LOW.mp);return low&&S.gold>=potPrice('hp');}
 let shopSkipT=0,retT=0;
+/* v4.24 사냥 중 보충 (MMORPG 라이크 '물약 부족 시 귀환 · 자동 구매'): 자동 진행으로 사냥하는 동안 HP 물약이 기준(6) 아래로 내려가면
+   사냥을 멈추고 마을 상점에서 보충한 뒤 하던 일로 돌아간다. 전에는 다음 단계를 고를 때만 확인해서, 긴 수련 · 컬렉션 대기 사냥에서 물약이 바닥났다. */
+function huntResupply(){if(!S.autoQ||!auto||!hunt||nav||modal||player.dead||traveling)return false;if(hunt.mob&&S.hpPot>=2)return false;/* 보스와 싸우는 중엔 물약 2개까지 버틴다 */if(!needShop())return false;STAT.resup=(STAT.resup||0)+1;hunt=null;toast('HP 물약 '+S.hpPot+'개 · 사냥을 멈추고 물약을 보충하러 간다',true);if(shopGo())return true;autoNext();return false;}
 function shopGo(){const sid=shopId();if(!sid)return false;shopSkipT=t+60;const done=()=>{autoBuy();later(.4,()=>{if(!modal&&!player.dead)autoGo();});};
   const n=npcList.find(n=>n.id===sid);if(dist(n,player)<30){done();return true;}return navTo('npc',sid,npcName(sid)+'에게 · 물약 보충',done);}
 /* 필드에서 HP 물약이 떨어지면 귀환(주문서 있으면 즉시, 없으면 걸어서) */
-function emergencyReturn(){if(!S.autoRet||player.dead||!auto||S.hpPot>0||t<retT)return;const st=pStats();if(player.hp>st.hp*.4||inR(ZONES.village.r,player.x,player.y,0))return;retT=t+40;STAT.ret++;hunt=null;
+function emergencyReturn(){if(!(S.autoRet||S.autoQ)||player.dead||!auto||S.hpPot>0||t<retT)return;const st=pStats();if(player.hp>st.hp*.4||inR(ZONES.village.r,player.x,player.y,0))return;retT=t+40;STAT.ret++;hunt=null;
   if(S.scroll>0){goTown();toast('물약 소진 · 귀환 주문서를 사용해 마을로 돌아왔다 (상점의 긴급 귀환 설정)',true);if(S.autoQ)later(.6,()=>{shopSkipT=0;autoGo();});}else{toast('물약도 주문서도 없다 · 걸어서 마을로!',true);auto=false;shopSkipT=0;shopGo();}}
 const STAT={hpUse:0,mpUse:0,buy:0,buyG:0,killG:0,rwG:0,shop:0,ret:0,deaths:0,xpLost:0};
 function usePot(k,silent){const st=pStats();if(player.dead||t<player.potT)return false;if(k==='hp'){if(!S.hpPot){if(!silent)toast('HP 물약이 없다');return false;}if(player.hp>=st.hp)return false;S.hpPot--;STAT.hpUse++;if(S.hpPot===POT_LOW.hp-1||S.hpPot===2)toast('HP 물약 '+S.hpPot+'개 남음 · 마을 상점에서 보충',true);else if(!S.hpPot)toast('HP 물약이 떨어졌다!',true);const v=Math.max(60,st.hp*.35);player.hp=Math.min(st.hp,player.hp+v);floatTxt(player.x,player.y,'+'+Math.round(v),'#8ef07a');}
@@ -1350,7 +1353,7 @@ function update(dt){zoom+=(zoomT-zoom)*Math.min(1,dt*12);if(Math.abs(zoomT-zoom)
   if(Math.random()<dt*1.2)for(const L of LAVA)if(Math.hypot(L.x-player.x,L.y-player.y)<500)spawnP(L.x+rand(-L.rx,L.rx)*.7,L.y+rand(-L.ry,L.ry)*.6,2,{col:'#ff8a3a',vz:rand(20,50),g:-10,life:1.2,size:3,size1:0});
   if(Math.random()<dt*2){const w=M.way;if(Math.hypot(w.x-player.x,w.y-player.y)<400)spawnP(w.x+rand(-8,8),w.y,rand(6,30),{col:'#c8a8ff',vz:rand(10,24),g:0,life:1.4,size:3,size1:0});}
   if(started&&Math.floor(t*2)!==Math.floor((t-dt)*2)){emergencyReturn();autoDisCheck();}
-  if(started&&Math.floor(t/4)!==Math.floor((t-dt)/4)){save();ensureFieldBosses();growthTick();if(trainFor&&S.autoQ){const q=curQ();if(q.id!==trainFor||S.qs!=='active'||gateState(q).ok){trainFor=null;if(!modal&&!nav){hunt=null;autoNext();}}}}}
+  if(started&&Math.floor(t/4)!==Math.floor((t-dt)/4)){save();ensureFieldBosses();growthTick();huntResupply();if(trainFor&&S.autoQ){const q=curQ();if(q.id!==trainFor||S.qs!=='active'||gateState(q).ok){trainFor=null;if(!modal&&!nav){hunt=null;autoNext();}}}}}
 
 /* ================= 그리기 ================= */
 const tmpV=new T3.Vector3();let cssW=1,cssH=1,pr=1;const WSPRC={};

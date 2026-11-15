@@ -118,7 +118,7 @@ const BU={
   b32b:{q:'q32',n:'홍염의 깃 반지',k:'ring',t:5,g:4,fa:12,x:{crit:.02}}};
 for(const id in BU)BU[id].id=id;
 const buOfQ=qid=>Object.values(BU).filter(b=>b.q===qid);
-const BU_FIRST_B=.35,BU_FIELD=.40,BU_INV=.10,FIELD_RESP=150;
+const BU_FIRST_B=.35,BU_FIELD=.40,BU_PITY=3,BU_INV=.10,FIELD_RESP=150;
 /* ===== 장비 인스턴스 ===== */
 function newItem(k,t,g){return{u:++S.nu,k,t:clamp(t,1,TIER_MAX),g:clamp(g,0,4),en:0,ff:0};}
 function newBU(id){const b=BU[id];return{u:++S.nu,k:b.k,t:b.t,g:b.g,en:0,ff:0,bu:id};}
@@ -163,7 +163,7 @@ function rollGrade(boss){const r=Math.random();if(!boss)return r<DROP.hi?1:0;for
 function rollSlot(){const W=DROP.slot;let s=0;for(const k in W)s+=W[k];let r=Math.random()*s;for(const k in W){r-=W[k];if(r<=0)return k;}return 'weapon';}
 /* 지역 보스 전용 장비 드롭 */
 function dropBU(m){let L=[];if(m.eliteOf){const q=QUESTS.find(x=>x.id===m.eliteOf),B=buOfQ(m.eliteOf);if(!B.length)return;
-    if(m.field){const cq=curQ(),force=S.qs==='active'&&cq.type==='fboss'&&cq.boss===m.eliteOf;if(force||Math.random()<BU_FIELD){/* 아직 컬렉션에 못 넣었고 갖고 있지 않은 쪽을 우선 */const want=B.filter(b=>!COLL.some(c=>c.req.some((r,i)=>r.bu===b.id&&!collReg(c,i)))?false:!S.items.some(x=>x.bu===b.id));L.push(want.length?want[Math.floor(Math.random()*want.length)]:B[Math.random()<.5?0:1]);}}else{L.push(B[0]);if(Math.random()<BU_FIRST_B)L.push(B[1]);}}
+    if(m.field){const cq=curQ(),force=S.qs==='active'&&cq.type==='fboss'&&cq.boss===m.eliteOf;/* v4.24 천장: 같은 필드 보스에서 연속 2번 못 얻으면 3번째는 확정 */const bm=S.buMiss||(S.buMiss={}),pity=(bm[m.eliteOf]||0)>=BU_PITY-1;if(force||pity||Math.random()<BU_FIELD){bm[m.eliteOf]=0;/* 아직 컬렉션에 못 넣었고 등록할 수 있는 사본(미장착 · 미잠금)이 없는 쪽을 우선 — v4.24: 장착 중인 사본은 '갖고 있음'으로 치지 않는다 */const want=B.filter(b=>!COLL.some(c=>c.req.some((r,i)=>r.bu===b.id&&!collReg(c,i)))?false:!S.items.some(x=>x.bu===b.id&&!isEq(x)&&!x.lock));L.push(want.length?want[Math.floor(Math.random()*want.length)]:B[Math.random()<.5?0:1]);}else bm[m.eliteOf]=(bm[m.eliteOf]||0)+1;}else{L.push(B[0]);if(Math.random()<BU_FIRST_B)L.push(B[1]);}}
   else if(m.inv){const cl=QUESTS.filter((q,i)=>i<S.qi&&q.elite&&qMap(q)===MAPID).flatMap(q=>buOfQ(q.id));if(cl.length&&Math.random()<BU_INV)L.push(cl[Math.floor(Math.random()*cl.length)]);}
   L.forEach((b,i)=>{const it=newBU(b.id);if(addItem(it,m)){floatTxt(m.x,m.y-46-i*9,'★ '+b.n,GRADES[b.g].c,true);banner('보스 전용 장비',b.n+' · 신앙 +'+b.fa,true);STAT.bu=(STAT.bu||0)+1;}});}
 function dropFrom(m){dropBU(m);const tier=tierOfLv(m.lv),n=m.boss?1:Math.random()<DROP.eq?1:0;

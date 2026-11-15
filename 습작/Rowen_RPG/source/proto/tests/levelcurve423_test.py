@@ -10,7 +10,7 @@ with sync_playwright() as p:
     print('k',r['k'],'need1',r['n'][0],'need39',r['n'][-1],'ver',r['ver'])
     assert all(r['n'][i]<r['n'][i+1] for i in range(len(r['n'])-1)), '필요 경험치가 레벨마다 늘어야 함'
     assert abs(r['k'][0]-1)<1e-9 and abs(r['k'][2]-2.7)<1e-9 and abs(r['k'][4]-2.1)<1e-9
-    assert r['ver']=='v4.23' and r['lv1']==28 and r['lv2']==37
+    assert r['ver'].startswith('v4.') and r['lv1']==28 and r['lv2']==37
     S="__g.S"
     f=pg.evaluate("(()=>{const g=__g;g.S.lv=20;return [g.xpGapF(22),g.xpGapF(20),g.xpGapF(18),g.xpGapF(15),g.xpGapF(10),g.xpGapF(1)]})()");print('gap',f)
     assert f[0]==1 and f[1]==1 and f[2]==1 and abs(f[3]-.55)<1e-9 and f[4]==.2 and f[5]==.2
