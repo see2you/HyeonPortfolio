@@ -330,6 +330,13 @@ function craftCheck(k,t,g){const R=CRAFT_EQ[g],ok=oreKey(t),dk=dsgKey(k,t),ore=R
   if(cnt(ok)<ore)why.push(STK[ok].n+' '+cnt(ok)+'/'+ore);if(!cnt(dk))why.push(STK[dk].n+' 필요');if(S.gold<gold)why.push('골드 부족');if(R.rcp&&!cnt(R.rcp))why.push(STK[R.rcp].n+' 필요');
   if(R.need){const m=craftMats(k,t,R.need.g,R.need.n);if(m.length<R.need.n)why.push('재료 장비 '+GRADES[R.need.g].n+' '+m.length+'/'+R.need.n);}
   return{ok:!why.length,why,ore,ok_:ok,dk,gold,R};}
+/* v4.33 여러 개 한 번에: 최대 = 모든 시도가 성공한다고 볼 때 재료가 되는 횟수(실패하면 재료 장비가 남아 더 할 수 있어도 보수적으로) · 최대 50 */
+const CRAFT_N_MAX=50;
+function craftMaxN(k,t,g){const c=craftCheck(k,t,g);if(!c.ok)return 0;const R=c.R;let n=Math.min(CRAFT_N_MAX,Math.floor(cnt(c.ok_)/c.ore),cnt(c.dk),c.gold>0?Math.floor(S.gold/c.gold):CRAFT_N_MAX);
+  if(R.rcp)n=Math.min(n,cnt(R.rcp));if(R.need)n=Math.min(n,Math.floor(craftMats(k,t,R.need.g,99).length/R.need.n));return Math.max(0,n);}
+/* n번 시도(재료가 떨어지면 그 자리에서 멈춤) → 요약 */
+function craftBatch(k,t,g,n){const o={tries:0,ok:0,fail:0,great:0,items:[],stop:''};for(let i=0;i<n;i++){const r=craftItem(k,t,g);if(!r){o.stop=craftCheck(k,t,g).why[0]||'';break;}o.tries++;if(r.ok){o.ok++;o.items.push(r.it);if(r.great)o.great++;}else o.fail++;}
+  o.best=o.items.slice().sort((a,b)=>cpScore(b)-cpScore(a))[0]||null;return o;}
 function craftItem(k,t,g){const c=craftCheck(k,t,g);if(!c.ok)return null;const R=c.R;setCnt(c.ok_,cnt(c.ok_)-c.ore);setCnt(c.dk,cnt(c.dk)-1);S.gold-=c.gold;if(R.rcp)setCnt(R.rcp,cnt(R.rcp)-1);STAT.craft=(STAT.craft||0)+1;
   if(Math.random()>=R.rate){save();return{ok:false};}
   if(R.need)for(const it of craftMats(k,t,R.need.g,R.need.n))S.items.splice(S.items.indexOf(it),1);

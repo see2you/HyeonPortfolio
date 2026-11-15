@@ -315,7 +315,7 @@ function openForge(id){const body=el('div','shop');
   openModal({who:id,npc:id,name:npcName(id),sub:'대장장이 · 골드 '+fmt(S.gold),text:'',body,btns:[{t:'장비 강화',pri:true,f:()=>{closeModal();openEnchant();}},{t:'장비 제작',pri:true,f:()=>{closeModal();openCraft();}},{t:'닫기',alt:true,f:closeModal}]});}
 
 /* ================= 제작 (리니지M: 일반·고급 확정 · 희귀 이상 제작 비법서 + 확률) ================= */
-let cfK='weapon',cfT=1,cfG=0;
+let cfK='weapon',cfT=1,cfG=0,cfN=1;
 const targetSlotKind=k=>k==='ring'?'ring1':k;
 function openCraft(){if(!started)return;cfT=Math.min(cfT,craftTierMax());if(!craftCan(cfK,cfT,cfG)){/* v4.19 레드닷이 있으면 그 조합(가장 좋은 등급·높은 단계)을 먼저 보여 준다 */let pick=null;for(const k of [cfK,...CRAFT_KINDS])if(!pick&&craftCanK(k))for(let t=craftTierMax();t>=1&&!pick;t--)for(let g=4;g>=0;g--)if(craftCan(k,t,g)){pick=[k,t,g];break;}if(pick)[cfK,cfT,cfG]=pick;}openWin({id:'craft',key:'u',kick:'CRAFTING',title:'제작',info:()=>[],render:renderCraft});}
 function renderCraft(B,F){const g=el('div','cfw');B.appendChild(g);const L=el('div','cfl');g.appendChild(L);
@@ -335,7 +335,16 @@ function renderCraft(B,F){const g=el('div','cfw');B.appendChild(g);const L=el('d
   if(R.need){const m=craftMats(cfK,cfT,R.need.g,R.need.n);row('재료 장비 · '+GRADES[R.need.g].n+' '+itemName({k:cfK,t:cfT,g:R.need.g,en:0}),m.length,R.need.n,m.length>=R.need.n,null,{eq:true,k:cfK,t:cfT,g:R.need.g});}
   PI.appendChild(need);
   PI.appendChild(el('p','note2','성공 '+Math.round(R.rate*100)+'%'+(R.rate<1?' · 실패하면 광물·도면·비법서·골드를 잃고 재료 장비는 남는다':'')+' · 대성공 '+Math.round(CRAFT_GREAT*100)+'%: +1~3 강화된 채로'+(R.need?' · 재료 장비는 강화 수치가 낮은 것부터 · 장착·잠금 장비는 쓰지 않는다':'')));
-  const go=btn('제작하기','pri',()=>{const r=craftItem(cfK,cfT,cfG);if(!r)return;const fx=el('div','encfx '+(r.ok?'ok':'no'));fx.append(el('b',null,r.ok?(r.great?'대성공':'제작 성공'):'제작 실패'),el('span',null,r.ok?GRADES[r.it.g].n+' '+itemName(r.it):'재료 장비는 남았다'));renderWin();$('win').querySelector('.wbox').appendChild(fx);setTimeout(()=>fx.remove(),1400);},!c.ok);
+  /* v4.33 수량: [−] ×N [+] [최대] · 재료가 되는 만큼 · 결과 요약 */
+  const mx=craftMaxN(cfK,cfT,cfG);cfN=Math.max(1,Math.min(cfN,Math.max(1,mx)));
+  const showFx=(cls,b,sp)=>{const fx=el('div','encfx '+cls);fx.append(el('b',null,b),el('span',null,sp));$('win').querySelector('.wbox').appendChild(fx);setTimeout(()=>fx.remove(),cls.includes('cfsum')?2400:1400);};
+  if(mx>1){const q=el('div','cfq');const tb=(t,f,dis)=>{const b=el('button','tgb',t);b.type='button';b.disabled=dis;b.onclick=f;return b;};
+    q.append(el('span','tgl','수량'),tb('−',()=>{cfN=Math.max(1,cfN-1);renderWin();},cfN<=1),el('b','tgv','×'+cfN),tb('+',()=>{cfN=Math.min(mx,cfN+1);renderWin();},cfN>=mx),tb('최대',()=>{cfN=mx;renderWin();},cfN>=mx),el('span','cfmax','재료로 최대 '+mx+'회'));ACT.appendChild(q);}
+  const go=btn(cfN>1?'제작하기 ×'+cfN:'제작하기','pri',()=>{
+    if(cfN<=1){const r=craftItem(cfK,cfT,cfG);if(!r)return;renderWin();showFx(r.ok?'ok':'no',r.ok?(r.great?'대성공':'제작 성공'):'제작 실패',r.ok?GRADES[r.it.g].n+' '+itemName(r.it):'재료 장비는 남았다');return;}
+    const o=craftBatch(cfK,cfT,cfG,cfN);if(!o.tries)return;cfN=1;renderWin();
+    const sp=o.tries+'회 · 성공 '+o.ok+(o.fail?' · 실패 '+o.fail:'')+(o.great?' · 대성공 '+o.great:'')+(o.best?' · 가장 좋은 것 '+GRADES[o.best.g].n+' '+itemName(o.best):'')+(o.stop?' · 재료가 떨어져 멈춤':'');
+    showFx('cfsum '+(o.ok?'ok':'no'),'제작 ×'+o.tries,sp);toast('제작 ×'+o.tries+' — 성공 '+o.ok+(o.fail?' · 실패 '+o.fail:'')+(o.great?' · 대성공 '+o.great:''),o.ok>0);},!c.ok);
   go.classList.add('cfgo');ACT.appendChild(go);
   if(!c.ok)ACT.appendChild(el('small','why',c.why.join(' · ')));
   F.append(el('p','note2','빨간 점 = 지금 재료로 만들 수 있고 착용 중인 장비보다 좋은 부위 · 단계 · 등급 · 제작 = 그 지역 광물 + 그 지역 장비 도면(무기·방어구·장신구) + 골드 · 희귀 이상은 제작 비법서(지역 보스)가 더 필요한 확률 제작 · 광물·도면은 그 지역 사냥 · 퀘스트 · 토벌 의뢰 · 지역 보스로 · 착용 레벨 없음'));}
