@@ -23,7 +23,7 @@ with sync_playwright() as p:
         r=pg.evaluate("""(()=>{const ct=document.querySelector('.icat'),bs=[...ct.querySelectorAll('button')],rs=bs.map(x=>x.getBoundingClientRect());
           return {n:bs.length,txt:bs.map(x=>x.textContent),rows:new Set(rs.map(r=>Math.round(r.top))).size,right:Math.max(...rs.map(r=>r.right)),inv:document.querySelector('.inv').getBoundingClientRect().right,ov:ct.scrollWidth-ct.clientWidth,clip:bs.some(x=>x.scrollWidth>x.clientWidth+1)}})()""")
         print(vw,vh,r)
-        assert r['n']==6 and r['txt'][4].startswith('정렬 · 기본') and r['txt'][5].startswith('보기 · 전체'), r
+        assert r['n']>=6 and r['txt'][4].startswith('정렬 · 기본') and r['txt'][5].startswith('보기 · 전체'), r
         assert r['rows']==1 and r['ov']<=0 and not r['clip'] and r['right']<=r['inv']+1, '정렬 · 보기 버튼이 한 줄에 들어가지 않음'
         assert pg.evaluate(AUDIT+"('#win')")==[], '스크롤해야 보이는 버튼'
         # 정렬: 등급

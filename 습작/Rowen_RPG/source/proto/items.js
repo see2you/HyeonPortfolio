@@ -168,7 +168,7 @@ const bagUsed=()=>S.items.length+STK_ORDER.filter(k=>cnt(k)>0).length;
 function addItem(it,from){const src=from?acqSrc||acqSrcOf(from):null,lg=src&&(it.g>=1||it.bu),rec=miss=>acqLog({cat:'eq',n:itemName(it),g:it.g,bu:it.bu?1:0,u:miss?0:it.u,miss:miss?1:0,src,z:acqZone||acqZoneOf(from)});
   if(bagUsed()>=BAG_SLOTS){toastThr('가방이 가득 찼다 · 분해하거나 정리하자 (I)');if(lg)rec(1);return false;}
   if(weightNow()+itemW(it)>weightMax()){toastThr('무게 초과 · '+itemName(it)+'을(를) 들 수 없다');if(lg)rec(1);return false;}
-  it.nw=1;S.items.push(it);if(lg)rec(0);STAT.drops=(STAT.drops||0)+1;lastQKey='';
+  it.nw=1;S.items.push(it);if(lg)rec(0);autoLockNew(it);STAT.drops=(STAT.drops||0)+1;lastQKey='';
   if(S.cfg.autoEq&&!isEq(it)){const s=targetSlot(it),cur=S.eq[s]&&itemById(S.eq[s]);if(!cur||cpWith(s,it.u)>cpOf()+1){equipItem(it.u,true);toast('자동 장착 · '+GRADES[it.g].n+' '+itemName(it),true);}}
   return true;}
 let toastT=0;function toastThr(m){if(t<toastT)return;toastT=t+4;toast(m);}
@@ -196,6 +196,13 @@ function disassemble(us,silent){let n=0,st=0;for(const u of us){const i=S.items.
 function autoDisCheck(){const g=S.cfg.autoDis;if(g==null||g<0)return;if(wPct()<.45&&bagUsed()<BAG_SLOTS*.9)return;
   const us=S.items.filter(it=>it.g<=g&&!it.bu&&!isEq(it)&&!it.lock&&!betterThanEq(it)&&!collNeeds(it)).map(it=>it.u);if(!us.length)return;const r=disassemble(us,true);
   if(r.n)toast('자동 분해 · '+GRADES[g].n+(g?'까지 ':' ')+r.n+'개 → 강화석 +'+r.st+' (설정에서 변경)',true);}
+/* v4.32 자동 잠금: 설정 등급 이상을 얻으면 바로 잠근다 — 아직 컬렉션에 등록할 수 있는 장비는 등록을 막지 않도록 잠그지 않는다 */
+function autoLockOk(it){const g=S.cfg&&S.cfg.autoLock;return g!=null&&g>=0&&it.g>=g&&!it.lock&&!collNeeds(it);}
+function autoLockNew(it){if(!autoLockOk(it))return false;it.lock=1;toast('자동 잠금 🔒 '+GRADES[it.g].n+' '+itemName(it)+' (설정에서 변경)',true);return true;}
+/* v4.32 일괄 잠금 대상 */
+const LOCK_SETS=[['eq','장착 중인 장비',it=>isEq(it)],['hi','영웅 이상 (가방)',it=>!isEq(it)&&it.g>=3],['en','강화한 장비 +1 이상 (가방)',it=>!isEq(it)&&it.en>=1],['bu','보스 전용 ★ (가방)',it=>!isEq(it)&&!!it.bu]];
+function lockSet(id,on){const L=LOCK_SETS.find(x=>x[0]===id);if(!L)return 0;let n=0;for(const it of S.items)if(L[2](it)&&!it.lock===!!on){it.lock=on?1:0;n++;}if(n)save();return n;}
+function unlockAll(){let n=0;for(const it of S.items)if(it.lock){it.lock=0;n++;}if(n)save();return n;}
 function betterThanEq(it){const s=targetSlot(it),cur=S.eq[s]&&itemById(S.eq[s]);return !cur||cpScore(it)>cpScore(cur);}
 /* 강화 */
 
@@ -243,7 +250,7 @@ function itemIcon(it){if(it.k==='weapon')return weaponIcon(it.bu&&BU[it.bu].g>=4
 function stkIcon(k){const d=STK[k],a=d.col;return paintIcon(d.ic,{a,b:shade(a,1.45),c:shade(a,.62),w:'#d8c8a0',p:'#efe2c0',g:a});}
 
 /* ===== 세이브 이전 (v4.7 → v4.8) ===== */
-const CFG0={scan:'mid',tgt:'quest',order:'slot',counter:true,potAt:.4,autoDis:-1,autoEq:false};
+const CFG0={scan:'mid',tgt:'quest',order:'slot',counter:true,potAt:.4,autoDis:-1,autoEq:false,autoLock:-1};
 function migrate48(S,fresh){if(typeof migrateQi==='function')migrateQi(S);S.cfg=Object.assign({},CFG0,S.cfg||{});if(S.cfg.potAt==null)S.cfg.potAt=.4;
   if(!S.items){S.items=[];S.eq={};S.bag={};S.nu=S.nu||0;
     /* 기존 세이브: 무기·갑옷 강화 단계를 그대로 옮기고, 몬스터 상향에 맞춰 현재 레벨 티어의 일반 장비 6부위를 지급 */

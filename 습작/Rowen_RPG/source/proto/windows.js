@@ -38,10 +38,10 @@ function openBag(mode){if(!started||player.dead)return;if(win&&win.id==='bag'){r
    정렬: 장비 칸에만 적용 · 장착 중은 항상 맨 앞 · 같은 값이면 기본 순서(부위 → 단계 → 등급 → 강화)
    필터: NEW(지금보다 좋음 또는 새로 얻음) · 컬렉션 가능(등록할 수 있는 사본) · 분해 대상(일괄 분해 기준과 같음, 등급 무관) — 필터가 켜지면 장비만 보인다 */
 const BAG_SORT=[['def','기본'],['grade','등급'],['slot','부위'],['tier','단계'],['en','강화']];
-const BAG_FLT=[['all','전체 보기'],['new','NEW만'],['coll','컬렉션 가능만'],['dis','분해 대상만']];
+const BAG_FLT=[['all','전체 보기'],['new','NEW만'],['coll','컬렉션 가능만'],['dis','분해 대상만'],['lock','잠금만']];
 function bagUi(){if(!S.bagUi||typeof S.bagUi!=='object')S.bagUi={};const u=S.bagUi;if(!BAG_SORT.some(x=>x[0]===u.sort))u.sort='def';if(!BAG_FLT.some(x=>x[0]===u.flt))u.flt='all';if(!BAG_CAT.some(x=>x[0]===u.cat))u.cat='all';return u;}
 function disTarget(it){return !isEq(it)&&!it.lock&&!betterThanEq(it)&&!collNeeds(it);}
-function bagFltOk(it,f){if(f==='new')return !isEq(it)&&(betterThanEq(it)||!!it.nw);if(f==='coll')return !isEq(it)&&!it.lock&&!!collNeeds(it);if(f==='dis')return disTarget(it);return true;}
+function bagFltOk(it,f){if(f==='new')return !isEq(it)&&(betterThanEq(it)||!!it.nw);if(f==='coll')return !isEq(it)&&!it.lock&&!!collNeeds(it);if(f==='dis')return disTarget(it);if(f==='lock')return !!it.lock;return true;}
 function bagSortItems(arr,sort){const ord=k=>['weapon','helm','armor','cloak','gloves','boots','neck','ring'].indexOf(k);
   const base=(a,b)=>ord(a.k)-ord(b.k)||b.t-a.t||b.g-a.g||b.en-a.en||a.u-b.u;
   const key={grade:(a,b)=>b.g-a.g,slot:(a,b)=>ord(a.k)-ord(b.k),tier:(a,b)=>b.t-a.t,en:(a,b)=>b.en-a.en}[sort]||(()=>0);
@@ -81,7 +81,9 @@ function renderBag(B,F){const o=win,enc=o.enc;
     const fc=S.items.filter(it=>u.flt!=='all'&&bagFltOk(it,u.flt)).length;
     const fb=el('button','ict iflt'+(u.flt!=='all'?' set':''),(u.flt==='all'?'보기 · 전체':BAG_FLT.find(x=>x[0]===u.flt)[1]+' '+fc)+' ▾');fb.type='button';fb.title='장비만 골라 보기';
     fb.onclick=()=>showTip(fb,tp=>{tp.append(el('b','tn','보기 필터'),el('p',null,'필터를 켜면 장비만 보인다 · 분해 대상 = 일괄 분해 기준(장착 · 잠금 · 지금보다 좋음 · 컬렉션 가능 제외)'));const a=el('div','tbtn col');for(const [id,n] of BAG_FLT){const c=id==='all'?'':' · '+S.items.filter(it=>bagFltOk(it,id)).length;a.appendChild(btn((u.flt===id?'✓ ':'')+n+c,u.flt===id?'pri':'',()=>{u.flt=id;if(id!=='all')bagCat=u.cat='all';hideTip();renderWin();}));}tp.appendChild(a);});
-    ct.append(sb,fb);inv.appendChild(ct);}
+    /* v4.32 일괄 잠금 · 자동 잠금 (🔒 N ▾) */
+    const ln=S.items.filter(it=>it.lock).length,lb=el('button','ict lkb'+((S.cfg.autoLock??-1)>=0?' set':''),'🔒 '+ln+' ▾');lb.type='button';lb.title='일괄 잠금 · 자동 잠금 — 잠근 장비는 분해 · 자동 분해 · 제작 재료 · 컬렉션 등록에서 빠진다';lb.onclick=()=>bulkLockTip(lb);
+    ct.append(sb,fb,lb);inv.appendChild(ct);}
   const grid=el('div','grid'),ents=bagEntries().filter(e=>enc?e.it:bagCat==='all'||e.cat===bagCat);let n=0;
   if(!enc&&!ents.length&&bagUi().flt!=='all')grid.appendChild(el('div','iempty','조건에 맞는 장비가 없다 · 보기 → 전체 보기'));
   for(const e of ents){const b=el('button','cell');b.type='button';n++;
@@ -124,6 +126,15 @@ function stkTip(tp,k){const d=STK[k];tp.append(el('b','tn',d.n),el('div','tt',(d
   else if(k.startsWith('rcp')||k.startsWith('ore')||/^d[wac][123]$/.test(k))a.appendChild(btn('제작 창으로','pri',()=>{hideTip();openCraft();}));
   else if(d.book)a.appendChild(btn(S.books[d.book]?'이미 익힘':'사용','pri',()=>{useBook(k);hideTip();renderWin();},!!S.books[d.book]));
   if(a.children.length)tp.appendChild(a);}
+/* v4.32 일괄 잠금 — 장착 · 등급 · 강화 · 보스 전용을 한 번에 잠그거나 풀고, 자동 잠금 등급을 고른다 */
+function bulkLockTip(anchor){showTip(anchor,tp=>{const ln=S.items.filter(it=>it.lock).length;tp.append(el('b','tn','일괄 잠금 · 지금 '+ln+'개 잠김'),el('p',null,'잠근 장비는 분해 · 일괄 분해 · 자동 분해 · 제작 재료 · 컬렉션 등록에 쓰이지 않는다. 장착 장비를 잠가 두면 새 장비로 바꾼 뒤에도 지켜진다.'));
+  const a=el('div','tbtn col');
+  for(const [id,n,f] of LOCK_SETS){const k=S.items.filter(it=>f(it)&&!it.lock).length,all=S.items.filter(f).length;a.appendChild(btn(n+' 잠금 · '+(k?k+'개':all?'모두 잠김':'없음'),id==='eq'?'pri':'',()=>{const c=lockSet(id,true);toast('잠금 🔒 '+c+'개 · '+n,true);hideTip();renderWin();},!k));}
+  let armed=false;const ub=btn('잠금 모두 해제 · '+ln+'개','alt',()=>{if(!armed){armed=true;ub.textContent='한 번 더 눌러 '+ln+'개 해제';return;}const c=unlockAll();toast('잠금 해제 '+c+'개');hideTip();renderWin();},!ln);a.appendChild(ub);
+  tp.appendChild(a);
+  const g=S.cfg.autoLock??-1,r=el('div','tbtn');r.appendChild(el('span','tlk','자동 잠금'));for(const [v,n] of AUTOLOCK_OPT){r.appendChild(btn((g===v?'✓ ':'')+n.replace(' 이상','+'),g===v?'pri':'',()=>{S.cfg.autoLock=v;save();hideTip();bulkLockTip(anchor);}));}tp.appendChild(r);
+  tp.appendChild(el('p','tlkn','자동 잠금(+ = 그 등급 이상): 얻으면 바로 잠근다 · 아직 컬렉션에 등록할 수 있는 장비는 잠그지 않는다'));});}
+const AUTOLOCK_OPT=[[-1,'끔'],[2,'희귀 이상'],[3,'영웅 이상'],[4,'전설']];
 function bulkDisTip(anchor){showTip(anchor,tp=>{tp.append(el('b','tn','일괄 분해'),el('p',null,'장착 중 · 잠금 · 지금 장비보다 좋은 것 · 컬렉션에 등록할 수 있는 장비는 분해하지 않는다.'));const a=el('div','tbtn col');
   for(let g=0;g<=2;g++){const us=S.items.filter(it=>it.g<=g&&disTarget(it)).map(it=>it.u),y=us.reduce((n,u)=>n+disYield(itemById(u)),0);
     a.appendChild(btn(GRADES[g].n+(g?'까지':'')+' · '+us.length+'개 → 강화석 +'+y,g?'':'pri',()=>{disassemble(us);hideTip();renderWin();},!us.length));}
@@ -279,7 +290,7 @@ function renderSettings(B,F){const C=S.cfg,g=el('div','setw');B.appendChild(g);
   row(s3,'퀘스트 자동 진행','수락 → 이동 → 사냥 → 보상을 자동으로 (T)',onoff,()=>!!S.autoQ,v=>{S.autoQ=v;});
   row(s3,'자동 성장','능력치·스킬 포인트·스킬서·슬롯을 자동으로 쓴다',onoff,()=>!!S.autoGrow,v=>{S.autoGrow=v;if(v)autoGrowNow();});
   row(s3,'더 좋은 장비 자동 장착','얻은 장비가 지금보다 전투력이 높으면 바로 장착',onoff,()=>!!C.autoEq,v=>{C.autoEq=v;if(v)autoEquipAll();});
-  row(s3,'자동 분해','무게 45% 또는 가방 90%가 넘으면 이 등급 이하를 분해 (장착·잠금·더 좋은 장비 제외)',[[-1,'끔'],[0,'일반'],[1,'고급까지'],[2,'희귀까지']],()=>C.autoDis??-1,v=>C.autoDis=v);
+  row(s3,'자동 분해','무게 45% 또는 가방 90%가 넘으면 이 등급 이하를 분해 (장착·잠금·더 좋은 장비 제외 · 자동 잠금은 가방 🔒 ▾)',[[-1,'끔'],[0,'일반'],[1,'고급까지'],[2,'희귀까지']],()=>C.autoDis??-1,v=>C.autoDis=v);
   let s4=sec('화면 · 데이터');
   row(s4,'도트 양감','캐릭터·몬스터 도트에 형태 명암·반사광·선택적 외곽선',onoff,()=>VOL_ON,v=>{setVolume(v);C.vol=v;portrait('hero',$('face'),true);});
   row(s4,'양감 세기','약하게 하면 원래 도트에 가까워진다',Object.entries(VOL_LV).map(([n,k])=>[k,n]),()=>VOL_K,v=>{setVolume(true,v);C.volK=v;C.vol=true;portrait('hero',$('face'),true);});
