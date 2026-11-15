@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.25';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.26';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2462,8 +2462,9 @@ function encRow(it){const b=el('button','enr'+(encSel===it.u?' on':''));b.type='
 function renderEnc(B,F){const g=el('div','enw');B.appendChild(g);const L=el('div','enl');g.appendChild(L);
   L.appendChild(el('h4',null,'장착 중'));for(const s of SLOTS){const it=S.eq[s]&&itemById(S.eq[s]);if(it)L.appendChild(encRow(it));}
   const rest=S.items.filter(it=>!isEq(it)&&canEnchIt(it)).sort((a,b)=>b.g-a.g||b.t-a.t||b.en-a.en);if(rest.length){L.appendChild(el('h4',null,'가방'));for(const it of rest)L.appendChild(encRow(it));}
-  const P=el('div','enp');g.appendChild(P);const it=encSel&&itemById(encSel);
-  if(!it){P.appendChild(el('p','note2','강화할 장비가 없다 · 장비는 사냥 · 제작으로'));return;}
+  /* v4.26 오른쪽 = 위 정보(스크롤) + 아래 동작 줄(고정) — 버튼은 스크롤 없이 한 줄로 (원칙 8) */
+  const PW=el('div','enp');g.appendChild(PW);const P=el('div','enpi');const A=el('div','enact');PW.append(P,A);const it=encSel&&itemById(encSel);
+  if(!it){P.appendChild(el('p','note2','강화할 장비가 없다 · 장비는 사냥 · 제작으로'));A.remove();return;}
   const G=GRADES[it.g],hd=el('div','enh'),ic=el('div','enbig');ic.style.setProperty('--gc',G.c);ic.appendChild(icv(itemIcon(it)));const nm=el('div');const t1=el('b',null,itemName(it));t1.style.color=G.c;
   const nx=Object.assign({},it,{en:Math.min(ENH.max,it.en+1)});nm.append(t1,el('small',null,G.n+' · '+SLOTN[it.k]+' · '+(isEq(it)?'장착 중':'가방')),el('div','enlv',it.en>=ENH.max?'최대 강화 +'+ENH.max:'+'+it.en+'  →  +'+nx.en));hd.append(ic,nm);P.appendChild(hd);
   if(it.en<ENH.max)P.appendChild(statLines(nx,it));
@@ -2471,11 +2472,11 @@ function renderEnc(B,F){const g=el('div','enw');B.appendChild(g);const L=el('div
   const rb=el('div','enrate'+(safe||bl?' safe':''));rb.append(el('span',null,'성공 확률'),el('b',null,bl&&safe?'100% · +1~'+(it.en<=2?3:2):Math.round(rate*100)+'%'),el('small',null,safe?'안전 강화 (+'+enchSafe(it.k)+'까지 실패 없음)':'실패해도 파괴·하락 없음'+(it.ff?' · 연속 실패 '+it.ff+'회 (3회마다 +5%p)':'')));P.appendChild(rb);
   const c=enchCost(it),need=el('div','cfn');const row=(ico,label,have,req)=>{const d=el('div','cfm'+(have>=req?'':' no'));const l=el('span');if(ico)l.appendChild(icv(stkIcon(ico),'sic'));l.append(label);d.append(l,el('b',null,fmt(have)+' / '+fmt(req)));need.appendChild(d);};
   if(bl)row('bls',STK.bls.n,cnt('bls'),1);else row('stone','강화석',S.stone,c.stone);row(null,'골드',S.gold,c.gold);P.appendChild(need);
-  if(cnt('bls')){const tg=el('label','enbl');const cb=document.createElement('input');cb.type='checkbox';cb.checked=encBless;cb.onchange=()=>{encBless=cb.checked;renderWin();};tg.append(cb,' 축복받은 강화 주문서 사용 ('+cnt('bls')+'장) — 안전 구간에서 +1~3');P.appendChild(tg);}
-  const ck=enchCheck(it,bl);
-  const go=btn(it.en>=ENH.max?'최대 강화':'강화','pri',()=>doEnc(it,bl),!ck.ok);go.classList.add('cfgo');P.appendChild(go);
-  if(it.en<enchSafe(it.k)&&!bl){const go2=btn('안전 강화까지 (+'+enchSafe(it.k)+')','',()=>{let n=0;const nm0=itemName(it);while(it.en<enchSafe(it.k)&&enchCheck(it).ok&&n<20){enchant(it.u,false);n++;}renderWin();encFx(true,n+'회 강화',nm0+' → '+itemName(it));},!ck.ok);go2.classList.add('cfgo','alt2');P.appendChild(go2);}
-  if(!ck.ok&&it.en<ENH.max)P.appendChild(el('small','why',ck.why+(ck.why.startsWith('강화석')?' · 분해 · 몬스터 · 대장장이 상점':'')));
+  if(cnt('bls')){const tg=el('label','enbl');const cb=document.createElement('input');cb.type='checkbox';cb.checked=encBless;cb.onchange=()=>{encBless=cb.checked;renderWin();};tg.append(cb,' 축복받은 강화 주문서 사용 ('+cnt('bls')+'장) — 안전 구간에서 +1~3');A.appendChild(tg);}
+  const ck=enchCheck(it,bl);const row2=el('div','enbtns');A.appendChild(row2);
+  const go=btn(it.en>=ENH.max?'최대 강화':'강화','pri',()=>doEnc(it,bl),!ck.ok);go.classList.add('cfgo');row2.appendChild(go);
+  if(it.en<enchSafe(it.k)&&!bl){const go2=btn('안전 강화까지 (+'+enchSafe(it.k)+')','',()=>{let n=0;const nm0=itemName(it);while(it.en<enchSafe(it.k)&&enchCheck(it).ok&&n<20){enchant(it.u,false);n++;}renderWin();encFx(true,n+'회 강화',nm0+' → '+itemName(it));},!ck.ok);go2.classList.add('cfgo','alt2');row2.appendChild(go2);}
+  if(!ck.ok&&it.en<ENH.max)A.appendChild(el('small','why',ck.why+(ck.why.startsWith('강화석')?' · 분해 · 몬스터 · 대장장이 상점':'')));
   F.append(el('p','note2','무기·방어구 +'+ENH.safe.weapon+' · 장신구 +'+ENH.safe.acc+'까지 안전 강화 · 그 위는 확률(실패해도 파괴·하락 없음) · 강화석은 장비 분해 · 몬스터 · 퀘스트 · 대장장이 상점 · 강화 1단계마다 신앙 +1'));}
 function encFx(ok,a,b2){const fx=el('div','encfx '+(ok?'ok':'no'));fx.append(el('b',null,a),el('span',null,b2));$('win').querySelector('.wbox').appendChild(fx);setTimeout(()=>fx.remove(),1400);}
 function doEnc(it,bl){const nm0=itemName(it),r=enchant(it.u,bl);if(!r||r.max)return;if(!cnt('bls'))encBless=false;renderWin();
