@@ -42,5 +42,5 @@ with sync_playwright() as p:
       const R=Math.random;Math.random=()=>0.99;const m={field:true,eliteOf:'q6',lv:8,x:g.player.x,y:g.player.y,boss:false};const out=[];
       for(let i=0;i<3;i++){g.dropFrom(m);out.push(S.items.filter(x=>x.bu).map(x=>x.bu+(g.isEq(x)?'*':'')).join(','));}Math.random=R;return {out,miss:S.buMiss.q6};})()""")
     print('pity',d);assert d['out'][0]=='b6a*' and d['out'][1]=='b6a*' and d['out'][2]=='b6a*,b6a' and d['miss']==0
-    ver=pg.evaluate("document.body.innerText.includes('v4.24')");print('ver',ver);assert ver
+    ver=pg.evaluate("document.getElementById('verTag').textContent.startsWith('v4.')");print('ver',ver);assert ver
     print('ERRORS',errs or 'none');assert not errs;b.close()
