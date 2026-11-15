@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.28';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.29';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2282,7 +2282,7 @@ addEventListener('keydown',e=>{const k=keyOf(e);if(!started||traveling)return;
   if(k==='escape'&&!$('keys').hidden){toggleKeys(false);return;}
   if(k==='escape'&&!$('menuPop').hidden){toggleMenu(false);return;}
   if(k==='escape'&&!$('npcPop').hidden){toggleNpcList(false);return;}
-  if(win){if(k==='escape'||(k===win.key)){e.preventDefault();closeWin();}else if(k==='i'||k==='c'||k==='k'){e.preventDefault();({i:openBag,c:openStats,k:openSkills})[k]();}return;}
+  if(win){if(k==='escape'||(k===win.key)){e.preventDefault();closeWin();}else{/* v4.29 창이 열려 있어도 다른 창 단축키로 바로 바꾼다 (닫고 다시 열 필요 없음) */const W={i:openBag,c:openStats,k:openSkills,j:openEnchant,u:openCraft,o:openColl,p:()=>{closeWin();openGods();}}[k];if(W&&k.length===1){e.preventDefault();W();}}return;}
   if(modal){if(k==='escape'&&!player.dead)closeModal();return;}
   if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys.add(k);
   if(k===' '){const m=alive(target)?target:nearestMob(90);if(m){target=m;if(!basicAttack(m)){chase=m;}}}
@@ -2346,7 +2346,7 @@ document.addEventListener('pointerdown',e=>{if(!$('menuPop').hidden&&!e.target.c
    - 가방 · 능력치 · 스킬은 같은 창의 탭으로 오간다
    ===================================================================== */
 let win=null;
-const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션',''],['stats','능력치','C'],['skills','스킬','K']];
+const WTABS=[['bag','가방','I'],['enc','강화','J'],['craft','제작','U'],['coll','컬렉션','O'],['stats','능력치','C'],['skills','스킬','K']];
 function openWin(o){stopHold();if(win&&win.id==='bag'&&o.id!=='bag')for(const it of S.items)delete it.nw;if(modal&&!player.dead)closeModal();hideTip();document.querySelectorAll('.encfx').forEach(e=>e.remove());win=o;$('win').hidden=false;$('win').dataset.id=o.id;renderWin();}
 function closeWin(){stopHold();if(!win)return;if(win.id==='bag')for(const it of S.items)delete it.nw;win=null;$('win').hidden=true;hideTip();stage.focus({preventScroll:true});lastQKey='';}
 function renderWin(){const o=win;if(!o)return;$('wKick').textContent=o.kick||'';$('wTitle').textContent=o.title;const inf=$('wInfo');inf.replaceChildren(...(o.info?o.info():[]));
@@ -2451,7 +2451,7 @@ function bulkDisTip(anchor){showTip(anchor,tp=>{tp.append(el('b','tn','일괄 �
   tp.appendChild(a);});}
 /* ================= 강화 (J) — 제우스: 오만의 신 방식 =================
    왼쪽: 장착 중 → 가방 장비 목록 · 오른쪽: 선택 장비의 +N → +N+1 능력치 변화 · 성공 확률(안전 강화 표시) · 재료(강화석 · 골드) · 축복 주문서 사용
-   [강화] 한 번 · [안전 강화까지] 안전 단계까지 연속. 싱글 완화: 실패해도 파괴·하락 없음 */
+   [강화] 한 번 · [안전 강화까지] 안전 단계까지 연속 · v4.29 [목표 +N까지 연속 강화](평균 비용 미리 보기). 싱글 완화: 실패해도 파괴·하락 없음 */
 let encSel=null,encBless=false;
 function openEnchant(u){if(!started||player.dead)return;if(u)encSel=u;if(!encSel||!itemById(encSel))encSel=S.eq.weapon||S.items.filter(canEnchIt)[0]?.u||null;
   openWin({id:'enc',key:'j',kick:'ENHANCE',title:'강화',info:()=>[],render:renderEnc});}
@@ -2476,8 +2476,23 @@ function renderEnc(B,F){const g=el('div','enw');B.appendChild(g);const L=el('div
   const ck=enchCheck(it,bl);const row2=el('div','enbtns');A.appendChild(row2);
   const go=btn(it.en>=ENH.max?'최대 강화':'강화','pri',()=>doEnc(it,bl),!ck.ok);go.classList.add('cfgo');row2.appendChild(go);
   if(it.en<enchSafe(it.k)&&!bl){const go2=btn('안전 강화까지 (+'+enchSafe(it.k)+')','',()=>{let n=0;const nm0=itemName(it);while(it.en<enchSafe(it.k)&&enchCheck(it).ok&&n<20){enchant(it.u,false);n++;}renderWin();encFx(true,n+'회 강화',nm0+' → '+itemName(it));},!ck.ok);go2.classList.add('cfgo','alt2');row2.appendChild(go2);}
+  /* v4.29 목표 단계까지 연속 강화 — 목표 +N을 고르고 평균 비용을 미리 본 뒤 한 번에 (실패해도 파괴·하락 없음이라 '실패 시 멈춤'은 두지 않는다) */
+  if(it.en<ENH.max&&!bl){const t=encTgtOf(it),ex=encExpect(it,t),tr=el('div','entg');
+    const st=(d,lab)=>{const b=el('button','tgb',lab);b.type='button';b.disabled=d<0?t<=it.en+1:t>=ENH.max;b.onclick=()=>{encTgt[it.u]=t+d;renderWin();};return b;};
+    tr.append(el('span','tgl','목표'),st(-1,'−'),el('b','tgv','+'+t),st(1,'+'));
+    const go3=btn('+'+t+'까지 연속 강화','',()=>encToTarget(it,t),!ck.ok);go3.classList.add('cfgo','alt2');tr.appendChild(go3);A.appendChild(tr);
+    const ok=S.stone>=ex.stone&&S.gold>=ex.gold,xs=el('small','enexp'+(ok?'':' short'),'평균 '+ex.tries.toFixed(1)+'회 · 강화석 ~'+fmt(Math.ceil(ex.stone))+' (보유 '+fmt(S.stone)+') · 골드 ~'+fmt(Math.ceil(ex.gold))+(ok?'':' · 모자라면 거기서 멈춤'));A.appendChild(xs);}
   if(!ck.ok&&it.en<ENH.max)A.appendChild(el('small','why',ck.why+(ck.why.startsWith('강화석')?' · 분해 · 몬스터 · 대장장이 상점':'')));
   F.append(el('p','note2','무기·방어구 +'+ENH.safe.weapon+' · 장신구 +'+ENH.safe.acc+'까지 안전 강화 · 그 위는 확률(실패해도 파괴·하락 없음) · 강화석은 장비 분해 · 몬스터 · 퀘스트 · 대장장이 상점 · 강화 1단계마다 신앙 +1'));}
+/* v4.29 목표 강화: 기본 목표 = 안전 단계 아래면 안전 단계, 위면 +1 · 평균 시도 수는 연속 실패 보정(3회마다 +5%p)까지 정확히 계산 */
+const encTgt={};
+function encTgtOf(it){const lo=it.en+1,d=it.en<enchSafe(it.k)?enchSafe(it.k):lo;let t=encTgt[it.u]??d;t=Math.max(lo,Math.min(ENH.max,t));encTgt[it.u]=t;return t;}
+function encExpect(it,tgt){let tries=0,stone=0,gold=0;for(let n=it.en;n<Math.min(tgt,ENH.max);n++){let surv=1,ff=n===it.en?(it.ff||0):0,e=0;
+    for(let k=0;k<400&&surv>1e-7;k++){e+=surv;surv*=1-enchRate({k:it.k,en:n,ff});ff++;}
+    const c=enchCost({k:it.k,en:n,t:it.t,bu:it.bu});tries+=e;stone+=e*c.stone;gold+=e*c.gold;}return{tries,stone,gold};}
+function encToTarget(it,tgt){const nm0=itemName(it),e0=it.en,s0=S.stone,g0=S.gold;let n=0,f=0;while(it.en<tgt&&enchCheck(it).ok&&n<300){const r=enchant(it.u,false);if(!r)break;n++;if(!r.ok)f++;}
+  STAT.encTgt=(STAT.encTgt||0)+1;renderWin();const hit=it.en>=tgt,why=hit?'':' · '+(enchCheck(it).why||'멈춤');
+  encFx(hit,hit?'+'+tgt+' 달성':'+'+it.en+'에서 멈춤',n+'회 시도 (실패 '+f+') · 강화석 -'+fmt(s0-S.stone)+' · 골드 -'+fmt(g0-S.gold)+why);if(it.en>e0)burst(player.x,player.y,14,'#ffb050',24,90,4);return{n,f,from:e0,to:it.en,hit};}
 function encFx(ok,a,b2){const fx=el('div','encfx '+(ok?'ok':'no'));fx.append(el('b',null,a),el('span',null,b2));$('win').querySelector('.wbox').appendChild(fx);setTimeout(()=>fx.remove(),1400);}
 function doEnc(it,bl){const nm0=itemName(it),r=enchant(it.u,bl);if(!r||r.max)return;if(!cnt('bls'))encBless=false;renderWin();
   encFx(r.ok,r.ok?(r.up>1?'+'+r.up+' 강화 성공':'강화 성공'):'강화 실패',r.ok?nm0+' → '+itemName(it):itemName(it)+' · 단계 유지'+(it.ff%3===0?' · 다음 확률 +5%p':' · 연속 실패 '+it.ff+'회'));if(r.ok)burst(player.x,player.y,14,'#ffb050',24,90,4);}
@@ -2654,7 +2669,7 @@ function acqTip(tp,key){const sec=(t,lines)=>{if(!lines.length)return;tp.appendC
   else{tp.appendChild(el('p',null,d.desc?d.desc():''));}}
 /* ================= 컬렉션 (리니지M 아이템 컬렉션) ================= */
 let colCat=-1;
-function openColl(){if(!started)return;openWin({id:'coll',key:null,kick:'ITEM COLLECTION',title:'컬렉션',info:()=>{const n=COLL.filter(collDone).length,cb=collSum();return [el('span','wchip','완성 '+n+' / '+COLL.length),el('span','wchip',Object.keys(cb).length?Object.entries(cb).map(([k,v])=>STATN[k]+' '+statFmt(k,v)).join(' · '):'효과 없음')];},render:renderColl});}
+function openColl(){if(!started)return;openWin({id:'coll',key:'o',kick:'ITEM COLLECTION',title:'컬렉션',info:()=>{const n=COLL.filter(collDone).length,cb=collSum();return [el('span','wchip','완성 '+n+' / '+COLL.length),el('span','wchip',Object.keys(cb).length?Object.entries(cb).map(([k,v])=>STATN[k]+' '+statFmt(k,v)).join(' · '):'효과 없음')];},render:renderColl});}
 /* v4.12 일괄 등록: 미완성 컬렉션의 빈 칸마다 조건에 맞는 장비(장착·잠금·지금 장비보다 좋은 것 제외)를 낮은 값부터 */
 function collBatchList(){const used=new Set(),L=[];/* v4.17: 등록 가능한 칸은 모두 채운다 (장착 · 잠금 장비만 제외) */
   for(const c of COLL){if(collDone(c))continue;c.req.forEach((r,i)=>{if(collReg(c,i))return;
@@ -2886,7 +2901,7 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 

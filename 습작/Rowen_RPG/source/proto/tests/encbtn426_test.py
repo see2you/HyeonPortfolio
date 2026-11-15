@@ -16,7 +16,7 @@ with sync_playwright() as p:
         r=pg.evaluate("""(()=>{const q=s=>[...document.querySelectorAll(s)];const bs=q('.enact .btn');const A=document.querySelector('.enact'),I=document.querySelector('.enpi');
           return {n:bs.length,t:bs.map(x=>x.textContent),tops:bs.map(x=>Math.round(x.getBoundingClientRect().top)),bot:Math.max(...bs.map(x=>x.getBoundingClientRect().bottom)),inScroll:bs.some(x=>I.contains(x)),ver:document.getElementById('verTag').textContent}})()""")
         print(vw,vh,r)
-        assert r['n']==2 and r['t'][0]=='강화' and r['t'][1].startswith('안전 강화까지')
+        assert r['n']>=2 and r['t'][0]=='강화' and r['t'][1].startswith('안전 강화까지')
         assert abs(r['tops'][0]-r['tops'][1])<=1, '한 줄이 아님'
         assert r['bot']<=vh and not r['inScroll']
         assert r['ver'].startswith('v4.')
