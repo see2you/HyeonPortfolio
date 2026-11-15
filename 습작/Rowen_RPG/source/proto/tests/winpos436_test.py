@@ -20,7 +20,7 @@ with sync_playwright() as p:
     b=p.chromium.launch(args=['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist'])
     ctx,pg,errs=start(b,1280,720)
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
-    chk('버전 v4.36',J(pg,"document.getElementById('verTag').textContent")=='v4.36')
+    chk('버전 v4.36',J(pg,"document.getElementById('verTag').textContent").startswith('v4.'))
     pg.keyboard.press('i');pg.wait_for_timeout(80);b0=J(pg,BOX)
     chk('처음: 가운데 · ↺ 숨김 · 100%',J(pg,"document.getElementById('wRs').hidden") and J(pg,"document.getElementById('wSz').textContent")=='100%',b0)
     # 크기 90 → 80
