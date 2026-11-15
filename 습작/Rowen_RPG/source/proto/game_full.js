@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.33';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.34';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2317,7 +2317,7 @@ addEventListener('keydown',e=>{const k=keyOf(e);if(!started||traveling)return;
   if(k===' '){const m=alive(target)?target:nearestMob(90);if(m){target=m;if(!basicAttack(m)){chase=m;}}}
   else if('12345678'.includes(k)&&k.length===1)castSlot(+k-1);else if(k==='r')toggleAuto();else if(k==='t')toggleAutoQ();else if(k==='g')questGo();
   else if(k==='q')usePot('hp');else if(k==='e')usePot('mp');else if(k==='f'){const n=npcList.filter(n=>!n.deco).sort((a,b)=>dist(a,player)-dist(b,player))[0];if(n&&dist(n,player)<60)openNpc(n.id);else toast('가까이에 대화할 사람이 없다');}
-  else if(k==='c')openStats();else if(k==='k')openSkills();else if(k==='i')openBag();else if(k==='p')openGods();else if(k==='m')toggleMenu();else if(k==='n')toggleNpcList();else if(k==='u')openCraft();else if(k==='j')openEnchant();else if(k==='o')openColl();else if(k==='l')openLog();else if(k==='b')goTown();else if(k==='z')toggleZoom();else if(k==='escape'){cancelNav();chase=null;}});
+  else if(k==='c')openStats();else if(k==='k')openSkills();else if(k==='i')openBag();else if(k==='p')openGods();else if(k==='m')toggleMenu();else if(k==='n')toggleNpcList();else if(k==='u')openCraft();else if(k==='j')openEnchant();else if(k==='o')openColl();else if(k==='l')openLog();else if(k==='b')goTown();else if(k==='z')toggleZoom();else if(k==='h')toggleKeys();else if(k==='escape'){cancelNav();chase=null;}});
 addEventListener('keyup',e=>keys.delete(keyOf(e)));
 addEventListener('blur',()=>keys.clear());
 function toggleAuto(){auto=!auto;anchor=null;if(!auto)hunt=null;toast(auto?'자동 전투 시작':'자동 전투 종료');}
@@ -2351,6 +2351,17 @@ $('bAuto').onclick=toggleAuto;$('autoQ').onclick=toggleAutoQ;
 $('pHP').onclick=()=>usePot('hp');$('pMP').onclick=()=>usePot('mp');
 $('pHP').oncontextmenu=e=>{e.preventDefault();S.autoPot=!S.autoPot;toast('HP 물약 자동 사용 '+(S.autoPot?'켬':'끔'));};
 /* v4.8.6 조작법: 항상 보이지 않고 왼쪽 아래 [조작법 보기] → 버튼 위 작은 팝업 (다시 누르기 · 화면 터치 · Esc로 닫기) */
+/* v4.34 조작법 안내를 한 곳(KEYGUIDE)에서 만든다 — 묶음(이동·전투 / 자동 / 창 / 화면) · 빠졌던 Q · E · T · B · Z · Esc · H 반영 · tests/keys434_test.py가 keydown 처리 키와 대조 */
+const KEYGUIDE=[
+  ['이동 · 전투',[['이동','WASD','방향키'],['공격','Space'],['스킬','1~8'],['HP 물약','Q'],['MP 물약','E'],['대화','F'],['멈춤','Esc']]],
+  ['자동',[['자동 전투','R'],['퀘스트 자동 진행','T'],['퀘스트 이동','G'],['마을 귀환','B']]],
+  ['창',[['가방','I'],['강화','J'],['제작','U'],['컬렉션','O'],['기록','L'],['능력치','C'],['스킬','K'],['권능','P'],['메뉴','M'],['NPC 목록','N']]],
+  ['화면',[['확대·축소','Z','휠'],['조작법','H'],['이동 · 공격 · 대화','클릭']]]];
+function fillKeys(){const box=document.querySelector('#keys .kpc');if(!box)return;box.replaceChildren();
+  for(const [g,L] of KEYGUIDE){const row=el('span','kg');row.appendChild(el('b','kgh',g));const ks_=el('span','kis');row.appendChild(ks_);
+    L.forEach(([n,...ks],i)=>{const it=el('span','ki');it.append(n+' ');ks.forEach((k,j)=>{if(j)it.append('/');it.appendChild(el('kbd',null,k));});ks_.appendChild(it);});box.appendChild(row);}
+  box.appendChild(el('span','ktip','창이 열려 있을 때 — 다른 창 키 = 바로 전환 · 같은 키 · Esc = 닫기 · 창을 열어도 게임은 멈추지 않는다'));}
+fillKeys();
 function toggleKeys(on){const k=$('keys'),b=$('bKeys');on=on??k.hidden;k.hidden=!on;b.setAttribute('aria-expanded',on);b.textContent=on?'조작법 닫기':'조작법 보기';}
 $('bKeys').onclick=e=>{e.stopPropagation();toggleKeys();};
 stage.addEventListener('pointerdown',e=>{if(!$('keys').hidden&&!e.target.closest('#bKeys'))toggleKeys(false);},true);
