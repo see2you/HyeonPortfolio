@@ -77,7 +77,7 @@ function renderBag(B,F){const o=win,enc=o.enc;
   /* 바닥: 무게 · 칸 · 일괄 분해 */
   const p=wPct(),wb=el('div','wbar'+(p>=.82?' bad':p>=.5?' warn':''));wb.append(el('i',null)),wb.firstChild.style.width=Math.min(100,p*100)+'%';wb.appendChild(el('b',null,'무게 '+Math.round(p*100)+'% · '+fmt(weightNow())+' / '+fmt(weightMax())));
   const fl=el('div','ifoot');fl.append(wb,el('span','slots','칸 '+bagUsed()+' / '+BAG_SLOTS));
-  if(!enc){fl.appendChild(btn('제작','pri',()=>openCraft()));fl.appendChild(btn('컬렉션','',()=>openColl()));const db=btn('일괄 분해','',()=>bulkDisTip(db));fl.appendChild(db);}inv.appendChild(fl);
+  if(!enc){{const n=equipBetterN(),eb=btn(n?'일괄 장착 · '+n:'일괄 장착',n?'pri':'',()=>{batchEquip();renderWin();},!n);eb.title=n?'부위마다 지금보다 전투력이 높은 장비를 모두 장착한다':'지금보다 좋은 장비가 없다';if(n)eb.classList.add('dot');fl.appendChild(eb);}fl.appendChild(btn('제작','pri',()=>openCraft()));fl.appendChild(btn('컬렉션','',()=>openColl()));const db=btn('일괄 분해','',()=>bulkDisTip(db));fl.appendChild(db);}inv.appendChild(fl);
   F.append(el('p','note2','무게 50% 이상이면 자연 회복이 멈추고 · 82% 이상이면 공격·스킬을 쓸 수 없다 · 장비를 누르면 장착·강화·분해 · 장비 강화는 메뉴 → 강화(J)'));}
 function statLines(it,cmp){const s=itemStats(it),c=cmp?itemStats(cmp):{},box=el('div','tst');const ks=new Set([...Object.keys(s),...Object.keys(c)]);
   for(const k of ks){const v=s[k]||0,d=v-(c[k]||0),row=el('div',null);row.append(el('span',null,STATN[k]),el('b',null,statFmt(k,v)));if(cmp&&Math.abs(d)>1e-6)row.appendChild(el('em',d>0?'up':'dn',(d>0?'▲ ':'▼ ')+statFmt(k,Math.abs(d)).slice(1)));box.appendChild(row);}return box;}
