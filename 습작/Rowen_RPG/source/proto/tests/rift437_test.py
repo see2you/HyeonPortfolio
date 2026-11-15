@@ -12,7 +12,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.37',J("document.getElementById('verTag').textContent")=='v4.37')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     chk('시작: 잠김(Lv1) · 60:00',J("!__g.riftOpen()&&__g.riftT()===3600&&__g.riftZone()==='z4'"))
     J("__g.riftEnter()");chk('잠김이면 입장 안 됨',J("__g.rift===null"))
     J("__g.S.lv=10;__g.S.autoQ=true;__g.step(3,.05)")
