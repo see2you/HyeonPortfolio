@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.29';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.30';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2372,13 +2372,25 @@ const pct=v=>(v*100).toFixed(1)+'%';
 
 /* ================= 가방 + 장비 (I) ================= */
 const BAG_CAT=[['all','전체'],['eq','장비'],['use','소모품'],['mat','재료 · 기타']];
-let bagCat='all',bagSel=null;
+let bagCat='all',bagSel=null;/* bagCat은 S.bagUi.cat과 같이 움직인다 (v4.30) */
 const encLbl=it=>Math.round(enchRate(it)*100)+'%';
 function openBag(mode){if(!started||player.dead)return;if(win&&win.id==='bag'){renderWin();return;}
   openWin({id:'bag',key:'i',kick:'INVENTORY / EQUIPMENT',title:'가방',enc:null,info:()=>[],render:renderBag});}
-function bagEntries(){const L=[];for(const k of STK_ORDER)if(cnt(k)>0)L.push({stk:k,cat:STK[k].cat});
-  const ord=k=>['weapon','helm','armor','cloak','gloves','boots','neck','ring'].indexOf(k);
-  for(const it of [...S.items].sort((a,b)=>(isEq(b)-isEq(a))||ord(a.k)-ord(b.k)||b.t-a.t||b.g-a.g||b.en-a.en))L.push({it,cat:'eq'});
+/* v4.30 가방 정렬 · 필터 (MMORPG 라이크 가방 정렬 버튼 · 보기 필터) — 선택은 세이브(S.bagUi)에 저장
+   정렬: 장비 칸에만 적용 · 장착 중은 항상 맨 앞 · 같은 값이면 기본 순서(부위 → 단계 → 등급 → 강화)
+   필터: NEW(지금보다 좋음 또는 새로 얻음) · 컬렉션 가능(등록할 수 있는 사본) · 분해 대상(일괄 분해 기준과 같음, 등급 무관) — 필터가 켜지면 장비만 보인다 */
+const BAG_SORT=[['def','기본'],['grade','등급'],['slot','부위'],['tier','단계'],['en','강화']];
+const BAG_FLT=[['all','전체 보기'],['new','NEW만'],['coll','컬렉션 가능만'],['dis','분해 대상만']];
+function bagUi(){if(!S.bagUi||typeof S.bagUi!=='object')S.bagUi={};const u=S.bagUi;if(!BAG_SORT.some(x=>x[0]===u.sort))u.sort='def';if(!BAG_FLT.some(x=>x[0]===u.flt))u.flt='all';if(!BAG_CAT.some(x=>x[0]===u.cat))u.cat='all';return u;}
+function disTarget(it){return !isEq(it)&&!it.lock&&!betterThanEq(it)&&!collNeeds(it);}
+function bagFltOk(it,f){if(f==='new')return !isEq(it)&&(betterThanEq(it)||!!it.nw);if(f==='coll')return !isEq(it)&&!it.lock&&!!collNeeds(it);if(f==='dis')return disTarget(it);return true;}
+function bagSortItems(arr,sort){const ord=k=>['weapon','helm','armor','cloak','gloves','boots','neck','ring'].indexOf(k);
+  const base=(a,b)=>ord(a.k)-ord(b.k)||b.t-a.t||b.g-a.g||b.en-a.en||a.u-b.u;
+  const key={grade:(a,b)=>b.g-a.g,slot:(a,b)=>ord(a.k)-ord(b.k),tier:(a,b)=>b.t-a.t,en:(a,b)=>b.en-a.en}[sort]||(()=>0);
+  return [...arr].sort((a,b)=>(isEq(b)-isEq(a))||key(a,b)||base(a,b));}
+function bagEntries(){const L=[],u=bagUi(),f=u.flt;if(f==='all')for(const k of STK_ORDER)if(cnt(k)>0)L.push({stk:k,cat:STK[k].cat});
+  for(const it of bagSortItems(S.items.filter(it=>bagFltOk(it,f)),u.sort))L.push({it,cat:'eq'});
+  if(f!=='all')return L;
   /* 퀘스트 수집품(무게 없음) */
   const q=curQ();if(S.qs==='active'&&q.type==='collect')L.push({quest:{n:q.item,c:S.qn,of:q.n},cat:'mat'});
   for(const id in S.sq){const s=S.sq[id],sq=SUBQ[id];if(s.st==='active'&&sq.type==='collect')L.push({quest:{n:sq.item,c:s.n,of:sq.n},cat:'mat'});}
@@ -2403,8 +2415,17 @@ function renderBag(B,F){const o=win,enc=o.enc;
   /* 오른쪽: 가방 칸 */
   const inv=el('div','inv');wrap.appendChild(inv);
   if(enc){const bar=el('div','encbar');bar.append(icv(stkIcon(enc)),el('b',null,STK[enc].n+' '+cnt(enc)+'장'),el('span',null,cnt(enc)?' · 강화할 장비를 고르세요 (장착 중인 장비도 가능)':' · 주문서를 모두 썼다'),btn('그만하기','alt',()=>{o.enc=null;renderWin();}));inv.appendChild(bar);}
-  else{const ct=el('div','icat');for(const [id,n] of BAG_CAT){const b=el('button','ict'+(bagCat===id?' on':''),n);b.type='button';b.onclick=()=>{bagCat=id;hideTip();renderWin();};ct.appendChild(b);}inv.appendChild(ct);}
+  else{const u=bagUi();bagCat=u.cat;const ct=el('div','icat');for(const [id,n] of BAG_CAT){const b=el('button','ict'+(bagCat===id?' on':''),n);b.type='button';b.onclick=()=>{bagCat=u.cat=id;if(id==='use'||id==='mat')u.flt='all';hideTip();renderWin();};ct.appendChild(b);}
+    /* v4.30 정렬 · 보기 (오른쪽 끝, 누르면 고르는 팝업) */
+    const sp=el('span','isp');ct.appendChild(sp);
+    const sb=el('button','ict isort'+(u.sort!=='def'?' set':''),'정렬 · '+BAG_SORT.find(x=>x[0]===u.sort)[1]+' ▾');sb.type='button';sb.title='장비 정렬 기준 (장착 중은 항상 앞)';
+    sb.onclick=()=>showTip(sb,tp=>{tp.append(el('b','tn','장비 정렬'),el('p',null,'장착 중인 장비는 항상 앞 · 같은 값이면 부위 → 단계 → 등급 순'));const a=el('div','tbtn col');for(const [id,n] of BAG_SORT)a.appendChild(btn((u.sort===id?'✓ ':'')+n+(id==='grade'?' (높은 순)':id==='tier'?' (높은 순)':id==='en'?' (높은 순)':id==='slot'?' (무기 → 반지)':' (부위 · 단계)'),u.sort===id?'pri':'',()=>{u.sort=id;hideTip();renderWin();}));tp.appendChild(a);});
+    const fc=S.items.filter(it=>u.flt!=='all'&&bagFltOk(it,u.flt)).length;
+    const fb=el('button','ict iflt'+(u.flt!=='all'?' set':''),(u.flt==='all'?'보기 · 전체':BAG_FLT.find(x=>x[0]===u.flt)[1]+' '+fc)+' ▾');fb.type='button';fb.title='장비만 골라 보기';
+    fb.onclick=()=>showTip(fb,tp=>{tp.append(el('b','tn','보기 필터'),el('p',null,'필터를 켜면 장비만 보인다 · 분해 대상 = 일괄 분해 기준(장착 · 잠금 · 지금보다 좋음 · 컬렉션 가능 제외)'));const a=el('div','tbtn col');for(const [id,n] of BAG_FLT){const c=id==='all'?'':' · '+S.items.filter(it=>bagFltOk(it,id)).length;a.appendChild(btn((u.flt===id?'✓ ':'')+n+c,u.flt===id?'pri':'',()=>{u.flt=id;if(id!=='all')bagCat=u.cat='all';hideTip();renderWin();}));}tp.appendChild(a);});
+    ct.append(sb,fb);inv.appendChild(ct);}
   const grid=el('div','grid'),ents=bagEntries().filter(e=>enc?e.it:bagCat==='all'||e.cat===bagCat);let n=0;
+  if(!enc&&!ents.length&&bagUi().flt!=='all')grid.appendChild(el('div','iempty','조건에 맞는 장비가 없다 · 보기 → 전체 보기'));
   for(const e of ents){const b=el('button','cell');b.type='button';n++;
     if(e.it){const it=e.it;b.style.setProperty('--gc',GRADES[it.g].c);if(it.g>=3)b.classList.add('glow');b.appendChild(icv(itemIcon(it)));if(it.en)b.appendChild(el('span','en','+'+it.en));if(isEq(it))b.appendChild(el('span','eqm','E'));else if(betterThanEq(it))b.appendChild(el('span','newm','NEW'));if(it.nw)b.appendChild(el('span','nwd'));if(it.lock)b.appendChild(el('span','lk','🔒'));if(it.bu)b.appendChild(el('span','bum','★'));
       if(enc){const ok=canEnch(it.k)&&scrollFor(it.k)===scrollBase(enc)&&it.en<ENH.max;b.classList.toggle('encok',ok);b.classList.toggle('encno',!ok);if(ok)b.appendChild(el('span','rt',encLbl(it,enc)));}
@@ -2446,7 +2467,7 @@ function stkTip(tp,k){const d=STK[k];tp.append(el('b','tn',d.n),el('div','tt',(d
   else if(d.book)a.appendChild(btn(S.books[d.book]?'이미 익힘':'사용','pri',()=>{useBook(k);hideTip();renderWin();},!!S.books[d.book]));
   if(a.children.length)tp.appendChild(a);}
 function bulkDisTip(anchor){showTip(anchor,tp=>{tp.append(el('b','tn','일괄 분해'),el('p',null,'장착 중 · 잠금 · 지금 장비보다 좋은 것 · 컬렉션에 등록할 수 있는 장비는 분해하지 않는다.'));const a=el('div','tbtn col');
-  for(let g=0;g<=2;g++){const us=S.items.filter(it=>it.g<=g&&!isEq(it)&&!it.lock&&!betterThanEq(it)&&!collNeeds(it)).map(it=>it.u),y=us.reduce((n,u)=>n+disYield(itemById(u)),0);
+  for(let g=0;g<=2;g++){const us=S.items.filter(it=>it.g<=g&&disTarget(it)).map(it=>it.u),y=us.reduce((n,u)=>n+disYield(itemById(u)),0);
     a.appendChild(btn(GRADES[g].n+(g?'까지':'')+' · '+us.length+'개 → 강화석 +'+y,g?'':'pri',()=>{disassemble(us);hideTip();renderWin();},!us.length));}
   tp.appendChild(a);});}
 /* ================= 강화 (J) — 제우스: 오만의 신 방식 =================
@@ -2901,7 +2922,7 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={renderWin,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 

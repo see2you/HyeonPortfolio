@@ -20,7 +20,7 @@ with sync_playwright() as p:
         assert r['tg'] and r['tv']=='+5' and r['go']=='+5까지 연속 강화', r   # 안전 단계 아래 → 기본 목표 = 안전 단계
         assert r['exp'].startswith('평균 5.0회'), r['exp']
         assert r['bot']<=vh and not r['inScroll']
-        assert r['ver']=='v4.29'
+        assert r['ver'].startswith('v4.')
         assert pg.evaluate(AUDIT)==[], '강화 창에 스크롤해야 보이는 버튼'
         # 목표 +8로 올림
         for _ in range(3): pg.click('.entg .tgb:nth-of-type(2)');pg.wait_for_timeout(50)
