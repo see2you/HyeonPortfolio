@@ -176,6 +176,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .joy{position:absolute;width:calc(var(--u)*13);height:calc(var(--u)*13);margin:calc(var(--u)*-6.5) 0 0 calc(var(--u)*-6.5);border-radius:50%;background:rgba(20,16,32,.3);border:2px solid rgba(255,236,190,.3);pointer-events:none;opacity:.5}
 .joy.on{opacity:1}
 .joy i{position:absolute;left:50%;top:50%;width:calc(var(--u)*5.4);height:calc(var(--u)*5.4);margin:calc(var(--u)*-2.7) 0 0 calc(var(--u)*-2.7);border-radius:50%;background:rgba(255,236,190,.45);border:2px solid rgba(255,246,220,.75)}
+.verTag{position:absolute;z-index:6;left:calc(var(--u)*.8);bottom:0;height:calc(var(--u)*1.2);line-height:calc(var(--u)*1.2);font-size:calc(var(--u)*.85);letter-spacing:.06em;color:rgba(246,215,154,.6);pointer-events:none;font-variant-numeric:tabular-nums}
 .kbtn{position:absolute;z-index:5;left:calc(var(--u)*1.6);bottom:calc(var(--u)*2.4);font:inherit;font-size:.74em;padding:.3em .9em;border-radius:999px;color:var(--gold2);cursor:pointer;
   background:linear-gradient(180deg,rgba(46,36,66,.9),rgba(20,16,32,.88));border:1px solid rgba(232,184,100,.45)}.kbtn:hover,.kbtn[aria-expanded=true]{border-color:var(--gold);color:#fff2d6}
 .keys{position:absolute;z-index:5;left:calc(var(--u)*1.6);bottom:calc(var(--u)*5.6);display:flex;flex-direction:column;gap:.35em;padding:calc(var(--u)*.8) calc(var(--u)*1.1);font-size:.72em;color:#d8cfe4;line-height:1.75;pointer-events:none;max-width:calc(var(--u)*32);box-shadow:0 calc(var(--u)*.6) calc(var(--u)*1.6) rgba(0,0,0,.5)}
@@ -406,6 +407,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
       <button class="sb atk" id="s0" type="button" title="공격 (Space)"><span class="ic">⚔</span><span class="cd"></span></button>
     </div>
     <div class="nav panel np" id="nav" hidden><span class="sp"></span><span id="navT">자동 이동 중</span><button type="button" id="navX" style="pointer-events:auto">취소</button></div>
+    <span class="verTag" id="verTag" aria-label="게임 버전"></span>
     <button class="kbtn" id="bKeys" type="button" aria-expanded="false" aria-controls="keys">조작법 보기</button>
     <div class="keys panel" id="keys" hidden><b class="kh">조작법</b><span class="kpc">NPC 목록 <kbd>N</kbd> · 이동 <kbd>WASD</kbd>/<kbd>방향키</kbd> · 공격 <kbd>Space</kbd> · 스킬 <kbd>1</kbd>~<kbd>8</kbd> · 자동 <kbd>R</kbd> · 대화 <kbd>F</kbd> · 메뉴 <kbd>M</kbd> · 가방 <kbd>I</kbd> · 강화 <kbd>J</kbd> · 제작 <kbd>U</kbd> · 컬렉션 <kbd>O</kbd> · 능력치 <kbd>C</kbd> · 스킬 <kbd>K</kbd> · 권능 <kbd>P</kbd> · 첫 퀘스트 <kbd>G</kbd> · 확대·축소 <kbd>휠</kbd> · 땅/몬스터/NPC 클릭</span><span class="ktouch">이동 왼쪽 아래를 끌기 · 공격 ⚔ 버튼 · 스킬 아래 슬롯 1~8 · AUTO 자동 전투 · 땅/몬스터/NPC 터치 · 왼쪽 퀘스트를 누르면 자동 이동 · 위 메뉴 가방·능력치·스킬·권능·설정 · 두 손가락 확대는 아직 없음</span></div>
     <div class="xp np"><i id="xpB"></i><b id="xpT">0%</b></div>
@@ -426,7 +428,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.20</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.21</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>
