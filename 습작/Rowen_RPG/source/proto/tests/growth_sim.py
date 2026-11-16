@@ -19,7 +19,7 @@ with sync_playwright() as p:
     BOT=os.environ.get("BOT","1")=="1";pg.add_script_tag(path=os.path.join(os.path.dirname(os.path.abspath(__file__)),"growth_bot.js"))
     pg.evaluate("__g.S.autoGrow=true;__g.S.cfg.autoEq=true;__g.S.autoQ=true;__g.autoNext()")
     st="(()=>{const q=__g.curQ(),g=__g.gateState(q);return {qi:__g.S.qi,qs:__g.S.qs,lv:__g.S.lv,cp:__g.cpOf(),map:__g.map,trav:__g.traveling,nav:__g.nav&&__g.nav.label,hunt:__g.hunt&&(__g.hunt.sub||__g.hunt.sp||'mob'),modal:__g.modal&&__g.modal.name,sub:JSON.stringify(Object.fromEntries(Object.entries(__g.S.sq).filter(([k,v])=>v.st!=='clear'&&!__g.SUBQ[k].trial).map(([k,v])=>[k,v.st+v.n]))),gate:q.gate?g.ok:null,sk:JSON.stringify(__g.S.sk),hpPot:__g.S.hpPot,w:Math.round(__g.wPct()*100),it:__g.S.items.length,mpPot:__g.S.mpPot,stat:JSON.stringify(__g.STAT),dead:__g.player.dead,gold:__g.S.gold,inv:__g.inv?__g.inv.m.lv+' '+__g.inv.zone:null,invSeen:!!__g.S.invSeen}})()"
-    last=None;stall=0;gatelog={};NQ=pg.evaluate('__g.QUESTS.length')
+    last=None;stall=0;gatelog={};RIFTPROBE=os.environ.get('RIFTPROBE')=='1';probed=set();NQ=pg.evaluate('__g.QUESTS.length')
     for i in range(int(os.environ.get('ITERS','3600'))):
         if pg.evaluate("__g.traveling"):
             pg.wait_for_timeout(300);continue
@@ -28,6 +28,17 @@ with sync_playwright() as p:
             lg=pg.evaluate("__bot("+os.environ.get("BOTOPT","{}")+")")
             if lg and os.environ.get("BOTLOG"): print("BOT",i*3,lg)
         s=pg.evaluate(st)
+        if RIFTPROBE and not s['modal'] and not s['dead'] and pg.evaluate("__g.riftOpen()&&!__g.rift&&__g.riftT()>=600") and s['map'] not in probed:
+            # v4.41 균열 측정: 균열이 처음 열린 시점에 120초(게임 시간) 들어가 분당 처치 · 강화석을 잰다 — 측정 뒤 자동 진행으로 돌아감
+            probed.add(s['map']);pr=pg.evaluate("(()=>{const g=__g;g.riftEnter();return {lv:g.S.lv,st:g.S.stone,k:g.S.kills,z:g.rift&&g.rift.zone,cp:g.cpOf()}})()")
+            for j in range(40):
+                pg.evaluate("__g.step(60,0.05)")
+                if BOT and j%5==0: pg.evaluate("__bot("+os.environ.get("BOTOPT","{}")+")")
+                if pg.evaluate("!__g.rift"): break
+            r=pg.evaluate("(()=>{const g=__g,R=g.rift;const o=R?{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,sec:R.t0-g.S.riftT,dead:false}:{dead:g.player.dead};if(R)g.riftEnd('out');g.S.autoQ=true;g.autoNext();return o})()")
+            print('RIFTPROBE',i*3,s['map'],pr,r,'kpm',round(r.get('k',0)/max(1,r.get('sec',0))*60,1) if r.get('sec') else '-')
+            if pg.evaluate("__g.player.dead"): pg.evaluate("if(__g.modal&&__g.modal.name==='사망했습니다')__g.modal.btns[0].f()")
+            continue
         if s['modal'] in ('신의 시련이 열렸다','다음 신의 시련'):  # v4.8.5: 시련 선택은 플레이어 몫 — 시뮬레이션은 '나중에'로 메인만 진행(기준 비교용)
             print('TRIAL CHOICE',i*3);pg.evaluate("__g.modal.btns[0].f()")
         if s['dead']:

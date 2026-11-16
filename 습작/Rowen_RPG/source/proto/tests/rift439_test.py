@@ -11,7 +11,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.39',J("document.getElementById('verTag').textContent")=='v4.39')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     J("__g.S.autoQ=false;__g.step(25,.05)")
     chk('Lv1: 메뉴 균열 버튼 잠김',J("document.getElementById('bRift').classList.contains('lock')"))
     J("__g.toggleMenu(true)");pg.wait_for_timeout(60)
