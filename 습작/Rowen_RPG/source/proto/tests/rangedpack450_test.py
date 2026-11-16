@@ -54,7 +54,7 @@ with sync_playwright() as p:
     # 3) 서 있기 예산
     pg=page(b,errs)
     for lv in (5,6):
-        pg.evaluate(SETUP_JS,lv);mel=sum(pg.evaluate(IDLE,[lv,s,'melee']) for s in range(1,17));rng=sum(pg.evaluate(IDLE,[lv,s,'ranged']) for s in range(1,17))
+        pg.evaluate(SETUP_JS,lv);mel=sum(pg.evaluate(IDLE,[lv,s,'melee']) for s in range(1,33));rng=sum(pg.evaluate(IDLE,[lv,s,'ranged']) for s in range(1,33))
         chk(.90<=rng/mel<=1.15,'Lv%d 서 있기 피해 예산 %.3f (0.90~1.15)'%(lv,rng/mel))
     # 4) 화면 · 이어하기
     pg.evaluate("""()=>{const g=__g,P=g.player;const L=g.mobs.filter(e=>e.sp==='fairy'&&!e.boss&&!e.eliteOf).slice(0,3);for(const e of g.mobs)if(!L.includes(e)){e.dead=true;e.respawn=1e9;}

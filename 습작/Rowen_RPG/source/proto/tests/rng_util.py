@@ -6,7 +6,8 @@ PACK_JS="""([sp,lv,n,seed,beh])=>{const g=__g,S=g.S,P=g.player;let a=seed>>>0;Ma
  const keep=g.MOB_B[sp];if(beh==='melee')delete g.MOB_B[sp];const rng=g.mobBeh({sp})==='ranged';
  const L=g.mobs.filter(e=>e.sp===sp&&!e.boss&&!e.eliteOf).slice(0,n);if(L.length<n){if(keep)g.MOB_B[sp]=keep;return null;}
  for(const e of g.mobs){e.aggro=false;e.ret=false;e.aim=null;if(!L.includes(e)){e.dead=true;e.deadT=-1e9;e.respawn=1e9;}}
- const c=L[0],rot=(seed*2.399963)%6.2832;/* 씨앗마다 무리 방향 · 다가오는 방향을 돌린다(지형 · 나무가 한 방향만 막아 결과가 씨앗과 무관해지던 것) */if(!c._h0)c._h0={x:c.home.x,y:c.home.y};const cx=c._h0.x,cy=c._h0.y;
+ const c=L[0];let rot=(seed*2.399963)%6.2832;/* 씨앗마다 무리 방향 · 다가오는 방향을 돌린다(지형 · 나무가 한 방향만 막아 결과가 씨앗과 무관해지던 것) */if(!c._h0)c._h0={x:c.home.x,y:c.home.y};const cx=c._h0.x,cy=c._h0.y;/* v4.51: 플레이어 · 집 자리가 막힌 칸(물 · 나무)이면 방향을 돌린다 — v4.50 묶음 B의 꼬리 한 판은 플레이어가 막힌 칸에 놓여 한 걸음도 못 움직인 측정 잘못이었다 */
+ if(g.blockedAt){const G=window.__gap||70,bad=r=>g.blockedAt(cx+Math.cos(r+1)*100,cy+Math.sin(r+1)*100)||[1,2,3].some(i=>g.blockedAt(cx+Math.cos(r+i*2.1)*G,cy+Math.sin(r+i*2.1)*G));for(let k=0;k<12&&bad(rot);k++)rot+=.5236;}
  L.forEach((m,i)=>{const an=rot+i*2.1;m.home.x=cx+Math.cos(an)*(window.__gap||70)*(i>0);m.home.y=cy+Math.sin(an)*(window.__gap||70)*(i>0);m.x=m.home.x;m.y=m.home.y;m.dead=false;m.deadT=0;m.respawn=1e9;m.lv=lv;const ms=g.mobStats(lv,false);m.atk=ms.atk;m.def=ms.def;m.max=m.hp=Math.max(1,Math.round(ms.hp*(rng?g.RANGED.hpK:1)));m.atkT=.5+i*.4;m.wind=0;m.aggro=true;m.ret=false;m.aim=null;});
  g.shots.length=0;g.tele.length=0;g.clearStatus();P.dead=false;P.x=cx+Math.cos(rot+1)*100;P.y=cy+Math.sin(rot+1)*100;P.hp=1e8;P.shield=0;P.mp=9999;P.dash=0;S.hpPot=0;g.setTarget(null);g.resetAuto&&g.resetAuto();P.cd.fill(0);P.atkT=0;P.spin=0;P.swing=0;P.buffT=0;P.guardT=0;P.fervT=0;P.dead=false;
  const n0=g.STAT.shotN||0,h0=g.STAT.shotHit||0;g.setAuto(true);let sec=0;

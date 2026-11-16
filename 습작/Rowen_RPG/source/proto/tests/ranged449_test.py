@@ -95,7 +95,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()");pg.click('#btnStart',timeout=60000);pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     for lv in (5,6):
         pg.evaluate(SETUP_JS,lv)
-        mel=[pg.evaluate(RUN,[lv,60,s,'melee',0]) for s in range(1,17)];rng=[pg.evaluate(RUN,[lv,60,s,'ranged',0]) for s in range(1,17)]
+        mel=[pg.evaluate(RUN,[lv,60,s,'melee',0]) for s in range(1,33)];rng=[pg.evaluate(RUN,[lv,60,s,'ranged',0]) for s in range(1,33)]
         au=[pg.evaluate(RUN,[lv,60,s,'ranged',1]) for s in range(1,17)];am=[pg.evaluate(RUN,[lv,60,s,'melee',1]) for s in range(1,17)]
         ratio=sum(x['taken'] for x in rng)/sum(x['taken'] for x in mel);sh=sum(x['shots'] for x in au);hi=sum(x['hits'] for x in au);ar=sum(x['taken'] for x in au)/sum(x['taken'] for x in am)
         rows.append((lv,round(ratio,3),hi,sh,round(hi/max(1,sh),3),round(ar,3)));print('  budget lv',lv,'idle ratio',round(ratio,3),'auto hit',hi,'/',sh,round(hi/max(1,sh),3),'auto ratio',round(ar,3))
