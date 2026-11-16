@@ -4,6 +4,7 @@
    지역 보스 · 관문 정예(boss · eliteOf)에는 아직 붙이지 않는다(보스 패턴은 G1-f~g). */
 const MOB_B={
   lakesnake:{b:'melee',fx:'poison'},
+  acornboar:{b:'charge'},/* v4.54 G1-c1: 돌진 첫 종(로웬 도토리 숲 Lv3~5 · 상태이상 없음 — 입문 구간 보호). 관문 정예 '왕멧돼지'(q5 · q6)는 제외(G1-f 보스 패턴) */
   fairy:{b:'ranged',spd:205},/* v4.49 G1-b: 원거리 첫 종(로웬 도토리 숲 Lv5~6) · v4.53 속도 220 → 205(자동 전투가 공격 중인 요정을 쫓게 되어 evade451 묶음 0.39~0.41) */
   /* v4.52 G1-b2c: 원거리 나머지 5종 — 둔화 · 화상 투사체는 G1-e에서(지금은 피해만). spd = 그 종의 투사체 속도(없으면 RANGED.spd) — 사냥터 지형이 트여 자동 전투가 잘 피하는 종은 빠르게 해 피격률 20~40%에 맞춘다 */
   cavemush:{b:'ranged',spd:190},/* v4.53 G1-b2c2 카르도 버섯 동굴 Lv18~19 (관문 정예 '동굴버섯'(q16)은 제외) */
@@ -23,3 +24,7 @@ const RANGED={range:110,aim:1.2,flee:70,fleeK:.6,leash:150,spd:220,pr:8,mul:1.4,
 /* v4.51 G1-b2b 회피(evade): 자동 전투가 t초 동안 prog만큼도 못 다가가면 원거리 대상이 집으로 돌아가 체력 회복 · 자동 전투는 skip초 건너뜀 · 집 도착 뒤 lock초 선공 안 함 */
 const EVADE={t:4,prog:12,skip:8,lock:3};
 const FX_P={base:.25,early:.15,elite:1};
+/* v4.54 돌진 원형(지시서 §G1 · G1-c): 거리 min~max에서 aim초 예고(일직선 띠 폭 w) — 앞 (aim−lock)초는 플레이어를 따라가고 마지막 lock초는 방향이 고정(띠가 밝아짐) →
+   spd/초로 직선 돌진(고정 순간 거리 + over, 최대 dist) · 지나가며 한 번 맞히면 ×mul(방어 뒤) · 빗나가거나 벽에 막히면 stag초 경직(받는 피해 ×stagK) · 쿨 cd초.
+   맞힌 뒤 rest초 숨 고르기(근접 공격 안 함) · 쿨이 찼는데 min보다 가까우면 back초까지 뒷걸음질쳐 거리를 벌린다(못 벌리면 근접으로 · 3초 뒤 다시). 그 밖에는 근접형 그대로 */
+const CHARGE={min:60,max:140,aim:.8,lock:.35,w:22,spd:260,dist:170,over:30,mul:1.45,cd:8,stag:1.5,stagK:1.3,back:1.2,rest:1.6};
