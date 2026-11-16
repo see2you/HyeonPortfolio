@@ -12,7 +12,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.42',J("document.getElementById('verTag').textContent")=='v4.42')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     J("__g.S.autoQ=false;__g.S.lv=12;__g.S.riftT=3600;__g.S.gold=5000;__g.S.autoBuy=true;__g.step(5,.05)")
     calm="for(const m of __g.mobs)m.atk=0;"
     # 1) 물약 적음 → 준비 창

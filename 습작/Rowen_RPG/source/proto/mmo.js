@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.42';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.43';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -1517,7 +1517,8 @@ function invSpawn(){const open=HUNT.filter(z=>S.lv>=ZONES[z].mobs[0][1]-1),cand=
    입장 시간 풀 최대 60분 · 균열 안에 있을 때만 줄고, 균열 밖에서 보낸 게임 시간 2분마다 1분 충전(실제 시간 · 매일 초기화 없음 — 접속 유도 장치를 만들지 않는다).
    균열이 열리면 그 사냥터에 균열 몬스터(같은 종 · Lv+1)가 한 벌 더 생기고 4초마다 다시 나타난다. 그 사냥터의 모든 처치: 강화석 7%→21% · 도면 ×2 · 비법서(지역 단계) 소량. 경험치 · 골드는 그대로.
    자동 진행은 균열에 들어가지 않는다(플레이어가 고른다). */
-const RIFT={potMin:10,max:3600,chg:.5,minIn:60,zone:{rowen:'z4',kardo:'k3',erna:'e3'},lvUp:1,resp:4,stoneP:.21,dsgK:2,rcp:{1:['rcp2',.004],2:['rcp3',.003],3:['rcp4',.0015]},
+const RIFT={potMin:10,max:3600,chg:.5,minIn:60,zone:{rowen:'z4',kardo:'k3',erna:'e3'},lvUp:1,resp:4,stoneP:.14,dsgK:2,eqK:2,shardP:.01,rcp:{1:['rcp2',.008],2:['rcp3',.006],3:['rcp4',.003]},
+  /* v4.43 보상 재구성(#3-4c): 봇 시험에서 강화석은 병목이 아니었다 → 강화석 ×3→×2, 대신 장비 드롭 ×2(eqK) · 비법서 ×2 · 권능 파편(처치당 1%) */
   /* v4.38 균열 정예: 균열 안 처치 eN마다(입장을 넘어 누적) 하나 · 그 사냥터 가장 높은 종 Lv+3 · 체력 ×5 · 공격 ×1.25 · 처치 시 균열 상자 확정 */
   eN:150,eLv:3,eHp:5,eAtk:1.25,eXp:6,eGold:10,box:{stone:r=>4+2*r,shard:5}};
 let rift=null;
@@ -1544,19 +1545,21 @@ function riftBack(){if(!rift||player.dead)return;const z=rift.zone,Z=ZONES[z];ca
 function riftEnter(force){closeModal();if(rift){if(!riftIn())riftBack();return;}const z=riftZone();if(!z)return toast('이 지역에는 시간의 균열이 없다');if(!riftOpen())return toast('Lv '+riftLv()+'부터 '+ZONES[z].name+'의 균열에 들어갈 수 있다');
   if(riftT()<RIFT.minIn)return toast('균열 입장 시간이 모자라다 · 1분 이상 충전되면 들어갈 수 있다');if(player.dead)return;
   if(force!==true&&S.hpPot<RIFT.potMin)return riftPrep();
-  stopAutoQ();cancelNav();chase=null;target=null;rift={map:MAPID,zone:z,k:0,stone:0,dsg:0,rcp:0,t0:S.riftT};
+  stopAutoQ();cancelNav();chase=null;target=null;rift={map:MAPID,zone:z,k:0,stone:0,dsg:0,rcp:0,eq:0,sh:0,t0:S.riftT};
   const Z=ZONES[z],old=mobs.filter(m=>m.rift&&!m.riftBoss&&m.zone===z);
   if(old.length){for(const m of old){m.dead=false;m.hp=m.max;m.x=m.home.x;m.y=m.home.y;m.aggro=false;m.ret=false;m.deadT=0;m.respawn=RIFT.resp;m.mesh.visible=true;}}
   else{const homes=mobs.filter(m=>m.zone===z).map(m=>m.home);for(const [sp,l0,l1,n] of Z.mobs){let k=0;for(let i=0;i<n*80&&k<n;i++){const x=Z.r[0]+30+Math.random()*(Z.r[2]-Z.r[0]-60),y=Z.r[1]+30+Math.random()*(Z.r[3]-Z.r[1]-60),c=ci(x,y);
       if(blk[c]||!reach[c]||homes.some(h=>Math.hypot(h.x-x,h.y-y)<22)||roadD(x,y)<10)continue;homes.push({x,y});makeMob(sp,l1+RIFT.lvUp,Math.round(x),Math.round(y),z,false,{ext:{rift:true,name:'균열 '+SPECIES[sp].name}});k++;}}}
   player.x=Z.c[0];player.y=Z.c[1];snapCam();$('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);
   for(let i=0;i<24;i++)spawnP(player.x+rand(-40,40),player.y+rand(-30,30),6,{col:'#c89cff',vx:rand(-20,20),vy:rand(-20,20),vz:rand(40,90),g:-120,life:1,size:3});
-  banner('시간의 균열',Z.name+' · '+mmss(S.riftT)+' 남음 · 강화석 · 도면 · 비법서가 잘 나온다');startHunt(z);if(S.riftEP&&S.riftEP[z])later(1.5,()=>{if(rift&&rift.zone===z)riftElite();});lastQKey='';save();}
+  banner('시간의 균열',Z.name+' · '+mmss(S.riftT)+' 남음 · 도면 · 장비 · 비법서가 잘 나온다');startHunt(z);if(S.riftEP&&S.riftEP[z])later(1.5,()=>{if(rift&&rift.zone===z)riftElite();});lastQKey='';save();}
 function riftLoot(m){rift.k++;S.riftK=(S.riftK||0)+1;riftRecOf(rift.zone).k++;const r=MAP_REG[MAPID]||1;
   if(m.riftBoss)riftBox(m,r);else{S.riftEK=(S.riftEK||0)+1;if(S.riftEK>=RIFT.eN&&!alive(riftEliteOf())){S.riftEK=0;riftElite();}}
   withAcq(acqSrcOf(m),acqZoneOf(m),()=>{
   if(Math.random()<DROP.dsg*(RIFT.dsgK-1)){const k=dsgRand(r);addStk(k,1);rift.dsg++;floatTxt(m.x,m.y-52,'+'+STK[k].n,STK[k].col,true);}
-  const [rk,rp]=RIFT.rcp[r];if(Math.random()<rp){addStk(rk,1);rift.rcp++;floatTxt(m.x,m.y-40,'+'+STK[rk].n,STK[rk].col,true);toast('균열 · '+STK[rk].n+' 획득',true);}});}
+  const [rk,rp]=RIFT.rcp[r];if(Math.random()<rp){addStk(rk,1);rift.rcp++;floatTxt(m.x,m.y-40,'+'+STK[rk].n,STK[rk].col,true);toast('균열 · '+STK[rk].n+' 획득',true);}
+  if(Math.random()<DROP.eq*(RIFT.eqK-1)){const it=newItem(rollSlot(),tierOfLv(m.lv),rollGrade(false));if(addItem(it,m)){rift.eq=(rift.eq||0)+1;const G=GRADES[it.g];floatTxt(m.x,m.y-62,G.n+' '+itemName(it),G.c,it.g>=2);}}
+  if(Math.random()<RIFT.shardP){S.shard+=1;rift.sh=(rift.sh||0)+1;floatTxt(m.x,m.y-46,'+권능 파편','#ffd860');}});}
 const riftEliteOf=z=>mobs.find(m=>m.riftBoss&&m.zone===(z||(rift&&rift.zone)));
 const riftLeft=()=>Math.max(0,RIFT.eN-(S.riftEK||0));
 function riftElite(){if(!rift)return null;const z=rift.zone,Z=ZONES[z];if(!S.riftEP)S.riftEP={};S.riftEP[z]=1;let m=riftEliteOf(z);
@@ -1574,7 +1577,7 @@ function riftBox(m,r){const z=m.zone;if(S.riftEP)delete S.riftEP[z];S.riftBox=(S
   if(hunt&&hunt.mob===m)hunt.mob=null;lastQKey='';save();}
 function riftEnd(why){if(!rift)return;const R=rift,Z=ZALL[R.zone];rift=null;
   for(const m of mobs)if(m.rift){m.dead=true;m.respawn=1e9;m.deadT=0;m.aggro=false;m.mesh.visible=false;if(target===m)target=null;if(chase===m)chase=null;}
-  const sum=Z.name+' 균열 · '+mmss(Math.max(0,R.t0-S.riftT))+' · 처치 '+R.k+' · 강화석 +'+R.stone+(R.dsg?' · 도면 +'+R.dsg:'')+(R.rcp?' · 비법서 +'+R.rcp:'')+(R.box?' · 균열 상자 '+R.box:'');
+  const sum=Z.name+' 균열 · '+mmss(Math.max(0,R.t0-S.riftT))+' · 처치 '+R.k+' · 강화석 +'+R.stone+(R.dsg?' · 도면 +'+R.dsg:'')+(R.rcp?' · 비법서 +'+R.rcp:'')+(R.eq?' · 장비 +'+R.eq:'')+(R.sh?' · 권능 파편 +'+R.sh:'')+(R.box?' · 균열 상자 '+R.box:'');
   if(why==='time'&&!player.dead){hunt=null;auto=false;player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();banner('균열이 닫혔다','입장 시간을 다 썼다 · '+ZONES.village.name+'(으)로 돌아왔다');}
   toast((why==='time'?'균열 시간 끝 · ':why==='dead'?'쓰러져 균열에서 밀려났다 · ':'균열에서 나왔다 · ')+sum,true);lastQKey='';save();}
 function riftTick(dt){if(!started)return;const T=riftT();
@@ -1602,17 +1605,17 @@ function riftRecOf(z){if(!S.riftRec)S.riftRec={};return S.riftRec[z]||(S.riftRec
 function riftExp(z){const Z=ZALL[z],r=MAP_REG[Z.map]||1;let w=0,sn=0,snN=0;
   for(const [sp,l0,l1,n] of Z.mobs){w+=n;sn+=n*Math.ceil(tierOfLv(l1+RIFT.lvUp)/2);snN+=n*Math.ceil(tierOfLv(Math.round((l0+l1)/2))/2);}sn/=w||1;snN/=w||1;
   const R=riftRecOf(z),mine=R.s>=60&&R.k>0,kpm=mine?R.k/(R.s/60):RIFT.kpm[z]||12,boxK=1/RIFT.eN;
-  const pk={stone:RIFT.stoneP*sn+boxK*RIFT.box.stone(r),dsg:DROP.dsg*RIFT.dsgK+boxK,rcp:RIFT.rcp[r][1]+boxK,box:boxK};
-  return {z,r,lv:riftLv(Z.map),kpm,mine,pk,stoneM:pk.stone*kpm,stoneN:STONE_P*snN*kpm,dsgH:pk.dsg*kpm*60,rcpH:pk.rcp*kpm*60,boxH:pk.box*kpm*60,rcpK:RIFT.rcp[r][0],
+  const pk={stone:RIFT.stoneP*sn+boxK*RIFT.box.stone(r),dsg:DROP.dsg*RIFT.dsgK+boxK,rcp:RIFT.rcp[r][1]+boxK,box:boxK,eq:DROP.eq*RIFT.eqK,sh:RIFT.shardP+boxK*RIFT.box.shard};
+  return {z,r,lv:riftLv(Z.map),kpm,mine,pk,stoneM:pk.stone*kpm,stoneN:STONE_P*snN*kpm,dsgH:pk.dsg*kpm*60,rcpH:pk.rcp*kpm*60,boxH:pk.box*kpm*60,eqH:pk.eq*kpm*60,shH:pk.sh*kpm*60,rcpK:RIFT.rcp[r][0],
     x:pk.stone/(STONE_P*snN||1)};}
 function riftTable(body){const w=el('div','rtab');w.appendChild(el('div','rth','지역별 기대 보상 · 입장 시간 60분 기준 (분당 처치 × 처치당 기대값)'));
-  const tb=el('table');const hr=el('tr');for(const h of ['균열','열림','분당 처치','강화석/분','60분 강화석','도면','비법서','상자','처치당 강화석'])hr.appendChild(el('th',null,h));tb.appendChild(hr);
+  const tb=el('table');const hr=el('tr');for(const h of ['균열','열림','분당 처치','60분 강화석','도면','비법서','장비','파편','처치당 강화석'])hr.appendChild(el('th',null,h));tb.appendChild(hr);
   for(const mid in RIFT.zone){const z=RIFT.zone[mid],E=riftExp(z),cur=mid===MAPID,op=riftOpen(mid),tr=el('tr',(cur?'cur ':'')+(op?'':'lk'));
-    const c=[MAPS[mid].name+' · '+ZALL[z].name,op?'Lv '+E.lv+'+':'Lv '+E.lv+'부터',E.kpm.toFixed(1)+(E.mine?' ✓':''),E.stoneM.toFixed(1),Math.round(E.stoneM*60)+'',E.dsgH.toFixed(1),E.rcpH.toFixed(1)+' '+STK[E.rcpK].n.split(' ')[0],E.boxH.toFixed(1),'보통의 ×'+E.x.toFixed(1)];
+    const c=[MAPS[mid].name+' · '+ZALL[z].name,op?'Lv '+E.lv+'+':'Lv '+E.lv+'부터',E.kpm.toFixed(1)+(E.mine?' ✓':''),Math.round(E.stoneM*60)+'',E.dsgH.toFixed(1),E.rcpH.toFixed(1)+' '+STK[E.rcpK].n.split(' ')[0],E.eqH.toFixed(1),E.shH.toFixed(1),'보통의 ×'+E.x.toFixed(1)];
     for(const v of c)tr.appendChild(el('td',null,v));tb.appendChild(tr);}
   w.appendChild(tb);w.appendChild(el('div','rtn','✓ = 내 기록(그 균열에서 1분 이상) · 나머지는 예상 처치 속도(열린 직후 레벨 기준) · 경험치 · 골드는 보통 사냥과 같다'));body.appendChild(w);}
 function riftRow(body){const z=riftZone();if(!z)return;const d=el('div','si rift'),nm=el('div','nm'),op=riftOpen(),T=riftT();
-  nm.append(el('b',null,'⧗ 시간의 균열 · '+ZONES[z].name),el('small',null,op?(rift?'균열 안 · ':'')+'입장 시간 '+mmss(T)+' / 60:00 · 균열 밖 2분마다 1분 충전 · 강화석 ×3 · 도면 ×2 · 비법서 · 정예까지 '+riftLeft()+'(상자 확정)':'Lv '+riftLv()+'부터 열린다'));{const E=riftExp(z);nm.appendChild(el('small','rx','기대 · 분당 처치 '+E.kpm.toFixed(1)+(E.mine?'(내 기록)':'(예상)')+' · 강화석 '+E.stoneM.toFixed(1)+'/분 (같은 처치 수 보통 사냥 '+E.stoneN.toFixed(1)+') · 60분 도면 '+E.dsgH.toFixed(1)+' · 비법서 '+E.rcpH.toFixed(1)+' · 상자 '+E.boxH.toFixed(1)));}d.appendChild(nm);
+  nm.append(el('b',null,'⧗ 시간의 균열 · '+ZONES[z].name),el('small',null,op?(rift?'균열 안 · ':'')+'입장 시간 '+mmss(T)+' / 60:00 · 균열 밖 2분마다 1분 충전 · 장비 ×2 · 도면 ×2 · 비법서 ×2 · 강화석 ×2 · 권능 파편 · 정예까지 '+riftLeft()+'(상자 확정)':'Lv '+riftLv()+'부터 열린다'));{const E=riftExp(z);nm.appendChild(el('small','rx','기대 · 분당 처치 '+E.kpm.toFixed(1)+(E.mine?'(내 기록)':'(예상)')+' · 강화석 '+E.stoneM.toFixed(1)+'/분 (같은 처치 수 보통 사냥 '+E.stoneN.toFixed(1)+') · 60분 도면 '+E.dsgH.toFixed(1)+' · 비법서 '+E.rcpH.toFixed(1)+' · 장비 '+E.eqH.toFixed(1)+' · 파편 '+E.shH.toFixed(1)));}d.appendChild(nm);
   const b=el('button','btn pri',rift?'나가기':op?'입장':'잠김');b.type='button';b.disabled=!op||(!rift&&T<RIFT.minIn);b.onclick=()=>{if(rift){closeModal();riftEnd('out');}else riftEnter();};d.appendChild(b);body.appendChild(d);}
 function invTick(dt){if(!started)return;if(!invUnlocked()){invNext=Math.max(invNext,t+60);return;}if(!S.invSeen){S.invSeen=true;banner('침공 개방','Lv '+INV.unlockLv+' 달성 · 잠시 후 첫 침공 보스가 나타난다');save();}if(inv){if(inv.m.dead){inv=null;invNext=t+INV.every;lastQKey='';}else if(t>inv.until){inv.m.dead=true;inv.m.respawn=1e9;inv.m.deadT=1;inv.m.mesh.visible=false;if(target===inv.m)target=null;if(hunt&&hunt.mob===inv.m)hunt=null;toast('침공 보스가 물러갔다');inv=null;invNext=t+INV.every;lastQKey='';}}
   else if(t>=invNext&&!player.dead)invSpawn();}
