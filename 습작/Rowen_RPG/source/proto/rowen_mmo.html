@@ -459,7 +459,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.43</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.44</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>
@@ -472,7 +472,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 <script>
 'use strict';
 (function(){
-const GAME_VER='v4.43';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.44';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -3532,7 +3532,9 @@ function invSpawn(){const open=HUNT.filter(z=>S.lv>=ZONES[z].mobs[0][1]-1),cand=
 const RIFT={potMin:10,max:3600,chg:.5,minIn:60,zone:{rowen:'z4',kardo:'k3',erna:'e3'},lvUp:1,resp:4,stoneP:.14,dsgK:2,eqK:2,shardP:.01,rcp:{1:['rcp2',.008],2:['rcp3',.006],3:['rcp4',.003]},
   /* v4.43 보상 재구성(#3-4c): 봇 시험에서 강화석은 병목이 아니었다 → 강화석 ×3→×2, 대신 장비 드롭 ×2(eqK) · 비법서 ×2 · 권능 파편(처치당 1%) */
   /* v4.38 균열 정예: 균열 안 처치 eN마다(입장을 넘어 누적) 하나 · 그 사냥터 가장 높은 종 Lv+3 · 체력 ×5 · 공격 ×1.25 · 처치 시 균열 상자 확정 */
-  eN:150,eLv:3,eHp:5,eAtk:1.25,eXp:6,eGold:10,box:{stone:r=>4+2*r,shard:5}};
+  eN:150,eLv:3,eHp:5,eAtk:1.25,eXp:6,eGold:10,box:{stone:r=>4+2*r,shard:5,
+  /* v4.44 상자를 병목에 닿게(#3-4d): 장비 1개 확정(지역별 등급 표 — 누적 확률, 영웅 이상은 아직 못 채운 컬렉션 부위 우선) · 그 지역에서 이미 만난 지역 보스의 전용 장비 buP 확률(컬렉션에 없는 쪽 우선) */
+  eq:{1:[[3,.25],[2,1]],2:[[3,.40],[2,1]],3:[[4,.10],[3,.60],[2,1]]},buP:.30}};
 let rift=null;
 const riftZone=mid=>RIFT.zone[mid||MAPID],riftLv=mid=>ZALL[riftZone(mid)].mobs[0][1];
 const riftOpen=mid=>!!riftZone(mid)&&S.maps.includes(mid||MAPID)&&S.lv>=riftLv(mid);
@@ -3581,15 +3583,24 @@ function riftElite(){if(!rift)return null;const z=rift.zone,Z=ZONES[z];if(!S.rif
   else{m.dead=false;m.hp=m.max;m.x=m.home.x;m.y=m.home.y;m.aggro=false;m.ret=false;m.deadT=0;m.respawn=1e9;m.mesh.visible=true;}
   for(let i=0;i<20;i++)spawnP(m.x+rand(-20,20),m.y+rand(-14,14),6,{col:'#c89cff',vx:rand(-20,20),vy:rand(-20,20),vz:rand(50,100),g:-120,life:1.1,size:3});
   if(hunt&&hunt.zone===z&&!hunt.mob)hunt.mob=m;banner('균열 정예 출현',Z.name+' · Lv'+m.lv+' '+m.name+' · 쓰러뜨리면 균열 상자');lastQKey='';return m;}
+/* v4.44 균열 상자 장비: 등급은 지역 표(RIFT.box.eq[r]) · 부위는 그 등급 이상을 요구하는 미등록 컬렉션 칸 우선(없으면 보통 부위 굴림) · 단계는 정예 Lv */
+function riftBoxGrade(r){const x=Math.random();for(const [g,p] of RIFT.box.eq[r])if(x<p)return g;return 2;}
+function riftBoxSlot(g,t){const c=[];for(const C of COLL)C.req.forEach((q,i)=>{if(!q.bu&&q.k&&(q.g||0)>=2&&(q.g||0)<=g&&(!q.t||q.t===t)&&!collReg(C,i))c.push(q.k);});return c.length?c[Math.floor(Math.random()*c.length)]:rollSlot();}
+/* 그 지역(지금 맵)에서 이미 만난 지역 보스의 전용 장비 후보 — 컬렉션에 아직 없고 등록할 수 있는 사본도 없는 것 우선 */
+function riftBoxBU(){const B=fieldBossQs().flatMap(q=>buOfQ(q.id));if(!B.length)return null;
+  const want=B.filter(b=>COLL.some(c=>c.req.some((q,i)=>q.bu===b.id&&!collReg(c,i)))&&!S.items.some(x=>x.bu===b.id&&!isEq(x)&&!x.lock));const L=want.length?want:B;return L[Math.floor(Math.random()*L.length)];}
 function riftBox(m,r){const z=m.zone;if(S.riftEP)delete S.riftEP[z];S.riftBox=(S.riftBox||0)+1;rift.box=(rift.box||0)+1;
   const ns=RIFT.box.stone(r),dk=dsgRand(r),rk=RIFT.rcp[r][0],sh=RIFT.box.shard;S.stone+=ns;rift.stone+=ns;S.shard+=sh;
-  withAcq('균열 정예 · '+m.name,acqZoneOf(m),()=>{addStk(dk,1);addStk(rk,1);});rift.dsg++;rift.rcp++;
-  floatTxt(m.x,m.y-30,'균열 상자','#e0c0ff',true);
-  banner('균열 상자','강화석 +'+ns+' · '+STK[dk].n+' · '+STK[rk].n+' · 권능 파편 +'+sh);toast('균열 정예 토벌 · 균열 상자: 강화석 +'+ns+' · '+STK[dk].n+' +1 · '+STK[rk].n+' +1 · 권능 파편 +'+sh,true);
+  const g=riftBoxGrade(r),t=tierOfLv(m.lv),it=newItem(riftBoxSlot(g,t),t,g),bu=Math.random()<RIFT.box.buP?riftBoxBU():null;let got=[];
+  withAcq('균열 정예 · '+m.name,acqZoneOf(m),()=>{addStk(dk,1);addStk(rk,1);
+    if(addItem(it,m)){rift.eq=(rift.eq||0)+1;rift.boxG=Math.max(rift.boxG||0,g);STAT.riftBoxG=STAT.riftBoxG||{};STAT.riftBoxG[g]=(STAT.riftBoxG[g]||0)+1;got.push(GRADES[g].n+' '+itemName(it));}
+    if(bu){const b=newBU(bu.id);if(addItem(b,m)){rift.bu=(rift.bu||0)+1;STAT.riftBU=(STAT.riftBU||0)+1;STAT.bu=(STAT.bu||0)+1;got.push('★ '+bu.n);}}});rift.dsg++;rift.rcp++;
+  floatTxt(m.x,m.y-30,'균열 상자','#e0c0ff',true);const gs=got.length?' · '+got.join(' · '):'';
+  banner('균열 상자','강화석 +'+ns+' · '+STK[dk].n+' · '+STK[rk].n+' · 권능 파편 +'+sh+gs);toast('균열 정예 토벌 · 균열 상자: 강화석 +'+ns+' · '+STK[dk].n+' +1 · '+STK[rk].n+' +1 · 권능 파편 +'+sh+gs,true);
   if(hunt&&hunt.mob===m)hunt.mob=null;lastQKey='';save();}
 function riftEnd(why){if(!rift)return;const R=rift,Z=ZALL[R.zone];rift=null;
   for(const m of mobs)if(m.rift){m.dead=true;m.respawn=1e9;m.deadT=0;m.aggro=false;m.mesh.visible=false;if(target===m)target=null;if(chase===m)chase=null;}
-  const sum=Z.name+' 균열 · '+mmss(Math.max(0,R.t0-S.riftT))+' · 처치 '+R.k+' · 강화석 +'+R.stone+(R.dsg?' · 도면 +'+R.dsg:'')+(R.rcp?' · 비법서 +'+R.rcp:'')+(R.eq?' · 장비 +'+R.eq:'')+(R.sh?' · 권능 파편 +'+R.sh:'')+(R.box?' · 균열 상자 '+R.box:'');
+  const sum=Z.name+' 균열 · '+mmss(Math.max(0,R.t0-S.riftT))+' · 처치 '+R.k+' · 강화석 +'+R.stone+(R.dsg?' · 도면 +'+R.dsg:'')+(R.rcp?' · 비법서 +'+R.rcp:'')+(R.eq?' · 장비 +'+R.eq:'')+(R.sh?' · 권능 파편 +'+R.sh:'')+(R.bu?' · 보스 전용 +'+R.bu:'')+(R.box?' · 균열 상자 '+R.box:'');
   if(why==='time'&&!player.dead){hunt=null;auto=false;player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();banner('균열이 닫혔다','입장 시간을 다 썼다 · '+ZONES.village.name+'(으)로 돌아왔다');}
   toast((why==='time'?'균열 시간 끝 · ':why==='dead'?'쓰러져 균열에서 밀려났다 · ':'균열에서 나왔다 · ')+sum,true);lastQKey='';save();}
 function riftTick(dt){if(!started)return;const T=riftT();
@@ -3620,12 +3631,15 @@ function riftExp(z){const Z=ZALL[z],r=MAP_REG[Z.map]||1;let w=0,sn=0,snN=0;
   const pk={stone:RIFT.stoneP*sn+boxK*RIFT.box.stone(r),dsg:DROP.dsg*RIFT.dsgK+boxK,rcp:RIFT.rcp[r][1]+boxK,box:boxK,eq:DROP.eq*RIFT.eqK,sh:RIFT.shardP+boxK*RIFT.box.shard};
   return {z,r,lv:riftLv(Z.map),kpm,mine,pk,stoneM:pk.stone*kpm,stoneN:STONE_P*snN*kpm,dsgH:pk.dsg*kpm*60,rcpH:pk.rcp*kpm*60,boxH:pk.box*kpm*60,eqH:pk.eq*kpm*60,shH:pk.sh*kpm*60,rcpK:RIFT.rcp[r][0],
     x:pk.stone/(STONE_P*snN||1)};}
+/* v4.44 정예 상자 안내 한 줄 — 지역 표에서 바로 만든다 */
+function riftBoxTxt(){const pc=x=>Math.round(x*100)+'%',part=r=>{const T=RIFT.box.eq[r];let prev=0,o=[];for(const [g,p] of T){if(g>=3)o.push(GRADES[g].n+' '+pc(p-prev));prev=p;}return MAPS[Object.keys(RIFT.zone).find(m=>(MAP_REG[m]||1)===r)].name+' '+o.reverse().join(' · ');};
+  return '균열 상자(정예 · 처치 '+RIFT.eN+'마다): 장비 1개 확정(희귀 이상 · '+[1,2,3].map(part).join(' / ')+') · 보스 전용 장비 '+pc(RIFT.box.buP)+'(이 지역에서 이미 만난 지역 보스 · 컬렉션에 없는 것 먼저) · 강화석 · 도면 · 비법서 · 권능 파편';}
 function riftTable(body){const w=el('div','rtab');w.appendChild(el('div','rth','지역별 기대 보상 · 입장 시간 60분 기준 (분당 처치 × 처치당 기대값)'));
   const tb=el('table');const hr=el('tr');for(const h of ['균열','열림','분당 처치','60분 강화석','도면','비법서','장비','파편','처치당 강화석'])hr.appendChild(el('th',null,h));tb.appendChild(hr);
   for(const mid in RIFT.zone){const z=RIFT.zone[mid],E=riftExp(z),cur=mid===MAPID,op=riftOpen(mid),tr=el('tr',(cur?'cur ':'')+(op?'':'lk'));
     const c=[MAPS[mid].name+' · '+ZALL[z].name,op?'Lv '+E.lv+'+':'Lv '+E.lv+'부터',E.kpm.toFixed(1)+(E.mine?' ✓':''),Math.round(E.stoneM*60)+'',E.dsgH.toFixed(1),E.rcpH.toFixed(1)+' '+STK[E.rcpK].n.split(' ')[0],E.eqH.toFixed(1),E.shH.toFixed(1),'보통의 ×'+E.x.toFixed(1)];
     for(const v of c)tr.appendChild(el('td',null,v));tb.appendChild(tr);}
-  w.appendChild(tb);w.appendChild(el('div','rtn','✓ = 내 기록(그 균열에서 1분 이상) · 나머지는 예상 처치 속도(열린 직후 레벨 기준) · 경험치 · 골드는 보통 사냥과 같다'));body.appendChild(w);}
+  w.appendChild(tb);w.appendChild(el('div','rtn','✓ = 내 기록(그 균열에서 1분 이상) · 나머지는 예상 처치 속도(열린 직후 레벨 기준) · 경험치 · 골드는 보통 사냥과 같다'));w.appendChild(el('div','rtn rbox',riftBoxTxt()));body.appendChild(w);}
 function riftRow(body){const z=riftZone();if(!z)return;const d=el('div','si rift'),nm=el('div','nm'),op=riftOpen(),T=riftT();
   nm.append(el('b',null,'⧗ 시간의 균열 · '+ZONES[z].name),el('small',null,op?(rift?'균열 안 · ':'')+'입장 시간 '+mmss(T)+' / 60:00 · 균열 밖 2분마다 1분 충전 · 장비 ×2 · 도면 ×2 · 비법서 ×2 · 강화석 ×2 · 권능 파편 · 정예까지 '+riftLeft()+'(상자 확정)':'Lv '+riftLv()+'부터 열린다'));{const E=riftExp(z);nm.appendChild(el('small','rx','기대 · 분당 처치 '+E.kpm.toFixed(1)+(E.mine?'(내 기록)':'(예상)')+' · 강화석 '+E.stoneM.toFixed(1)+'/분 (같은 처치 수 보통 사냥 '+E.stoneN.toFixed(1)+') · 60분 도면 '+E.dsgH.toFixed(1)+' · 비법서 '+E.rcpH.toFixed(1)+' · 장비 '+E.eqH.toFixed(1)+' · 파편 '+E.shH.toFixed(1)));}d.appendChild(nm);
   const b=el('button','btn pri',rift?'나가기':op?'입장':'잠김');b.type='button';b.disabled=!op||(!rift&&T<RIFT.minIn);b.onclick=()=>{if(rift){closeModal();riftEnd('out');}else riftEnter();};d.appendChild(b);body.appendChild(d);}
@@ -3642,7 +3656,7 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={mainDone,riftPrep,riftPrepGo,riftResupply,riftBack,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftT,winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftPrepGo,riftResupply,riftBack,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftT,winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 

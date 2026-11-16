@@ -31,7 +31,8 @@ with sync_playwright() as p:
         if BOTRIFT and not s['modal'] and not s['dead']:
             # v4.42 봇 균열 사용: 자동 진행으로 사냥 중 강화석이 모자라면(< BOTRIFT_ST) 균열에 15분(게임 시간) — 물약 10 미만이면 [채우고 입장]
             # v4.43 BOTRIFT_MODE=wait: 강화석 대신 '성장 대기(수련 사냥, trainFor)' 중에 균열 15분 — 대기 시간을 균열이 줄이는지 본다
-            RCOND=("!!__g.trainFor" if os.environ.get('BOTRIFT_MODE')=='wait' else f"__g.S.stone<{RIFT_ST}")
+            RCOND=("!!__g.trainFor&&__g.S.lv<=Math.max(...__g.ZALL[__g.riftZone()].mobs.map(a=>a[2]))+3" if os.environ.get('BOTRIFT_MODE')=='wait' else f"__g.S.stone<{RIFT_ST}")
+            # v4.44: wait 모드는 '지금 레벨에 맞는 균열'만(균열 사냥터 최고 Lv+3 이하) — v4.43에선 Lv26에 로웬 Lv9 균열을 썼다
             if riftOn is None and pg.evaluate(f"__g.riftOpen()&&!__g.rift&&__g.riftT()>=900&&!!__g.hunt&&__g.S.autoQ&&{RCOND}&&!__g.nav"):
                 pg.evaluate("__g.S.hpPot<__g.RIFT.potMin?__g.riftPrepGo():__g.riftEnter(true)");riftOn=i;riftUse['n']+=1;print('BOTRIFT in',i*3,s['map'],'lv',s['lv'],'stone',pg.evaluate('__g.S.stone'))
             elif riftOn is not None and (i-riftOn>=300 or pg.evaluate("!__g.rift&&!__g.nav")):

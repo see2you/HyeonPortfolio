@@ -11,7 +11,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.43',J("document.getElementById('verTag').textContent")=='v4.43')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     R=J("(()=>{const R=__g.RIFT;return {sp:R.stoneP,dk:R.dsgK,ek:R.eqK,sh:R.shardP,rc:[R.rcp[1][1],R.rcp[2][1],R.rcp[3][1]]}})()")
     chk('수치: 강화석 .14(보통 .07의 ×2) · 도면 ×2 · 장비 ×2 · 파편 1%',R['sp']==.14 and R['dk']==2 and R['ek']==2 and R['sh']==.01,R)
     chk('비법서 ×2: .008 · .006 · .003',R['rc']==[.008,.006,.003],R['rc'])
