@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.45';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.46';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -276,7 +276,18 @@ const MAPS={
     inv:{e1:['oregolem',30],e2:['earthgolem',33],e3:['magmagolem',36],e4:['magmagolem',39]},
   },
 };
-const ZALL={};for(const mid in MAPS)for(const z in MAPS[mid].zones)ZALL[z]=Object.assign(MAPS[mid].zones[z],{map:mid,id:z});
+/* v4.46 시간의 균열 전용 공간(G17 · 현 요청): 사냥터 위에 덧씌우던 균열을 별도 맵으로 떼어 냈다 — 메인 퀘스트 사냥터와 겹치지 않는다.
+   한 맵을 세 지역 균열이 같이 쓴다(들어온 지역에 따라 몬스터 한 벌을 새로 깐다). 걸을 수 있는 곳은 bound 안뿐이고 그 밖은 어두운 허공.
+   village = 균열 문턱(안전) · rz = 사냥 구역 · way = 균열 문(길잡이 표석과 같은 조작 — 나가기 · 다른 지역으로) · mini = 미니맵이 비추는 정사각형 */
+MAPS.rift={id:'rift',name:'시간의 균열',inst:true,haze:'#5a4186',amb:0xdccaff,skirt:0x120c1e,voidCol:'#161026',
+  bound:[540,490,1380,1420],mini:{x:490,y:485,w:940},
+  zones:{village:{name:'균열 문턱',r:[850,1190,1070,1330],safe:true,c:[960,1255]},
+    rz:{name:'시간의 균열',r:[640,590,1280,1150],c:[960,880],mobs:[]}},
+  lakes:[],lava:[],plats:[],plaza:{x:960,y:1238},way:{x:960,y:1300},roads:[[[960,1296],[960,1150]]],houses:[],npcs:{},deco:[],
+  trees:()=>({0:DTREES}),dens:()=>.035,biome:()=>7,
+  decor(stat){for(const [x,y] of [[902,1206],[1018,1206],[902,1306],[1018,1306],[930,1160],[990,1160]])stat(FSPR.lamp,x,y,{r:4});},
+  scatter:[[22,b=>true,()=>[ORE,OBS],8],[26,b=>true,()=>ROCKSET.rock,9]],reeds:false};
+const ZALL={};for(const mid in MAPS)for(const z in MAPS[mid].zones){const Z=Object.assign(MAPS[mid].zones[z],{map:mid,id:z});if(!(MAPS[mid].inst&&z==='village'))ZALL[z]=Z;}
 const NALL={};for(const mid in MAPS)for(const id in MAPS[mid].npcs)NALL[id]=Object.assign(MAPS[mid].npcs[id],{map:mid});
 const HUNTALL=['z1','z2','z3','z4','z5','k1','k2','k3','k4','e1','e2','e3','e4'];
 const AGGRO={windfox:1,bull:1,otter:1,lakesnake:1,lavalizard:1,obsidiancrab:1,goat:1,crystalbat:1,rockcrab:1,puffer:1,ashbat:1,phoenix:1,magmagolem:1};
@@ -388,7 +399,15 @@ const QUESTS=[
   {id:'q10',giver:'orvin',title:'호수의 주인',type:'elite',zone:'z4',subs:['sb3','sb4','rp2','ht1'],gate:{skills:{roar:1,star:2},cp:1750},
     elite:{sp:'lakesnake',lv:13,name:'호수의 주인 · 큰물뱀',hpMul:3,sc:1.8,fa:4},
     offer:'호수 깊은 곳의 큰물뱀이 뒤틀림의 원인일세.\n넬과 미라를 도와 준비하게. 전투 함성을 배우고 별똥별을 더 익혀야 할 걸세.',done:'호수의 기운이 맑아졌네.\n하지만 뒤틀림은 북서쪽 고원에서 흘러오고 있어.',rw:{xp:1200,gold:600,shard:15}},
-  {id:'q11',giver:'orvin',title:'잿빛 고원',type:'kill',subs:['sd4','gc3','gc4'],sp:'emberslime',n:12,zone:'z5',
+  /* v4.46 시간의 균열 개방 스토리(G17 · 현 요청): 호수의 주인이 쓰러진 자리에서 안개가 갈라진다 → 조각을 모아 길잡이 표석에 문을 낸다 → 균열 개방.
+     기존 유형(talk · collect)만 쓴다. story가 붙은 퀘스트는 메인 보상 덧셈(순번 짝수 도면 · 광물)에서 빠져 기존 퀘스트의 보상이 한 칸도 밀리지 않는다 */
+  {id:'rq1',story:'rift',giver:'orvin',title:'갈라진 안개',type:'talk',npc:'hans',
+    offer:'큰물뱀이 쓰러지던 순간, 호수 위 안개가 칼로 벤 듯 갈라졌다고 하네.\n북문의 한스가 그 광경을 봤다니 이야기를 들어 보게.',done:'봤고말고. 갈라진 틈으로 다른 하늘이 보였어.\n틈에서 반짝이는 조각이 쏟아졌는데, 호숫가 슬라임들이 그걸 삼키더군.',rw:{xp:100,gold:150}},
+  {id:'rq2',story:'rift',giver:'hans',title:'시간의 조각',type:'collect',sp:'waterslime',item:'시간의 조각',rate:.5,n:6,zone:'z4',
+    offer:'그 조각을 모아 장로님께 가져가면 뭔가 알아내실 거야.\n안개 호숫가의 물방울슬라임에게서 여섯 개만 되찾아 와.',done:'차갑지도 뜨겁지도 않은데, 쥐고 있으면 시계 소리가 나는군.\n장로님께 가져가 봐.',rw:{xp:400,gold:300,stone:4}},
+  {id:'rq3',story:'rift',giver:'orvin',title:'균열의 문',type:'talk',npc:'bram',
+    offer:'시간의 조각이라… 옛 기록에 있네. 뒤틀림이 시간에 낸 상처, 「시간의 균열」일세.\n조각을 길잡이 표석에 박으면 그 안으로 드나드는 문이 된다네. 브람에게 맡기게.',done:'표석에 박아 넣었다. …문이 열렸군. 표석에 손을 대면 균열로 들어갈 수 있을 거다.\n안의 시간은 한 시간뿐이야. 밖에서 쉬면 다시 차오르니 아껴 써.',rw:{xp:100,shard:5}},
+  {id:'q11',giver:'orvin',title:'잿빛 고원',type:'kill',subs:['sd4','gc3','gc4','gr1'],sp:'emberslime',n:12,zone:'z5',
     offer:'뒤틀림의 근원은 잿빛 고원일세.\n불씨슬라임 열두 마리를 처치하고 길을 트게.',done:'고원 깊은 곳에서 거대한 열기가 느껴지네…\n마그마골렘 군주가 깨어난 게야.',rw:{xp:1500,gold:800,shard:15}},
   {id:'fb2',giver:'hans',title:'지역 보스 토벌',type:'fboss',boss:'q10',zone:'z4',n:1,
     offer:'호수의 주인이 다시 물 위로 올라왔어. 고원으로 가는 길목이 또 막혔네.\n군주와 맞서려면 신앙이 더 필요해. 큰물뱀을 잡아 그 비늘 장비부터 챙겨 오게.',done:'좋아, 이제 고원으로 갈 채비가 됐군.',rw:{xp: 1300, gold: 700, stone: 5, shard: 10}},
@@ -544,6 +563,8 @@ Object.assign(SUBQ,{
 });
 const STATE_T={rep:1,lv:1};
 Object.assign(SUBQ,{
+  /* v4.46 첫 균열 안내(선택): 균열 안 누적 처치(S.riftK) — 처치 이벤트가 아니라 수를 보는 성장 서브라 '균열 처치는 퀘스트에 들지 않는다'와 부딪히지 않는다 */
+  gr1:{giver:'hans',grow:'rift',n:10,title:'첫 균열 탐사',offer:'문이 열렸다며? 안이 어떤지 직접 보고 와. 균열 몬스터 열 마리면 충분해.\n위험하면 화면의 [나가기]를 눌러.',done:'시간이 멈춘 사냥터라… 강화석이 저렇게 쏟아진다니 종종 들러야겠군.',rw:{xp:300,stone:5}},
   gc1:{giver:'bram',grow:'craft',g:0,n:2,title:'첫 장비 제작',give:{stone:6,gold:120},offer:'이제부터 장비는 주워 쓰는 게 아니라 만들어 쓰는 거야.\n강화석을 줄 테니 제작 창에서 장비 두 개를 만들어 봐. (가방 I → 제작)',done:'제법인데? 같은 장비 둘을 모으면 고급으로 올려 만들 수 있지.',rw:{xp:250,stk:{asc:3},stone:3}},
   gc2:{giver:'bram',grow:'ench',k:'weapon',en:3,title:'무기 단련',give:{wsc:3},offer:'강화석을 넉넉히 주지. 장착한 무기를 +3까지 올려 보게. (메뉴 → 강화)\n안전 강화 구간에선 실패하지 않아. 강화할수록 신앙도 깊어지지.',done:'손에 착 붙는군. 강화 단계마다 신앙이 1씩 오른다네.',rw:{xp:250,stone:4}},
   gc3:{giver:'orvin',grow:'coll',n:2,title:'첫 컬렉션',offer:'장비를 컬렉션에 바치면 그 장비는 사라지지만, 그 힘은 영원히 자네에게 남는다네.\n컬렉션 둘을 완성해 보게. (가방 I → 컬렉션)',done:'몸에 힘이 차오르는 게 느껴지나? 그게 신앙일세.',rw:{xp:600,stk:{wsc:2}}},
@@ -575,8 +596,14 @@ for(const q of [...QUESTS,...Object.values(SUBQ)]){if(q.rw){normRwStk(q.rw);if(q
 const QFB=q=>QUESTS.find(x=>x.id===q.boss);QUESTS.forEach(q=>{if(q.type==='fboss')q.title=QFB(q).elite.name.split(' · ')[0]+' 재토벌';});
 /* 이전 세이브의 S.qi는 v4.18까지의 순서 — 퀘스트 id로 옮긴다 */
 const QORDER_418=['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q12','q13','q14','q15','q16','q17','q18','q19','q20','q21','q22','q23','q24','q25','q26','q27','q28','q29','q30','q31','q32','q33'];
-function migrateQi(S){if((S.qv||0)>=2)return;if(S.qi!=null){const id=QORDER_418[S.qi];const i=id?QUESTS.findIndex(q=>q.id===id):QUESTS.length;if(i>=0)S.qi=i;}S.qv=2;}
-QUESTS.forEach((q,i)=>{if(q.type==='talk')return;const r=MAP_REG[q.type==='fboss'?NALL[q.giver].map:qMap(q)]||1;q.rw.ore=(q.rw.ore||0)+(q.elite?6+4*r:3+2*r);if(q.elite)q.rw.dsg=(q.rw.dsg||0)+2;else if(i%2===0)q.rw.dsg=(q.rw.dsg||0)+1;});
+const QORDER_445=['q1','q2','q3','q4','q5','q6','q7','q8','q9','fb1','q10','q11','fb2','q12','q13','q14','q15','fb3','q16','q17','q18','fb4','q19','q20','fb5','q21','q22','q23','q24','q25','q26','fb6','q27','q28','q29','fb7','q30','q31','fb8','q32','q33'];
+/* v4.46 메인에 균열 개방 스토리 3개(rq1~rq3)를 q10 뒤에 끼움 → 순번을 id로 다시 찾는다. qv 3 = 이 순서. 옛 순번(qv 2 = QORDER_445 · 그 전 = QORDER_418)의 id를 지금 QUESTS에서 찾는다.
+   · q10을 넘긴 세이브는 스토리를 지난 것으로 본다(균열 열림 — 한 번 알림) · q10 전인데 옛 규칙으로 균열을 써 본 세이브는 riftKey로 계속 열어 둔다 · q11을 지난 세이브에는 '첫 균열 탐사'를 열어 준다 */
+function migrateQi(S){const v=S.qv||0;if(v>=3)return;if(S.qi!=null){const id=(v>=2?QORDER_445:QORDER_418)[S.qi];const i=id?QUESTS.findIndex(q=>q.id===id):QUESTS.length;if(i>=0)S.qi=i;
+    const k=QUESTS.findIndex(q=>q.id==='rq3'),k11=QUESTS.findIndex(q=>q.id==='q11');
+    if(S.qi>k)S.riftNote=1;else if((S.riftK||0)>0)S.riftKey=1;
+    if(S.sq&&!S.sq.gr1&&(S.qi>k11||S.qi===k11&&S.qs&&S.qs!=='avail'))S.sq.gr1={st:'avail',n:0};}S.qv=3;}
+{let j=0;QUESTS.forEach(q=>{const i=j;if(!q.story)j++;if(q.type==='talk'||q.story)return;const r=MAP_REG[q.type==='fboss'?NALL[q.giver].map:qMap(q)]||1;q.rw.ore=(q.rw.ore||0)+(q.elite?6+4*r:3+2*r);if(q.elite)q.rw.dsg=(q.rw.dsg||0)+2;else if(i%2===0)q.rw.dsg=(q.rw.dsg||0)+1;});}
 for(const id of ['gc1','gc4','gc8','gc13']){const q=SUBQ[id];q.give=q.give||{};const r=id==='gc13'?3:id==='gc8'?2:1;q.give['ore'+r]=(q.give['ore'+r]||0)+(id==='gc1'?8:id==='gc4'?10:20);q.give.dsgAny=(id==='gc1'?2:1);if(q.give.stone){delete q.give.stone;}}
 
 /* ================= 저장 ================= */
@@ -585,7 +612,7 @@ let S=null;
 const newSave=()=>({map:'rowen',maps:['rowen'],lv:1,xp:0,gold:60,hpPot:5,mpPot:3,scroll:2,autoBuy:true,autoRet:false,wlv:0,alv:0,wfail:0,afail:0,stone:3,shard:0,
   st:{str:0,vit:0,dex:0,int:0},sp:0,kp:0,sk:{},books:{},autoGrow:false,
   god:null,godLv:{zeus:1,athena:1,artemis:1},qi:0,qs:'avail',qn:0,sq:{},rep:null,autoQ:false,autoPot:true,x:960,y:1700,kills:0,lastSeen:0,aiZone:null});
-function save(){if(!S)return;S.lastSeen=Date.now();S.map=MAPID;S.x=Math.round(player.x);S.y=Math.round(player.y);try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
+function save(){if(!S)return;S.lastSeen=Date.now();if(M.inst){if(riftRet){S.map=riftRet.map;S.x=riftRet.x;S.y=riftRet.y;}/* 전용 공간에서는 들어오기 전 자리를 적는다 → 이어하기는 균열 밖에서 */}else{S.map=MAPID;S.x=Math.round(player.x);S.y=Math.round(player.y);}try{localStorage.setItem(SAVE_KEY,JSON.stringify(S));}catch(e){}}
 function loadSave(){try{const r=JSON.parse(localStorage.getItem(SAVE_KEY));if(r&&r.lv)return migrate48(Object.assign(newSave(),r));}catch(e){}return null;}
 
 /* ================= 현재 지역 바인딩 ================= */
@@ -688,8 +715,10 @@ async function buildWorld(id,prog){bindMap(id);const R=M.rt;
   const c=mk(WW,WH),g=c.getContext('2d'),img=g.createImageData(WW,WH),d=img.data;
   const DI=['#8f7150','#a2805a','#b18f66','#bf9e73'].map(hx),DIB=['#3a2e2a','#463830','#524236','#5e4a3c'].map(hx),WA=hx('#3a73a2'),WD=hx('#2c5f8e'),WL=hx('#6aa3cc'),SA=hx('#cbb586'),SAD=hx('#b59e70'),LV=hx('#e0601e'),LVD=hx('#a8341a'),CR=hx('#1c1414');
   const put=(i,col,k=1)=>{d[i]=col[0]*k;d[i+1]=col[1]*k;d[i+2]=col[2]*(k+(1-k)*.35);d[i+3]=255;};
+  /* v4.46 전용 공간: bound가 있는 맵은 그 밖을 허공으로(땅 그림 · 풀 · 나무 · 통행 모두) */
+  const BD=M.bound,VOID=hx(M.voidCol||'#161026'),edgeOf=BD?(x,y)=>Math.min(x-BD[0],BD[2]-x,y-BD[1],BD[3]-y):(x,y)=>Math.min(x,WW-x,y,WH-y);
   for(let y=0;y<WH;y++){if(y%96===0){prog(y/WH*.7);await new Promise(r=>setTimeout(r,0));}
-    for(let x=0;x<WW;x++){const i=(y*WW+x)*4,j=(vnoise(x/38,y/38)-.5)*60,edge=Math.min(x,WW-x,y,WH-y),k=edge<140?1-(140-edge)/140*.45:1;
+    for(let x=0;x<WW;x++){const i=(y*WW+x)*4;if(BD&&edgeOf(x,y)<-46){put(i,VOID);continue;}const j=(vnoise(x/38,y/38)-.5)*60,edge=edgeOf(x,y);if(BD&&edge<-12-j*.3){put(i,VOID);continue;}const k=edge<140?1-(140-Math.max(edge,-30))/140*.45:1;
       let wet=false;for(const L of LAKES){const le=((x-L.x)/(L.rx+j*.3))**2+((y-L.y)/(L.ry+j*.2))**2;if(le<1){let col=le<.45?WD:WA;if(le>.9||hash2(x>>1,y)<.012)col=WL;put(i,col);wet=true;break;}if(le<1.24){put(i,hash2(x,y)<.3?SAD:SA);wet=true;break;}}
       if(wet)continue;
       let hot=false;for(const L of LAVA){const e=((x-L.x)/(L.rx+j*.08))**2+((y-L.y)/(L.ry+j*.05))**2;if(e<1){put(i,e<.5?LV:LVD);hot=true;break;}if(e<1.55){put(i,hash2(x,y)<.45?CR:BPAL[5][0]);hot=true;break;}}
@@ -700,7 +729,7 @@ async function buildWorld(id,prog){bindMap(id);const R=M.rt;
   const set=(x,y,col)=>{if(x<0||y<0||x>=WW||y>=WH)return;const i=(y*WW+x)*4;d[i]=col[0];d[i+1]=col[1];d[i+2]=col[2];};
   const free=(x,y)=>lakeMin(x,y)>1.4&&roadD(x,y)>16&&Math.hypot(x-PLAZA.x,(y-PLAZA.y)*1.25)>106&&!LAVA.some(L=>ellE(L,x,y)<1.7);
   const r=rng(777+id.length),FL=['#f4f1e4','#f2cf55','#ef8fb0','#9fc3f0'].map(hx);
-  for(let n=0;n<52000;n++){const x=2+Math.floor(r()*(WW-4)),y=2+Math.floor(r()*(WH-4));if(!free(x,y))continue;const b=biomeAt(x,y,0),P=BPAL[b];
+  for(let n=0;n<52000;n++){const x=2+Math.floor(r()*(WW-4)),y=2+Math.floor(r()*(WH-4));if(!free(x,y)||BD&&edgeOf(x,y)<4)continue;const b=biomeAt(x,y,0),P=BPAL[b];
     if(b===5){if(r()<.3){set(x,y,hx('#6a2216'));set(x+1,y,hx('#6a2216'));}else set(x,y,hx('#6a625e'));continue;}
     if(b===3||b===6){set(x,y,P[5]);set(x+1,y,P[4]);set(x,y+1,P[0]);continue;}
     if(b===7&&r()<.12){const col=r()<.5?hx('#8ad8ff'):hx('#c8a8ff');set(x,y,col);continue;}
@@ -713,7 +742,7 @@ async function buildWorld(id,prog){bindMap(id);const R=M.rt;
   const gt=new T3.CanvasTexture(c);gt.magFilter=T3.NearestFilter;gt.minFilter=T3.LinearMipMapLinearFilter;gt.anisotropy=rd.capabilities.getMaxAnisotropy();
   R.terrain=terrain=new T3.Mesh(geo,new T3.MeshLambertMaterial({map:gt}));terrain.receiveShadow=true;G0.add(terrain);
   const skirt=new T3.Mesh(new T3.PlaneGeometry(WW+6000,WH+6000),new T3.MeshLambertMaterial({color:M.skirt||(id==='kardo'?0x4a4630:0x2a4424)}));skirt.rotation.x=-Math.PI/2;{let lo=1e9;for(let i=0;i<EG.length;i++)if(EG[i]<lo)lo=EG[i];/* 지형 최저점보다 아래 — 협곡(h −20)이 덮이던 버그 */skirt.position.set(WW/2,Math.min(-12,lo-6),WH/2);}G0.add(skirt);
-  for(let cy=0;cy<GH;cy++)for(let cx=0;cx<GW;cx++){const x=cx*CELL+4,y=cy*CELL+4;if(x<26||y<26||x>WW-26||y>WH-26||lakeMin(x,y)<1.06||LAVA.some(L=>ellE(L,x,y)<1.15))blk[cy*GW+cx]=1;}
+  for(let cy=0;cy<GH;cy++)for(let cx=0;cx<GW;cx++){const x=cx*CELL+4,y=cy*CELL+4;if(x<26||y<26||x>WW-26||y>WH-26||BD&&edgeOf(x,y)<8||lakeMin(x,y)<1.06||LAVA.some(L=>ellE(L,x,y)<1.15))blk[cy*GW+cx]=1;}
   for(const h of HOUSES){buildHouse(h);markRect(h.x-4,h.base-h.d-6,h.x+h.w+4,h.base+1);}
   const stat=(img,x,y,o={})=>{statics.push({img,x,y,flat:o.flat,s:o.s||1});if(o.r)markCircle(x,y,o.r);};
   const ctx={markRect,stall:cols=>sprTable(46,10,10,'#9a6a40',{head:6,items:p=>{cols.forEach((c2,k)=>{const x=3+k*6+(k>3?3:0);p(x,-5,4,6,c2);p(x+1,-6,2,1,'#e8e4dc');p(x,-5,1,6,'#ffffff');});}})};
@@ -722,7 +751,7 @@ async function buildWorld(id,prog){bindMap(id);const R=M.rt;
   const clearSpot=(x,y)=>{if(roadD(x,y)<28||inR(ZONES.village.r,x,y,34)||lakeMin(x,y)<1.5)return false;if(eliteSpots.some(([ex,ey])=>Math.hypot(x-ex,y-ey)<110))return false;
     if(LAVA.some(L=>ellE(L,x,y)<2.2))return false;for(const z of HUNT){const c2=ZONES[z].c;if(Math.hypot(x-c2[0],y-c2[1])<70)return false;}return true;};
   for(let gy=14;gy<WH;gy+=20)for(let gx=4;gx<WW;gx+=22){const x=Math.round(gx+(hash2(gx,gy)-.5)*16),y=Math.round(gy+(hash2(gy,gx)-.5)*10);
-    if(!clearSpot(x,y))continue;const b=biomeAt(x,y,(vnoise(x/38,y/38)-.5)*60),edge=Math.min(x,WW-x,y,WH-y);
+    if(!clearSpot(x,y))continue;const b=biomeAt(x,y,(vnoise(x/38,y/38)-.5)*60),edge=edgeOf(x,y);if(BD&&edge<0)continue;/* bound가 있는 맵(전용 공간)만 — 지역 맵은 v4.45와 한 그루도 다르지 않게 */
     let dens=M.dens(b,x,y);if(edge<80)dens=.92;else if(edge<130)dens=Math.max(dens,.4);
     if(hash2(gx*3+7,gy*5)<dens){const L=TS[b]||TS[0];stat(L[Math.floor(hash2(x,y)*L.length)],x,y,{r:6});}}
   for(const [n,ok,pick,rr] of M.scatter){let k=0;for(let i=0;i<n*40&&k<n;i++){const x=40+r()*(WW-80),y=40+r()*(WH-80);if(!clearSpot(x,y)||blockedAt(x,y))continue;const b=biomeAt(x,y,0);if(!ok(b))continue;const L=pick(b);stat(L[Math.floor(r()*L.length)],Math.round(x),Math.round(y),{r:rr});k++;}}
@@ -755,7 +784,7 @@ function buildHouse(h){
   const gable=new T3.Mesh(gb,fadeMat(new T3.MeshLambertMaterial({color:new T3.Color(shade(h.wall,-.1)),side:T3.DoubleSide})));gable.castShadow=true;G0.add(gable);
   if(h.chimney){const ch=new T3.Mesh(new T3.BoxGeometry(9,22,9),fadeMat(new T3.MeshLambertMaterial({color:0x8b867f})));ch.position.set(x1-24,yR-2,zM-8);ch.castShadow=true;G0.add(ch);h.smoke={x:x1-24,y:zM-8,z:yR+10-e};}}
 const mini=$('mini'),mg=mini.getContext('2d');
-function buildMini(){const c=mk(192,192),g=c.getContext('2d');g.imageSmoothingEnabled=true;g.drawImage(groundCv,0,0,192,192);g.fillStyle='rgba(20,40,20,.35)';
+function buildMini(){const c=mk(192,192),g=c.getContext('2d'),V=M.mini;g.imageSmoothingEnabled=true;if(V){g.drawImage(groundCv,V.x,V.y,V.w,V.w,0,0,192,192);const k=WW/V.w;g.setTransform(k,0,0,k,-V.x/10*k,-V.y/10*k);}else g.drawImage(groundCv,0,0,192,192);g.fillStyle='rgba(20,40,20,.35)';
   for(const s of statics)if(s.img.height>40)g.fillRect(s.x/10-1,s.y/10-1,2,2);g.fillStyle='#6a4d8c';for(const h of HOUSES)g.fillRect(h.x/10,(h.base-h.d)/10,h.w/10,h.d/10);g.fillStyle='#b8a0ff';g.fillRect(M.way.x/10-2,M.way.y/10-3,4,5);M.rt.miniBase=miniBase=c;}
 
 /* ================= 길찾기 (A*) ================= */
@@ -878,7 +907,7 @@ function playerHit(m,mul,skill){const st=pStats(),crit=Math.random()<st.crit,d=c
 /* 무게 82% 이상: 공격·스킬 불가 (리니지) */
 const tooHeavy=()=>wPct()>=.82;
 function heavyBlock(silent){if(!tooHeavy())return false;if(!silent)toastThr('무게 '+Math.round(wPct()*100)+'% · 82% 이상이면 공격할 수 없다 — 가방(I)에서 분해하자');return true;}
-function killMob(m){m.dead=true;m.deadT=0;m.hp=0;m.respawn=m.field?FIELD_RESP:m.boss||m.riftBoss?1e9:m.rift?RIFT.resp:9;const inRift=riftHas(m);if(target===m)target=null;if(chase===m)chase=null;S.kills++;m.aoe=null;
+function killMob(m){m.dead=true;m.deadT=0;m.hp=0;m.respawn=m.field?FIELD_RESP:m.boss||m.riftBoss?1e9:m.rift&&!m.riftN?RIFT.resp:9;const inRift=riftHas(m);if(target===m)target=null;if(chase===m)chase=null;S.kills++;m.aoe=null;
   if(Math.random()<(inRift?RIFT.stoneP:STONE_P)||m.boss){const n0=S.stone;const n=m.boss?(m.inv||m.field?3:6):Math.ceil(tierOfLv(m.lv)/2);S.stone+=n;if(inRift)rift.stone+=S.stone-n0;floatTxt(m.x,m.y-14,'+강화석 '+n,'#9ee6ff');}
   dropFrom(m);if(inRift)riftLoot(m);
   if(m.boss){const sh=m.inv?20:m.field?5:15;S.shard+=sh;floatTxt(m.x,m.y-22,'+권능 파편 '+sh,'#ffe08a');if(m.inv){toast('침공 보스 토벌! 권능 파편 +'+sh+' · 강화석 +3',true);inv=null;invNext=t+INV.every;lastQKey='';}}
@@ -893,11 +922,11 @@ function hurtPlayer(dmg,src){if(player.dead||player.dash)return;if(src&&src.fa)d
 /* 사망: 쓰러지는 연출 → 1.3초 뒤 사망 팝업 → '부활하기'를 눌러야 마을에서 부활 */
 function die(src){if(win)closeWin();STAT.deaths++;const lost=Math.min(S.xp,Math.round(need(S.lv)*DEATH_XP));S.xp-=lost;STAT.xpLost+=lost;player.dead=true;player.deadT=t;auto=false;hunt=null;nav=null;chase=null;target=null;moveRing.visible=false;
   for(const m of mobs){m.aggro=false;m.ret=true;}document.body.classList.add('dead');save();
-  const by=src&&src.name?src.name:null,where=curZone&&ZONES[curZone]?ZONES[curZone].name:M.name;
+  const by=src&&src.name?src.name:null,where=curZone&&ZONES[curZone]?ZONES[curZone].name:M.name,vill=(M.inst&&riftRet?MAPS[riftRet.map].zones:ZONES).village.name;
   later(1.3,()=>{if(!player.dead)return;openModal({who:'hero',name:'사망했습니다',sub:where+(by?' · '+by+'에게 쓰러짐':''),
-    text:'눈앞이 흐려진다…\n'+ZONES.village.name+'의 등불 아래에서 다시 일어설 수 있다.'+(lost?'\n\n경험치 -'+fmt(lost)+' (현재 레벨의 '+Math.round(DEATH_XP*100)+'%)':''),
+    text:'눈앞이 흐려진다…\n'+vill+'의 등불 아래에서 다시 일어설 수 있다.'+(lost?'\n\n경험치 -'+fmt(lost)+' (현재 레벨의 '+Math.round(DEATH_XP*100)+'%)':''),
     btns:[{t:'부활하기',pri:true,f:()=>{revive();closeModal();}}],noFocus:true,lock:.8});});}
-function revive(){if(!player.dead)return;document.body.classList.remove('dead');const st=pStats();player.dead=false;player.hp=st.hp;player.mp=st.mp;player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();save();if(S.autoQ)later(1.2,()=>{if(!modal&&!nav&&!hunt)autoGo();});}
+function revive(){if(!player.dead)return;if(M.inst){/* v4.46 균열 안에서 쓰러지면 들어온 지역의 마을에서 일어난다 */if(!traveling)doTravel(riftRet?riftRet.map:'rowen',revive,{quiet:true,now:true,label:'마을로 돌아가는 중…'});return;}document.body.classList.remove('dead');const st=pStats();player.dead=false;player.hp=st.hp;player.mp=st.mp;player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();save();if(S.autoQ)later(1.2,()=>{if(!modal&&!nav&&!hunt)autoGo();});}
 function shopId(){const n=npcList.find(n=>NPCS[n.id]&&NPCS[n.id].shop);return n&&n.id;}
 function buyItem(k,n){const pr=potPrice(k),key=k==='hp'?'hpPot':k==='mp'?'mpPot':'scroll';n=Math.max(0,Math.min(n,POT_CAP[k]-S[key],Math.floor(S.gold/pr)));if(!n)return 0;S[key]+=n;S.gold-=n*pr;STAT.buy+=k==='scroll'?0:n;STAT.buyG+=n*pr;return n;}
 /* 자동 진행 보충: HP 한도까지 → MP 한도까지(지력·스킬 비중에 맞춰 골드 25%까지) → 주문서 2장 */
@@ -912,6 +941,7 @@ function shopGo(){const sid=shopId();if(!sid)return false;shopSkipT=t+60;const d
   const n=npcList.find(n=>n.id===sid);if(dist(n,player)<30){done();return true;}return navTo('npc',sid,npcName(sid)+'에게 · 물약 보충',done);}
 /* 필드에서 HP 물약이 떨어지면 귀환(주문서 있으면 즉시, 없으면 걸어서) */
 function emergencyReturn(){if(!(S.autoRet||S.autoQ||rift)||player.dead||!auto||S.hpPot>0||t<retT)return;const st=pStats();if(player.hp>st.hp*.4||inR(ZONES.village.r,player.x,player.y,0))return;retT=t+40;STAT.ret++;hunt=null;
+  if(M.inst){toast('물약 소진 · 균열에서 마을로 나간다',true);if(rift)riftEnd('town');else riftLeave();return;}
   if(S.scroll>0){goTown();toast('물약 소진 · 귀환 주문서를 사용해 마을로 돌아왔다 (상점의 긴급 귀환 설정)',true);if(S.autoQ)later(.6,()=>{shopSkipT=0;autoGo();});}else{toast('물약도 주문서도 없다 · 걸어서 마을로!',true);auto=false;shopSkipT=0;shopGo();}}
 const STAT={hpUse:0,mpUse:0,buy:0,buyG:0,killG:0,rwG:0,shop:0,ret:0,deaths:0,xpLost:0};
 function usePot(k,silent){const st=pStats();if(player.dead||t<player.potT)return false;if(k==='hp'){if(!S.hpPot){if(!silent)toast('HP 물약이 없다');return false;}if(player.hp>=st.hp)return false;S.hpPot--;STAT.hpUse++;if(S.hpPot===POT_LOW.hp-1||S.hpPot===2)toast('HP 물약 '+S.hpPot+'개 남음 · 마을 상점에서 보충',true);else if(!S.hpPot)toast('HP 물약이 떨어졌다!',true);const v=Math.max(60,st.hp*.35);player.hp=Math.min(st.hp,player.hp+v);floatTxt(player.x,player.y,'+'+Math.round(v),'#8ef07a');}
@@ -972,12 +1002,12 @@ function travelTo(mid,then){if(!S.maps.includes(mid)){toast(MAPS[mid].name+'(으
   const w=npcList.find(n=>n.way);if(dist(w,player)<40){doTravel(mid,then);return;}navTo('npc','way','길잡이 표석 · '+MAPS[mid].name+'(으)로',()=>doTravel(mid,then));}
 /* 현재 지역 그룹만 씬에 — 이어하기로 다른 지역에서 시작할 때 로웬 지형이 남아 협곡(고도 −20)을 덮던 버그 */
 function showMapOnly(){for(const k in MAPS){const R=MAPS[k].rt;if(R&&R.group&&R.group!==G0)scene.remove(R.group);}scene.add(G0);}
-async function doTravel(mid,then){if(traveling||mid===MAPID)return then&&then();traveling=true;closeModal();cancelNav();chase=null;target=null;auto=false;
-  const lo=$('loadov');lo.hidden=false;$('loadovT').textContent=MAPS[mid].name+'(으)로 이동하는 중…';await new Promise(r=>setTimeout(r,30));
-  scene.remove(G0);if(inv){inv=null;invNext=t+120;}if(rift)riftEnd('move');clearFx();for(const m of mobs)if(m.aggro){m.aggro=false;m.ret=true;}
+async function doTravel(mid,then,o){o=o||{};if(traveling||mid===MAPID)return then&&then();traveling=true;closeModal();cancelNav();chase=null;target=null;auto=false;
+  const lo=$('loadov');lo.hidden=false;$('loadovT').textContent=o.label||MAPS[mid].name+'(으)로 이동하는 중…';await new Promise(r=>setTimeout(r,30));
+  scene.remove(G0);if(inv){inv=null;invNext=t+120;}if(rift&&!o.rift)riftEnd('move');clearFx();for(const m of mobs)if(m.aggro){m.aggro=false;m.ret=true;}
   if(!MAPS[mid].rt||!MAPS[mid].rt.built)await buildWorld(mid,p=>{$('loadovT').textContent=MAPS[mid].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});
-  bindMap(mid);showMapOnly();applyLook();player.x=M.way.x;player.y=M.way.y+30;snapCam();curZone='';lo.hidden=true;traveling=false;save();lastQKey='';
-  toast(M.name+'에 도착했다');if(then)later(.6,then);}
+  bindMap(mid);showMapOnly();applyLook();{const at=o.at||{x:M.way.x,y:M.way.y+30};player.x=at.x;player.y=at.y;}snapCam();curZone='';lo.hidden=true;traveling=false;if(!M.inst)riftRet=null;if(o.arrive)o.arrive();riftHud();/* 맵이 바뀌는 순간 균열 HUD를 맞춘다(다음 HUD 갱신까지 남지 않게) */save();lastQKey='';
+  if(!o.quiet)toast(M.name+'에 도착했다');if(then){if(o.now)then();else later(.6,then);}}
 function applyLook(){HAZE.set(M.haze);scene.background=HAZE;scene.fog.color=HAZE;amb.color.setHex(M.amb);}
 
 /* ================= 퀘스트 ================= */
@@ -998,19 +1028,19 @@ const collDoneN=()=>COLL.filter(collDone).length,bcollDoneN=()=>COLL.filter(c=>i
 function growthProg(sq,s){if(sq.type==='rep')return [(S.repR&&S.repR[sq.map])||0,sq.n];if(sq.type==='lv')return [S.lv,sq.n];switch(sq.grow){
   case 'craft':return [(S.crafted||[]).slice(sq.g||0).reduce((a,b)=>a+b,0),sq.n];case 'reg':return [buRegN(),sq.n];
   case 'ench':{if(sq.k==='weapon'){const it=S.eq.weapon&&itemById(S.eq.weapon);return [it?it.en:0,sq.en];}return [ARMOR_K.filter(k=>{const it=S.eq[k]&&itemById(S.eq[k]);return it&&it.en>=sq.en;}).length,sq.n];}
-  case 'coll':return [collDoneN(),sq.n];case 'bcoll':return [bcollDoneN(),sq.n];case 'faith':return [pStats(null,true).faith,sq.n];}return [0,1];}
+  case 'coll':return [collDoneN(),sq.n];case 'bcoll':return [bcollDoneN(),sq.n];case 'faith':return [pStats(null,true).faith,sq.n];case 'rift':return [S.riftK||0,sq.n];}return [0,1];}
 function growthGoal(sq,s){const [a,b]=growthProg(sq,s),x=Math.min(a,b);switch(sq.grow){
   case 'craft':return (sq.g?GRADES[sq.g].n+' 이상 ':'')+'장비 제작 '+x+'/'+b;case 'reg':return '보스 전용 장비 컬렉션 등록 '+x+'/'+b;
   case 'ench':return sq.k==='weapon'?'장착 무기 +'+sq.en+' (현재 +'+a+')':'장착 방어구 +'+sq.en+' 이상 '+x+'/'+b+'부위';
-  case 'coll':return '컬렉션 완성 '+x+'/'+b;case 'bcoll':return '지역 보스 컬렉션 완성 '+x+'/'+b;case 'faith':return '신앙 '+x+'/'+b;}return '';}
-const GROW_HOW={craft:'가방 → 제작',reg:'가방 → 컬렉션 · 지역 보스',ench:'주문서로 강화',coll:'가방 → 컬렉션',bcoll:'지역 보스 유품 모으기',faith:'등급 · 강화 · 컬렉션'};
+  case 'coll':return '컬렉션 완성 '+x+'/'+b;case 'bcoll':return '지역 보스 컬렉션 완성 '+x+'/'+b;case 'faith':return '신앙 '+x+'/'+b;case 'rift':return '균열 몬스터 처치 '+x+'/'+b;}return '';}
+const GROW_HOW={craft:'가방 → 제작',reg:'가방 → 컬렉션 · 지역 보스',ench:'주문서로 강화',coll:'가방 → 컬렉션',bcoll:'지역 보스 유품 모으기',faith:'등급 · 강화 · 컬렉션',rift:'메뉴 → 균열 · 길잡이 표석'};
 function growthEvent(kind,it){if(!S||!S.sq)return;if(kind==='craft'){S.crafted=S.crafted||[0,0,0,0,0];S.crafted[it.g]++;}for(const id in S.sq){const s=S.sq[id],sq=SUBQ[id];if(!sq||s.st!=='active'||!sq.grow)continue;
 }growthTick();}
 function growthTick(){if(!S||!S.sq)return;let any=false;for(const id in S.sq){const s=S.sq[id],sq=SUBQ[id];if(!sq||s.st!=='active'||!(sq.grow||STATE_T[sq.type]))continue;const [a,b]=growthProg(sq,s);
     s.n=a;if(a>=b){s.st='done';any=true;toast((sq.grow?'성장 퀘스트':'서브')+' 완료 · '+sq.title+' — '+npcName(sq.giver)+'에게',true);if(hunt&&hunt.sub===id)hunt=null;}}
   if(any){lastQKey='';save();if(S.autoQ)later(.9,()=>{if(!modal&&!player.dead)autoGo();});}}
 /* 성장 서브: 플레이어가 직접 — 해당 창을 연다 */
-function openGrowth(sq){if(sq.grow==='craft')return openCraft();if(sq.grow==='ench'){return openEnchant(sq.k==='weapon'?S.eq.weapon:ARMOR_K.map(k=>S.eq[k]).find(Boolean));}
+function openGrowth(sq){if(sq.grow==='rift')return openRift();if(sq.grow==='craft')return openCraft();if(sq.grow==='ench'){return openEnchant(sq.k==='weapon'?S.eq.weapon:ARMOR_K.map(k=>S.eq[k]).find(Boolean));}
   if(sq.grow==='coll'||sq.grow==='bcoll'||sq.grow==='reg'){colCat=sq.grow==='coll'?-1:4;return openColl();}openBag();}
 let growHintT=-99;function growHint(){if(t<growHintT)return;growHintT=t+45;const L=activeSubs().filter(id=>isGrowth(id)&&subSt(id)==='active').map(id=>SUBQ[id].title),R2=activeSubs().filter(id=>SUBQ[id].type==='rep'&&subSt(id)==='active').map(id=>SUBQ[id].title);if(L.length)toast('성장 퀘스트 「'+L.join('」 「')+'」는 직접 — 제작 · 강화 · 컬렉션 등록은 자동 진행이 하지 않는다 · 그동안 수련 사냥',true);if(R2.length)toast('「'+R2.join('」 「')+'」 — 퀘스트 [반복] 탭에서 토벌 의뢰를 받거나 반복을 켜자',true);}
 function activeSubs(){const L=[];for(const id in S.sq){const s=S.sq[id];if(s.st!=='clear')L.push(id);}return L;}
@@ -1021,7 +1051,7 @@ function rwList(rw){const a=[];if(rw.god)a.push('권능 「'+GODS[rw.god].name+'
 function applyRw(rw,src){return withAcq(src||'보상',acqZoneOf(null),()=>applyRw0(rw));}
 function applyRw0(rw){gainXp(rw.xp||0);S.gold+=rw.gold||0;STAT.rwG+=rw.gold||0;S.hpPot+=rw.hp||0;S.mpPot+=rw.mp||0;S.stone+=rw.stone||0;S.shard+=rw.shard||0;S.sp+=rw.stat||0;S.kp+=rw.kp||0;if(rw.wup&&!enchantEquipped('weapon'))toast('장착한 무기가 없거나 최대 강화라 무기 마법 주문서로 받았다',true);if(rw.aup&&!enchantEquipped('armor'))toast('장착한 갑옷이 없거나 최대 강화라 갑옷 마법 주문서로 받았다',true);if(rw.book)addStk('book_'+rw.book,1);if(rw.stk)for(const k in rw.stk)addStk(k,rw.stk[k]);if(rw.ore)addStk('ore'+(MAP_REG[MAPID]||1),rw.ore);if(rw.dsg)for(let i=0;i<rw.dsg;i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);if(rw.god)gainGod(rw.god);
   toast('보상 · '+rwList(rw).join(' · '),true);burst(player.x,player.y,16,'#ffe08a',30,80,4);if(S.autoGrow&&(rw.stat||rw.kp||rw.book))autoGrowNow();lastQKey='';}
-function progressKill(m){const q=curQ();
+function progressKill(m){if(m.rift){lastQKey='';return;}/* v4.46 균열 전용 공간의 처치는 메인 · 서브 · 반복 의뢰에 들지 않는다 */const q=curQ();
   if(S.qs==='active'){let inc=false;if(q.type==='kill'&&q.sp===m.sp)inc=true;else if(q.type==='collect'&&q.sp===m.sp&&Math.random()<q.rate){inc=true;toast(q.item+' 획득 '+(S.qn+1)+'/'+q.n);}
     else if(q.type==='zone'&&m.zone===q.zone)inc=true;else if(q.type==='elite'&&m.eliteOf===q.id)inc=true;else if(q.type==='fboss'&&m.field&&m.eliteOf===q.boss)inc=true;
     if(inc){S.qn=Math.min(q.n||1,S.qn+1);if(S.qn>=(q.n||1))mainDone();}}
@@ -1094,7 +1124,7 @@ function acceptQuest(){const q=curQ();S.qs='active';S.qn=0;if(q.rep)S.rep={zone:
   toast('퀘스트 수락 · '+q.title);save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
 function claimQuest(){const q=curQ();if(S.qs!=='done')return;anchor=null;hunt=null;applyRw(q.rw,'메인 「'+q.title+'」');
   if(q.rep)S.rep=null;else S.qi++;S.qs='avail';S.qn=0;save();lastQKey='';const nq=curQ(),here=modal&&modal.npc;closeModal();
-  if(S.qi===QUESTS.length&&!q.rep)banner('메인 퀘스트 완료','이제 경비대의 토벌 의뢰를 반복할 수 있다');if(q.id==='q5'&&openTrials())return;/* 시련 선택 창이 먼저 — 고를 때까지 자동 진행 대기 */
+  if(S.qi===QUESTS.length&&!q.rep)banner('메인 퀘스트 완료','이제 경비대의 토벌 의뢰를 반복할 수 있다');if(q.id==='rq3')riftUnlocked();if(q.id==='q5'&&openTrials())return;/* 시련 선택 창이 먼저 — 고를 때까지 자동 진행 대기 */
   if(here&&nq.giver===here){openNpc(here);return;}if(S.autoQ)later(.6,autoGo);}
 function acceptSub(id){S.sq[id].st='active';S.sq[id].n=0;toast('서브 수락 · '+SUBQ[id].title);const gv=SUBQ[id].give;if(gv)withAcq('수락 지급 「'+SUBQ[id].title+'」',acqZoneOf(null),()=>{const a=[];for(const k in gv){if(k==='stone')S.stone+=gv[k];else if(k==='gold')S.gold+=gv[k];else if(k==='dsgAny'){for(let i=0;i<gv[k];i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);}else addStk(k,gv[k]);a.push((k==='stone'?'강화석':k==='gold'?'골드':k==='dsgAny'?'장비 도면':STK[k].n)+' '+gv[k]);}toast('지급 · '+a.join(' · '),true);});if(SUBQ[id].grow)growthTick();save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
 function claimSub(id){const s=S.sq[id];if(!s||s.st!=='done')return;anchor=null;hunt=null;s.st='clear';applyRw(SUBQ[id].rw,(isGrowth(id)?'성장 「':'서브 「')+SUBQ[id].title+'」');const rw=SUBQ[id].rw;
@@ -1138,9 +1168,9 @@ function openNpc(id){if(player.dead)return;if(id==='way')return openWay();const 
   btns.push({t:'닫기',alt:true,f:closeModal});
   let text=N.greet[Math.floor(Math.random()*N.greet.length)];if(S.qs==='active'&&q.giver===id&&q.type!=='talk')text=q.gate&&!gateState(q).ok?'아직 준비가 덜 됐네. 조건을 채우고 오게.':'아직인가? '+qGoal(q,S.qn)+' — 서두르진 말게.';
   openModal({...base,text,body:S.qs==='active'&&q.giver===id?qbox(q,'main',false):null,btns});}
-function openWay(){const body=el('div','shop');for(const mid in MAPS){const m=MAPS[mid],d=el('div','si'),open=S.maps.includes(mid);const nm=el('div','nm');nm.append(el('b',null,m.name+(mid===MAPID?' (현재 위치)':'')),el('small',null,Object.values(m.zones).filter(z=>z.lv).map(z=>z.name+' Lv '+z.lv).join(' · ')));d.appendChild(nm);
+function openWay(){const body=el('div','shop');for(const mid in MAPS){if(MAPS[mid].inst)continue;const m=MAPS[mid],d=el('div','si'),open=S.maps.includes(mid);const nm=el('div','nm');nm.append(el('b',null,m.name+(mid===MAPID?' (현재 위치)':'')),el('small',null,Object.values(m.zones).filter(z=>z.lv).map(z=>z.name+' Lv '+z.lv).join(' · ')));d.appendChild(nm);
     const b=el('button','btn pri',open?'이동':'잠김');b.type='button';b.disabled=!open||mid===MAPID;b.onclick=()=>doTravel(mid);d.appendChild(b);body.appendChild(d);}
-  riftRow(body);openModal({who:'hero',name:'길잡이 표석',sub:'마을 사이를 순간 이동 · 시간의 균열',text:'',body,btns:[{t:'닫기',alt:true,f:closeModal}]});}
+  riftRow(body);openModal({who:'hero',name:M.inst?'균열 문':'길잡이 표석',sub:M.inst?'균열에서 나가기 · 다른 지역으로':'마을 사이를 순간 이동 · 시간의 균열',text:'',body,btns:[{t:'닫기',alt:true,f:closeModal}]});}
 /* openShop · openForge · openStats · openSkills · openSettings → windows.js (v4.8) */
 function godCard(k){const G=GODS[k],lv=S.godLv[k],d=el('div','si');d.style.borderColor=S.god===k?G.col:'';const ic=el('span','wpic',G.ski);ic.style.cssText='display:grid;place-items:center;font-size:1.8em;color:'+G.col;d.appendChild(ic);
   const nm=el('div','nm');nm.append(el('b',null,G.name+' · '+G.title+'  Lv '+lv+(S.god===k?' (사용 중)':'')),el('small',null,G.desc(lv)));d.appendChild(nm);
@@ -1203,8 +1233,8 @@ function renderQuests(){const q=curQ(),g=q.gate&&S.qs==='active'?gateState(q):nu
     if(qTab==='rep'&&S.lv>=REP.lv&&(gid||S.repLoop)){const on=!!S.repLoop,lm=S.repLoop||MAPID,b=el('button','qloop'+(on?' on':''));b.type='button';
       b.append(el('b',null,on?'🔁 반복 중 · '+MAPS[lm].name:'🔁 반복 끔'),el('small',null,on?'의뢰를 마치면 자동으로 다시 받는다 · 누르면 끈다':'켜면 '+MAPS[lm].name+' 의뢰를 계속 받아 사냥한다 (메인 진행은 멈춘다)'));
       b.onclick=e=>{e.stopPropagation();if(on){S.repLoop=null;toast('반복 의뢰 끔 · 지금 의뢰까지만 한다');}else{S.repLoop=lm;S.autoQ=true;toast('반복 의뢰 켬 · '+MAPS[lm].name,true);if(!S.rq)repGo(lm);}save();lastQKey='';renderQuests();};L.appendChild(b);}
-    if(rift)card('sub run','균열','inv',ZONES[rift.zone].name+' 시간의 균열',[mmss(S.riftT)+' 남음 · 처치 '+rift.k+' · 강화석 +'+rift.stone+' · '+(alive(riftEliteOf())?'정예 출현!':'정예까지 '+riftLeft())],'나가기',()=>riftEnd('out'));
-    else if(qTab==='rep'&&riftOpen())card('sub','균열','rep',ZONES[riftZone()].name+' 시간의 균열',(riftT()>=RIFT.minIn?'입장 시간 ':'충전 중 ')+mmss(riftT())+' / 60:00','입장 ▶',riftT()>=RIFT.minIn?riftEnter:null);
+    /* v4.46 균열 안 정보 · 나가기는 균열 HUD(트래커 맨 위)가 맡는다 */
+    if(!rift&&qTab==='rep'&&riftOpen())card('sub','균열','rep',riftName(),(riftT()>=RIFT.minIn?'입장 시간 ':'충전 중 ')+mmss(riftT())+' / 60:00','입장 ▶',riftT()>=RIFT.minIn?riftEnter:null);
     if(inv){const rem=Math.max(0,inv.until-t),mm=Math.floor(rem/60),ss=Math.floor(rem%60);card('inv','침공','inv','Lv'+inv.m.lv+' '+inv.m.name,ZONES[inv.zone].name+' · '+mm+':'+String(ss).padStart(2,'0')+' 남음',hunt&&hunt.mob===inv.m?'토벌 중':'토벌 ▶',()=>goHunt(inv.zone,null,inv.m,ZONES[inv.zone].name+'(으)로 · 침공 보스 토벌'));}
     const fb=fieldBossInfo().filter(m=>!(q.type==='fboss'&&m.eliteOf===q.boss)),al=fb.filter(alive);if(al.length){const m=al.reduce((a,b)=>dist(a,player)<dist(b,player)?a:b),f=pStats(null,true).faith;card('fb','지역 보스','fb',m.name,[ZONES[m.zone].name+' · ',el('em',f>=m.fa?null:'no','신앙 '+f+'/'+m.fa),al.length>1?' · 외 '+(al.length-1):''],hunt&&hunt.mob===m?'토벌 중':'토벌 ▶',()=>goHunt(m.zone,null,m,ZONES[m.zone].name+'(으)로 · 지역 보스 토벌'));}
     else if(fb.length&&qTab==='rep'){const m=fb.reduce((a,b)=>(a.respawn-a.deadT)<(b.respawn-b.deadT)?a:b),rem=Math.max(0,m.respawn-m.deadT);card('fb','지역 보스','fb',m.name,'다시 나타나기까지 '+Math.floor(rem/60)+':'+String(Math.floor(rem%60)).padStart(2,'0'),'대기',null);}}
@@ -1234,7 +1264,7 @@ addEventListener('keyup',e=>keys.delete(keyOf(e)));
 addEventListener('blur',()=>keys.clear());
 function toggleAuto(){auto=!auto;anchor=null;if(!auto)hunt=null;toast(auto?'자동 전투 시작':'자동 전투 종료');}
 function toggleAutoQ(){S.autoQ=!S.autoQ;toast(S.autoQ?'퀘스트 자동 진행 켬 · 수락·이동·사냥·보상을 자동으로':'퀘스트 자동 진행 끔');save();if(S.autoQ&&!nav&&!hunt&&!modal)autoNext();}
-function goTown(){if(player.dead)return;if(inR(ZONES.village.r,player.x,player.y,0)){toast('이미 마을이다');return;}if(!S.scroll){toast('귀환 주문서가 없다 · 상점에서 구입');return;}S.scroll--;cancelNav();chase=null;auto=false;$('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();toast(ZONES.village.name+'(으)로 귀환했다');}
+function goTown(){if(player.dead)return;if(M.inst){/* v4.46 균열 안 귀환 = 들어온 지역의 마을 광장 */if(!S.scroll){toast('귀환 주문서가 없다 · 화면의 [나가기]로 균열에서 나갈 수 있다');return;}S.scroll--;if(rift)riftEnd('town');else riftLeave();return;}if(inR(ZONES.village.r,player.x,player.y,0)){toast('이미 마을이다');return;}if(!S.scroll){toast('귀환 주문서가 없다 · 상점에서 구입');return;}S.scroll--;cancelNav();chase=null;auto=false;$('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();toast(ZONES.village.name+'(으)로 귀환했다');}
 let zoomT=1;
 function setZoom(z){zoomT=Math.max(ZOOM.min,Math.min(ZOOM.max,Math.round(z*100)/100));if(Math.abs(zoomT-1)<.04)zoomT=1;if(S&&started){S.zoom=zoomT;save();}$('bZoom').textContent=Math.round(zoomT*100)+'%';}
 function toggleZoom(){setZoom(zoomT>1.05?1:1.4);}
@@ -1248,7 +1278,7 @@ stage.addEventListener('pointerdown',e=>{if(!started||modal||win||traveling||e.t
   stopAutoQ();const o=pickAt(sx,sy);if(o&&!o.sp){if(dist(o,player)<46)openNpc(o.id);else navTo('npc',o.id,o.way?'길잡이 표석':npcName(o.id)+'에게');return;}
   if(o&&o.sp){target=o;chase=o;nav=null;hunt=null;return;}
   const gp=groundAt(sx,sy);if(gp){chase=null;hunt=null;if(navTo('point',gp,'이동')){moveRing.visible=true;moveRing.userData.p=gp;}}});
-mini.addEventListener('pointerdown',e=>{if(!started||modal)return;stopAutoQ();const r=mini.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*WW,y=(e.clientY-r.top)/r.height*WH;chase=null;hunt=null;navTo('point',{x,y},'지도 지점으로');e.stopPropagation();});
+mini.addEventListener('pointerdown',e=>{if(!started||modal)return;stopAutoQ();const r=mini.getBoundingClientRect(),V=M.mini,x=V?V.x+(e.clientX-r.left)/r.width*V.w:(e.clientX-r.left)/r.width*WW,y=V?V.y+(e.clientY-r.top)/r.height*V.w:(e.clientY-r.top)/r.height*WH;chase=null;hunt=null;navTo('point',{x,y},'지도 지점으로');e.stopPropagation();});
 const joyz=$('joyz'),joyEl=$('joy'),knob=$('knob');
 function joyPos(){const r=stage.getBoundingClientRect();joyEl.style.left=(joy.on?joy.ox:r.width*.13)+'px';joyEl.style.top=(joy.on?joy.oy:r.height*.72)+'px';}
 joyz.addEventListener('pointerdown',e=>{joy.on=true;joy.id=e.pointerId;const r=stage.getBoundingClientRect();joy.ox=e.clientX-r.left;joy.oy=e.clientY-r.top;joy.dx=joy.dy=0;joyEl.classList.add('on');joyPos();joyz.setPointerCapture(e.pointerId);});
@@ -1307,7 +1337,7 @@ function toggleNpcList(on){const p=$('npcPop'),b=$('bNpc');on=on??p.hidden;p.hid
   for(const id in NPCS){if(NPCS[id].deco)continue;row(npcName(id),npcTag(id),()=>goNpc(id,npcName(id)+'에게'),mark(id));}
   row('길잡이 표석','지역 이동',()=>navTo('npc','way','길잡이 표석으로'));popFit(p);}
 $('bNpc').onclick=e=>{e.stopPropagation();toggleNpcList();};
-document.addEventListener('pointerdown',e=>{if(!$('npcPop').hidden&&!e.target.closest('#npcPop')&&!e.target.closest('#bNpc'))toggleNpcList(false);});$('bEnc').onclick=()=>openEnchant();$('bColl').onclick=()=>openColl();$('bLog').onclick=()=>openLog();$('bRift').onclick=()=>openRift();
+document.addEventListener('pointerdown',e=>{if(!$('npcPop').hidden&&!e.target.closest('#npcPop')&&!e.target.closest('#bNpc'))toggleNpcList(false);});$('bEnc').onclick=()=>openEnchant();$('bColl').onclick=()=>openColl();$('bLog').onclick=()=>openLog();$('bRift').onclick=()=>openRift();{const x=$('rhX');if(x)x.onclick=e=>{e.stopPropagation();if(rift)riftEnd('out');};}
 /* v4.12 메뉴: 스킬·능력치·가방·제작·컬렉션·권능·설정을 ☰ 하나로 (레드닷은 메뉴 버튼과 각 항목에) */
 function toggleMenu(on){const p=$('menuPop'),b=$('bMenu');on=on??p.hidden;p.hidden=!on;b.setAttribute('aria-expanded',on);if(on)popFit(p);}
 $('bMenu').onclick=e=>{e.stopPropagation();toggleMenu();};$('menuPop').addEventListener('click',e=>{if(e.target.closest('.tmb'))toggleMenu(false);});
@@ -1373,7 +1403,7 @@ function updateMobs(dt){const village=ZONES.village.r;
     m.moving=false;
     if(m.ret){if(dh<6){m.ret=false;m.hp=m.max;}else moveTo(m.home.x,m.home.y,70);continue;}
     if(m.aggro&&(dh>(m.boss?240:210)||player.dead||inR(village,player.x,player.y,10))){m.aggro=false;m.ret=true;m.wind=0;m.aoe=null;continue;}
-    if(!m.aggro&&!m.inv&&(aggroOn(m)||m.boss&&!m.field)&&dp<(m.boss?110:70)&&!player.dead&&!inR(village,player.x,player.y,10)){m.aggro=true;if(dp<200)floatTxt(m.x,m.y,'!','#ff8a6a');}
+    if(!m.aggro&&!m.inv&&(aggroOn(m)||m.boss&&!m.field)&&dp<(m.boss?110:70)&&!player.dead&&t>=graceT&&!inR(village,player.x,player.y,10)){m.aggro=true;if(dp<200)floatTxt(m.x,m.y,'!','#ff8a6a');}
     if(m.aggro){const reach2=(m.boss?18+12*m.sc:22)+4;m.atkT-=dt;
       if(m.boss){m.aoeT-=dt;if(m.aoe){m.aoe.t+=dt;if(m.aoe.t>=1.4){const ao=m.aoe;m.aoe=null;if(Math.hypot(player.x-ao.x,player.y-ao.y)<ao.r)hurtPlayer(calcDmg(m.atk,2.2,pStats().def,m.lv,S.lv),m);burst(ao.x,ao.y,4,'#ff8040',40,140,6);}}
         else if(m.aoeT<=0&&dp<200){m.aoe={x:player.x,y:player.y,r:58,t:0};m.aoeT=7;}}
@@ -1387,7 +1417,7 @@ function update(dt){zoom+=(zoomT-zoom)*Math.min(1,dt*12);if(Math.abs(zoomT-zoom)
   for(const n of npcList)if(n.deco){n.next-=dt;if(n.mv){const dx=n.mv.x-n.x,dy=n.mv.y-n.y,d=Math.hypot(dx,dy);if(d<2){n.mv=null;n.walk=0;}else{n.x+=dx/d*24*dt;n.y+=dy/d*24*dt;n.walk+=dt;n.dir=Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down');}}
     else if(n.next<=0){n.next=rand(3,7);const x=n.hx+rand(-30,30),y=n.hy+rand(-16,16);if(!blockedAt(x,y))n.mv={x,y};}}
   for(const b of bolts)b.life+=dt;bolts=bolts.filter(b=>b.life<(b.max||.22));for(const f of floats)f.life+=dt;floats=floats.filter(f=>f.life<1.1);tickParts(dt);tickFx(dt);
-  let z='field';for(const k in ZONES)if(inR(ZONES[k].r,player.x,player.y)){z=k;break;}if(HUNT.includes(z))S.aiZone=z;invTick(dt);riftTick(dt);riftFx(dt);
+  let z='field';for(const k in ZONES)if(inR(ZONES[k].r,player.x,player.y)){z=k;break;}if(HUNT.includes(z)&&!M.inst)S.aiZone=z;invTick(dt);riftTick(dt);riftFx(dt);
   if(z!==curZone){const first=curZone==='';curZone=z;if(z!=='field'){const Z=ZONES[z],fa=ZFAITH[z]||0;banner(Z.name,Z.lv?M.name+' · Lv '+Z.lv+(fa?' · 권장 신앙 '+fa:''):M.name+' · 안전 지역');if(fa&&pStats(null,true).faith<fa)later(1.2,()=>toast('신앙 '+pStats(null,true).faith+' / '+fa+' · 이 지역에선 주는 피해가 줄고 받는 피해가 늘어난다 — 제작·강화·컬렉션으로 신앙을 올리자'));}}
   for(const h of HOUSES)if(h.smoke&&Math.random()<dt*3)spawnP(h.smoke.x+rand(-2,2),h.smoke.y,h.smoke.z,{col:'#6a6070',vx:rand(-4,4),vy:-2,vz:14,life:1.6,size:3,size1:9});
   if(Math.random()<dt*1.2)for(const L of LAVA)if(Math.hypot(L.x-player.x,L.y-player.y)<500)spawnP(L.x+rand(-L.rx,L.rx)*.7,L.y+rand(-L.ry,L.ry)*.6,2,{col:'#ff8a3a',vz:rand(20,50),g:-10,life:1.2,size:3,size1:0});
@@ -1447,7 +1477,7 @@ function drawOverlay(){const g=og;g.setTransform(pr,0,0,pr,0,0);g.clearRect(0,0,
   const path=nav?nav.path:hunt&&hunt.roam?hunt.roam:null;if(path&&path.length){let px=player.x,py=player.y,acc=0;const pts=[];for(const p of path){const d=Math.hypot(p.x-px,p.y-py);let s=14-acc;while(s<d){pts.push([px+(p.x-px)*s/d,py+(p.y-py)*s/d]);s+=14;}acc=(acc+d)%14;px=p.x;py=p.y;if(pts.length>60)break;}
     g.lineWidth=1.5;g.strokeStyle='rgba(40,24,10,.6)';pts.forEach(([x,y],i)=>{const [a,b]=W2S(x,y,0),pulse=Math.max(0,Math.sin(i*.55-t*7));g.fillStyle=`rgba(255,${214+pulse*30|0},${110+pulse*90|0},${.7+.3*pulse})`;g.beginPath();g.ellipse(a,b,sc*(2.2+pulse*.8),sc*(1.25+pulse*.45),0,0,6.283);g.fill();g.stroke();});}
   for(const n of npcList){if(n.deco)continue;const [x,y]=W2S(n.x,n.y,n.way?52:40);if(x<-50||x>cssW+50||y<-50||y>cssH+50)continue;
-    if(n.way){txt('길잡이 표석',x,y,'#d8c0ff',fs,true);txt('마을 간 이동',x,y+fs*1.05,'#c8bcd8',fs*.8);continue;}
+    if(n.way){txt(M.inst?'균열 문':'길잡이 표석',x,y,'#d8c0ff',fs,true);txt(M.inst?'나가기 · 지역 이동':'마을 간 이동',x,y+fs*1.05,'#c8bcd8',fs*.8);continue;}
     txt(npcName(n.id),x,y+sc*2,'#ffe8b0',fs,true);txt(NPCS[n.id].role,x,y+sc*2+fs*1.05,'#c8bcd8',fs*.8);
     const mk2=npcMark(n.id);if(mk2){const by=y-fs*1.4-Math.abs(Math.sin(t*3))*sc*3;g.fillStyle='rgba(20,12,30,.8)';g.beginPath();g.arc(x,by,fs*1.05,0,6.283);g.fill();g.strokeStyle=mk2[1];g.lineWidth=2;g.stroke();txt(mk2[0],x,by+1,mk2[1],fs*1.5,true);}}
   const q=curQ(),subSp=Object.keys(S.sq).filter(id=>S.sq[id].st==='active').map(id=>SUBQ[id].sp);
@@ -1489,22 +1519,21 @@ function updateHud(dt){hudT-=dt;const st=pStats();
   {const p=wPct(),wt=$('wtT');wt.textContent='무게 '+Math.round(p*100)+'%';wt.className=p>=.82?'bad':p>=.5?'warn':'';$('bBag').classList.toggle('warn',p>=.5&&p<.82);$('bBag').classList.toggle('bad',p>=.82);$('bBag').classList.toggle('dot',S.items.some(it=>it.nw)||equipBetterN()>0);}$('shB').style.width=Math.min(100,player.shield/st.hp*100)+'%';$('pHPn').textContent=S.hpPot;$('bTown').textContent='귀환 '+S.scroll;$('pHP').classList.toggle('low',S.hpPot<POT_LOW.hp);$('pMPn').textContent=S.mpPot;$('pHP').classList.toggle('autoon',!!S.autoPot);
   $('bStat').classList.toggle('gold',S.sp>0);$('bStat').classList.toggle('dot',S.sp>0);
   if(t>=menuDotT){menuDotT=t+1;{const q=curQ();if(q.type==='fboss'&&S.qs==='active'&&hunt&&!hunt.sub&&hunt.zone===q.zone&&!alive(hunt.mob)&&qMap(q)===MAPID){const bm=eliteOf(QFB(q));if(alive(bm)){hunt.mob=bm;toast(bm.name+' 출현 · 토벌하자',true);}}}$('bEnc').classList.toggle('dot',enchHint());$('bCraft').classList.toggle('dot',craftHint());$('bLog').classList.toggle('dot',acqMissNew());riftBtn();$('bColl').classList.toggle('dot',collCanAny());$('bGod').classList.toggle('dot',godHint());}$('bStatN').textContent=S.sp>0?'+'+S.sp:'';$('bSkill').classList.toggle('dot',SK.some((s,i)=>skCan(i)));
-  const Z=ZONES[curZone];$('zoneT').replaceChildren(Z?Z.name:M.name+' 들녘');if(Z&&Z.lv&&!(rift&&rift.map===MAPID))$('zoneT').appendChild(el('small',null,'Lv '+Z.lv+(ZFAITH[curZone]?' · 신앙 '+ZFAITH[curZone]:'')));if(rift&&rift.map===MAPID){/* 균열 중엔 남은 시간이 잘리지 않게 Lv 표기 대신 */const rz=el('small','rz','⧗ 균열 '+mmss(S.riftT));rz.title=ZONES[rift.zone].name+' 시간의 균열 · 남은 입장 시간';$('zoneT').appendChild(rz);}$('zoneT').classList.toggle('rift',riftK>.05);
+  riftHud();const Z=ZONES[curZone];$('zoneT').replaceChildren(Z?Z.name:M.name+' 들녘');if(Z&&Z.lv&&!(rift&&rift.map===MAPID))$('zoneT').appendChild(el('small',null,'Lv '+Z.lv+(ZFAITH[curZone]?' · 신앙 '+ZFAITH[curZone]:'')));if(rift&&rift.map===MAPID){/* v4.46 남은 시간은 균열 HUD가 보여 준다 — 여기에는 딸린 지역 이름만 */const rz=el('small','rz',MAPS[rift.of].name);rz.title=riftName(rift.of);$('zoneT').appendChild(rz);}$('zoneT').classList.toggle('rift',riftK>.05);
   $('bAuto').classList.toggle('on',auto);$('bAuto').setAttribute('aria-pressed',auto);$('autoQ').classList.toggle('on',!!S.autoQ);$('autoQ').setAttribute('aria-pressed',!!S.autoQ);
-  const nv=$('nav');if(nav&&!player.dead){nv.hidden=false;$('navT').textContent='자동 이동 · '+nav.label;}else if(hunt){nv.hidden=false;$('navT').textContent=(hunt.sub?'서브 사냥 · ':'퀘스트 사냥 · ')+(hunt.mob?hunt.mob.name:hunt.sp?SPECIES[hunt.sp].name:ZONES[hunt.zone].name);}else nv.hidden=true;
+  const nv=$('nav');if(nav&&!player.dead){nv.hidden=false;$('navT').textContent='자동 이동 · '+nav.label;}else if(hunt){nv.hidden=false;$('navT').textContent=(riftIn()?'균열 사냥 · ':hunt.sub?'서브 사냥 · ':'퀘스트 사냥 · ')+(hunt.mob?hunt.mob.name:hunt.sp?SPECIES[hunt.sp].name:ZONES[hunt.zone].name);}else nv.hidden=true;
   if(alive(target)){$('tgt').hidden=false;const tn=$('tgtN');tn.replaceChildren(el('small',null,'Lv '+target.lv),target.name);if(target.fa){const lo=st.faith<target.fa;tn.appendChild(el('small','tfa'+(lo?' low':''),'신앙 '+st.faith+'/'+target.fa+(lo?' · '+Math.round(faithOut(target)*100)+'%':'')));}tn.className='tn'+(target.boss?' boss':'');$('tgtB').style.width=(target.hp/target.max*100)+'%';$('tgtT').textContent=fmt(target.hp)+' / '+fmt(target.max);}else $('tgt').hidden=true;
   $('bMenu').classList.toggle('dot',[...$('menuPop').querySelectorAll('.tmb')].some(b=>b.classList.contains('dot')));
   renderQuests();drawMini();}
-function drawMini(){if(!miniBase)return;const g=mg;g.drawImage(miniBase,0,0);const s=.1;
+function drawMini(){if(!miniBase)return;const g=mg,V=M.mini;g.setTransform(1,0,0,1,0,0);g.drawImage(miniBase,0,0);const s=.1;if(V){const k=WW/V.w;g.setTransform(k,0,0,k,-V.x*s*k,-V.y*s*k);}
   const q=curQ(),hz=[];if(S.qs==='active'&&q.zone&&ZONES[q.zone])hz.push([q.zone,'255,214,90']);for(const id in S.sq)if(S.sq[id].st==='active'&&ZONES[SUBQ[id].zone])hz.push([SUBQ[id].zone,'122,200,255']);
   for(const [z,c] of hz){const r=ZONES[z].r;g.strokeStyle=`rgba(${c},${.55+.35*Math.sin(t*4)})`;g.lineWidth=2;g.strokeRect(r[0]*s,r[1]*s,(r[2]-r[0])*s,(r[3]-r[1])*s);}
-  {const rz=riftZone();if(rz&&riftOpen()){const r=ZONES[rz].r,on=!!(rift&&rift.zone===rz);g.save();if(on){g.fillStyle=`rgba(150,90,235,${.3+.1*Math.sin(t*3)})`;g.fillRect(r[0]*s,r[1]*s,(r[2]-r[0])*s,(r[3]-r[1])*s);}g.strokeStyle=on?'rgba(205,160,255,.95)':'rgba(190,140,255,.6)';g.lineWidth=on?2:1.2;g.setLineDash(on?[]:[3,2]);g.strokeRect(r[0]*s,r[1]*s,(r[2]-r[0])*s,(r[3]-r[1])*s);g.setLineDash([]);g.fillStyle=on?'#e8d4ff':'#c9a0ff';g.font='700 11px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('⧗',(r[0]+r[2])/2*s,(r[1]+r[3])/2*s);g.restore();
-    if(on)for(const m of mobs)if(m.rift&&alive(m)){g.fillStyle=m.riftBoss?'#ff9cff':RIFT_COL.dot;g.beginPath();g.arc(m.x*s,m.y*s,m.riftBoss?4:1.4,0,6.283);g.fill();if(m.riftBoss){g.strokeStyle='#fff';g.lineWidth=1;g.stroke();}}}}
+  if(rift&&M.inst)for(const m of mobs)if(m.rift&&alive(m)){g.fillStyle=m.riftBoss?'#ff9cff':RIFT_COL.dot;g.beginPath();g.arc(m.x*s,m.y*s,m.riftBoss?3:1.1,0,6.283);g.fill();if(m.riftBoss){g.strokeStyle='#fff';g.lineWidth=.8;g.stroke();}}
   for(const m of mobs)if(alive(m)&&(m.aggro||m.boss)){g.fillStyle=m.boss?'#ff3a20':'#ff5a4a';g.beginPath();g.arc(m.x*s,m.y*s,m.boss?4:1.5,0,6.283);g.fill();}
   for(const n of npcList)if(!n.deco&&!n.way){g.fillStyle='#ffe8a0';g.fillRect(n.x*s-1,n.y*s-1,3,3);}
   const qp=questPoint();if(qp){g.strokeStyle='#ffe04a';g.lineWidth=2;g.beginPath();g.arc(qp.x*s,qp.y*s,5+Math.sin(t*5)*1.5,0,6.283);g.stroke();}
   const path=nav?nav.path:null;if(path&&path.length){g.strokeStyle='rgba(255,230,150,.8)';g.lineWidth=1.5;g.setLineDash([3,3]);g.beginPath();g.moveTo(player.x*s,player.y*s);for(const p of path)g.lineTo(p.x*s,p.y*s);g.stroke();g.setLineDash([]);}
-  g.fillStyle='#ffffff';g.strokeStyle='#1a1020';g.lineWidth=1.5;g.beginPath();g.arc(player.x*s,player.y*s,3.5,0,6.283);g.fill();g.stroke();}
+  g.fillStyle='#ffffff';g.strokeStyle='#1a1020';g.lineWidth=1.5;g.beginPath();g.arc(player.x*s,player.y*s,V?2:3.5,0,6.283);g.fill();g.stroke();g.setTransform(1,0,0,1,0,0);}
 
 /* ================= 권능 연출 · 침공 · AI 모드 ================= */
 function streak(x0,y0,x1,y1,col){bolts.push({pts:[[x0,y0,16],[x1,y1,10]],life:0,max:.14,col,w:.8});}
@@ -1523,11 +1552,20 @@ const RIFT={potMin:10,max:3600,chg:.5,minIn:60,zone:{rowen:'z4',kardo:'k3',erna:
   eN:150,eLv:3,eHp:5,eAtk:1.25,eXp:6,eGold:10,box:{stone:r=>4+2*r,shard:5,
   /* v4.44 상자를 병목에 닿게(#3-4d): 장비 1개 확정(지역별 등급 표 — 누적 확률, 영웅 이상은 아직 못 채운 컬렉션 부위 우선) · 그 지역에서 이미 만난 지역 보스의 전용 장비 buP 확률(컬렉션에 없는 쪽 우선) */
   eq:{1:[[3,.25],[2,1]],2:[[3,.40],[2,1]],3:[[4,.10],[3,.60],[2,1]]},buP:.30}};
-let rift=null;
-const riftZone=mid=>RIFT.zone[mid||MAPID],riftLv=mid=>ZALL[riftZone(mid)].mobs[0][1];
-const riftOpen=mid=>!!riftZone(mid)&&S.maps.includes(mid||MAPID)&&S.lv>=riftLv(mid);
-const riftHas=m=>!!(rift&&rift.map===MAPID&&m.zone===rift.zone);
-const riftIn=()=>!!(rift&&rift.map===MAPID&&inR(ZONES[rift.zone].r,player.x,player.y,40));
+/* v4.46 전용 공간: rift = 이번 입장 {of 들어온 지역, base 딸린 사냥터(몬스터 표 · 기록의 기준), zone 'rz', …} · riftRet = 돌아갈 곳 {map,x,y}(전용 맵에 있는 동안 유지)
+   · riftCarry = 물약을 사러 잠깐 나간 입장의 집계(돌아오면 이어 붙인다) */
+let rift=null,riftRet=null,riftCarry=null,graceT=0;const RIFT_MAP='rift',RIFT_GAP={y:95,r:115};/* graceT: 균열에서 [나가기]로 사냥터 한가운데에 돌아온 직후 3초는 선공을 받지 않는다 */
+const riftOf=()=>M.inst?(rift?rift.of:riftRet?riftRet.map:'rowen'):MAPID;
+const riftZone=mid=>RIFT.zone[mid||riftOf()],riftLv=mid=>ZALL[riftZone(mid)].mobs[0][1];
+/* v4.46 개방 스토리: 균열은 메인 「균열의 문」(rq3)을 마쳐야 열린다 — 판정은 메인 진행에서 계산(riftKey는 옛 세이브 보호용 예외) */
+const riftKeyIdx=()=>QUESTS.findIndex(q=>q.id==='rq3'),riftKey=()=>!!S.riftKey||S.qi>riftKeyIdx();
+const riftLockMsg=()=>{const a=QUESTS.findIndex(q=>q.id==='rq1');return S.qi<a?'시간의 균열은 아직 닫혀 있다 · 메인 퀘스트 「호수의 주인」 뒤의 이야기에서 열린다':'시간의 균열은 아직 닫혀 있다 · 메인 퀘스트 「'+QUESTS[Math.min(S.qi,riftKeyIdx())].title+'」을(를) 마치면 열린다';};
+const riftOpen=mid=>riftKey()&&!!riftZone(mid)&&S.maps.includes(mid||riftOf())&&S.lv>=riftLv(mid);
+function riftUnlocked(){banner('시간의 균열이 열렸다','길잡이 표석 · 메뉴 [균열]에서 들어갈 수 있다');toast('시간의 균열 개방 · 길잡이 표석 · 메뉴 [균열]에서 들어간다 (자동 진행은 들어가지 않는다)',true);
+  if(!S.riftSeen)S.riftSeen={};if(riftOpen())S.riftSeen[MAPID]=1;riftBtn();/* 잠금 모양을 바로 푼다 */for(const id of ['bRift','bMenu']){const b=$(id);if(b){b.classList.add('glow');later(6,()=>b.classList.remove('glow'));}}lastQKey='';}
+const riftHas=m=>!!(rift&&m.rift&&MAPID===RIFT_MAP);
+const riftIn=()=>!!(rift&&MAPID===RIFT_MAP);
+const riftName=mid=>MAPS[mid||riftOf()].name+' 시간의 균열';
 const mmss=s=>Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0');
 function riftT(){if(S.riftT==null)S.riftT=RIFT.max;return S.riftT;}
 /* v4.42 입장 전 물약 확인 (MMORPG 라이크 '사냥 준비' · 물약 N개 이하 귀환 → 자동 구매 → 복귀): 균열 안은 퀘스트 자동 진행이 꺼지므로
@@ -1539,45 +1577,55 @@ function riftPrep(){const sid=shopId(),c=riftPotCost(),can=S.gold>=potPrice('hp'
 function riftPrepGo(){const sid=shopId();if(!sid)return riftEnter(true);const go=()=>{autoBuy();later(.3,()=>{if(!player.dead&&!modal)riftEnter(true);});};
   stopAutoQ();const n=npcList.find(n=>n.id===sid);if(dist(n,player)<30){closeModal();go();return;}if(!navTo('npc',sid,npcName(sid)+'에게 · 물약 사고 균열로',go))riftEnter(true);}
 /* v4.42 균열 안 보충: 자동 보충이 켜져 있고 HP 물약이 기준(6) 아래면 사냥을 멈추고 상점 → 다시 균열 입구로(균열 밖에선 시간이 줄지 않는다). 정예와 싸우는 중엔 2개까지 버틴다. */
-function riftResupply(){if(!rift||!auto||!hunt||hunt.zone!==rift.zone||nav||modal||player.dead||traveling||!S.autoBuy)return false;if(hunt.mob&&S.hpPot>=2)return false;
-  if(S.hpPot>=POT_LOW.hp||S.gold<potPrice('hp'))return false;const sid=shopId();if(!sid)return false;const z=rift.zone;STAT.riftRes=(STAT.riftRes||0)+1;hunt=null;
+function riftResupply(){if(!rift||!riftIn()||!auto||!hunt||hunt.zone!==rift.zone||nav||modal||player.dead||traveling||!S.autoBuy)return false;if(hunt.mob&&S.hpPot>=2)return false;
+  if(S.hpPot>=POT_LOW.hp||S.gold<potPrice('hp'))return false;const of=rift.of;STAT.riftRes=(STAT.riftRes||0)+1;hunt=null;
   toast('균열 · HP 물약 '+S.hpPot+'개 · 상점에 다녀온다 (균열 밖에서는 시간이 줄지 않는다)',true);
-  return navTo('npc',sid,npcName(sid)+'에게 · 물약 보충 후 균열로',()=>{autoBuy();later(.3,()=>{if(rift&&rift.zone===z&&!player.dead)riftBack();});});}
-function riftBack(){if(!rift||player.dead)return;const z=rift.zone,Z=ZONES[z];cancelNav();player.x=Z.c[0];player.y=Z.c[1];snapCam();$('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);startHunt(z);toast('균열로 돌아왔다 · '+mmss(S.riftT)+' 남음');}
-function riftEnter(force){closeModal();if(rift){if(!riftIn())riftBack();return;}const z=riftZone();if(!z)return toast('이 지역에는 시간의 균열이 없다');if(!riftOpen())return toast('Lv '+riftLv()+'부터 '+ZONES[z].name+'의 균열에 들어갈 수 있다');
+  /* v4.46 전용 공간: 균열에서 나가(시간 멈춤) 마을 상점에서 사고 다시 들어온다 — 이번 입장의 집계는 riftCarry로 이어 붙인다 */
+  rift.then=()=>{const sid=shopId();if(!sid)return;const back=()=>{autoBuy();later(.3,()=>{if(!rift&&!player.dead&&!modal&&MAPID===of)riftEnter(true);});};
+    const n=npcList.find(n=>n.id===sid);if(dist(n,player)<30)back();else navTo('npc',sid,npcName(sid)+'에게 · 물약 보충 후 균열로',back);};
+  riftEnd('supply');return true;}
+/* 전용 맵에 한 벌 깔기: 딸린 사냥터 표의 종마다 n마리는 보통 레벨(재생성 9초) · n마리는 최고 Lv+lvUp(재생성 resp) — 옛 균열 사냥터(보통 + 균열 몬스터)와 같은 구성 */
+function riftSpawn(){const Z=ZONES.rz,B=ZALL[rift.base],fa=ZFAITH[rift.base]||0;for(const m of mobs)if(m.mesh&&m.mesh.parent)m.mesh.parent.remove(m.mesh);mobs.length=0;Z.mobs=B.mobs;
+  const homes=[],put=(sp,lv,ext)=>{for(let i=0;i<120;i++){const x=Z.r[0]+26+Math.random()*(Z.r[2]-Z.r[0]-52),y=Z.r[1]+26+Math.random()*(Z.r[3]-Z.r[1]-52),c=ci(x,y);
+      if(blk[c]||!reach[c]||homes.some(h=>Math.hypot(h.x-x,h.y-y)<22)||Math.hypot(x-Z.c[0],y-(Z.r[3]-RIFT_GAP.y))<RIFT_GAP.r)continue;/* 입구 앞 빈터: 들어서자마자 둘러싸이지 않게 · 다시 들어올 때 남은 정예가 서는 자리 */homes.push({x,y});return makeMob(sp,lv,Math.round(x),Math.round(y),'rz',false,{ext:Object.assign({rift:true,fa,name:'균열 '+SPECIES[sp].name},ext)});}return null;};
+  for(const [sp,l0,l1,n] of B.mobs){for(let i=0;i<n;i++)put(sp,l0+Math.floor(Math.random()*(l1-l0+1)),{riftN:true});for(let i=0;i<n;i++)put(sp,l1+RIFT.lvUp);}}
+function riftEnter(force){closeModal();if(rift||traveling)return;if(M.inst)return;const of=MAPID,z=riftZone(of);if(!z)return toast('이 지역에는 시간의 균열이 없다');if(!riftKey())return toast(riftLockMsg(),true);if(!riftOpen(of))return toast('Lv '+riftLv(of)+'부터 '+riftName(of)+'에 들어갈 수 있다');
   if(riftT()<RIFT.minIn)return toast('균열 입장 시간이 모자라다 · 1분 이상 충전되면 들어갈 수 있다');if(player.dead)return;
   if(force!==true&&S.hpPot<RIFT.potMin)return riftPrep();
-  stopAutoQ();cancelNav();chase=null;target=null;rift={map:MAPID,zone:z,k:0,stone:0,dsg:0,rcp:0,eq:0,sh:0,t0:S.riftT};
-  const Z=ZONES[z],old=mobs.filter(m=>m.rift&&!m.riftBoss&&m.zone===z);
-  if(old.length){for(const m of old){m.dead=false;m.hp=m.max;m.x=m.home.x;m.y=m.home.y;m.aggro=false;m.ret=false;m.deadT=0;m.respawn=RIFT.resp;m.mesh.visible=true;}}
-  else{const homes=mobs.filter(m=>m.zone===z).map(m=>m.home);for(const [sp,l0,l1,n] of Z.mobs){let k=0;for(let i=0;i<n*80&&k<n;i++){const x=Z.r[0]+30+Math.random()*(Z.r[2]-Z.r[0]-60),y=Z.r[1]+30+Math.random()*(Z.r[3]-Z.r[1]-60),c=ci(x,y);
-      if(blk[c]||!reach[c]||homes.some(h=>Math.hypot(h.x-x,h.y-y)<22)||roadD(x,y)<10)continue;homes.push({x,y});makeMob(sp,l1+RIFT.lvUp,Math.round(x),Math.round(y),z,false,{ext:{rift:true,name:'균열 '+SPECIES[sp].name}});k++;}}}
-  player.x=Z.c[0];player.y=Z.c[1];snapCam();$('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);
-  for(let i=0;i<24;i++)spawnP(player.x+rand(-40,40),player.y+rand(-30,30),6,{col:'#c89cff',vx:rand(-20,20),vy:rand(-20,20),vz:rand(40,90),g:-120,life:1,size:3});
-  banner('시간의 균열',Z.name+' · '+mmss(S.riftT)+' 남음 · 도면 · 장비 · 비법서가 잘 나온다');startHunt(z);if(S.riftEP&&S.riftEP[z])later(1.5,()=>{if(rift&&rift.zone===z)riftElite();});lastQKey='';save();}
-function riftLoot(m){rift.k++;S.riftK=(S.riftK||0)+1;riftRecOf(rift.zone).k++;const r=MAP_REG[MAPID]||1;
+  stopAutoQ();cancelNav();chase=null;target=null;const cr=riftCarry&&riftCarry.of===of&&t-riftCarry.at<900?riftCarry.s:null;riftCarry=null;
+  rift=Object.assign({of,map:RIFT_MAP,zone:'rz',base:z,k:0,stone:0,dsg:0,rcp:0,eq:0,sh:0,t0:S.riftT},cr);riftRet={map:of,x:Math.round(player.x),y:Math.round(player.y)};MAP_REG.rift=MAP_REG[of]||1;
+  const P=MAPS.rift.plaza;
+  doTravel(RIFT_MAP,()=>{if(!rift)return;$('flash').classList.add('on');setTimeout(()=>$('flash').classList.remove('on'),200);
+    for(let i=0;i<24;i++)spawnP(player.x+rand(-40,40),player.y+rand(-30,30),6,{col:'#c89cff',vx:rand(-20,20),vy:rand(-20,20),vz:rand(40,90),g:-120,life:1,size:3});
+    banner('시간의 균열',MAPS[of].name+' · '+mmss(S.riftT)+' 남음 · 도면 · 장비 · 비법서가 잘 나온다');startHunt('rz');if(S.riftEP&&S.riftEP[z])later(1.5,()=>{if(rift&&rift.base===z)riftElite(true);});lastQKey='';save();},
+    {rift:true,quiet:true,now:true,label:'시간의 균열로 들어가는 중…',at:{x:P.x,y:P.y-18},arrive:()=>{if(rift)riftSpawn();}});}
+/* 전용 맵에 입장 없이 남았을 때(예외) 들어온 지역의 마을로 내보낸다 */
+function riftLeave(){if(!M.inst||traveling)return;const of=riftRet?riftRet.map:'rowen',H=MAPS[of];hunt=null;auto=false;doTravel(of,null,{quiet:true,label:'균열에서 나가는 중…',at:{x:H.plaza.x,y:H.plaza.y+40}});}
+function riftLoot(m){rift.k++;S.riftK=(S.riftK||0)+1;riftRecOf(rift.base).k++;const r=MAP_REG[rift.of]||1;
   if(m.riftBoss)riftBox(m,r);else{S.riftEK=(S.riftEK||0)+1;if(S.riftEK>=RIFT.eN&&!alive(riftEliteOf())){S.riftEK=0;riftElite();}}
   withAcq(acqSrcOf(m),acqZoneOf(m),()=>{
   if(Math.random()<DROP.dsg*(RIFT.dsgK-1)){const k=dsgRand(r);addStk(k,1);rift.dsg++;floatTxt(m.x,m.y-52,'+'+STK[k].n,STK[k].col,true);}
   const [rk,rp]=RIFT.rcp[r];if(Math.random()<rp){addStk(rk,1);rift.rcp++;floatTxt(m.x,m.y-40,'+'+STK[rk].n,STK[rk].col,true);toast('균열 · '+STK[rk].n+' 획득',true);}
   if(Math.random()<DROP.eq*(RIFT.eqK-1)){const it=newItem(rollSlot(),tierOfLv(m.lv),rollGrade(false));if(addItem(it,m)){rift.eq=(rift.eq||0)+1;const G=GRADES[it.g];floatTxt(m.x,m.y-62,G.n+' '+itemName(it),G.c,it.g>=2);}}
   if(Math.random()<RIFT.shardP){S.shard+=1;rift.sh=(rift.sh||0)+1;floatTxt(m.x,m.y-46,'+권능 파편','#ffd860');}});}
-const riftEliteOf=z=>mobs.find(m=>m.riftBoss&&m.zone===(z||(rift&&rift.zone)));
+const riftEliteOf=()=>M.inst?mobs.find(m=>m.riftBoss):undefined;
 const riftLeft=()=>Math.max(0,RIFT.eN-(S.riftEK||0));
-function riftElite(){if(!rift)return null;const z=rift.zone,Z=ZONES[z];if(!S.riftEP)S.riftEP={};S.riftEP[z]=1;let m=riftEliteOf(z);
-  if(!m){const top=Z.mobs.reduce((a,b)=>b[2]>=a[2]?b:a),sp=top[0],lv=Math.min(LV_MAX,top[2]+RIFT.eLv);let x=Z.c[0],y=Z.c[1];
-    for(let i=0;i<60;i++){const xx=Z.c[0]+rand(-70,70),yy=Z.c[1]+rand(-50,50),c=ci(xx,yy);if(!blk[c]&&reach[c]&&roadD(xx,yy)>=6){x=Math.round(xx);y=Math.round(yy);break;}}
-    m=makeMob(sp,lv,x,y,z,false,{hpMul:6*RIFT.eHp,ext:{rift:true,riftBoss:true,sc:2,name:'균열의 주인 · '+SPECIES[sp].name}});m.atk=Math.round(m.atk*RIFT.eAtk);m.xp=Math.round(m.xp*RIFT.eXp);m.gold=Math.round(m.gold*RIFT.eGold);}
+function riftElite(gate){/* gate: 다시 들어왔을 때 남아 있던 정예 — 입구 앞 빈터에 세운다 */if(!rift||!riftIn())return null;const z=rift.base,Z=ZONES.rz,B=ZALL[z];if(!S.riftEP)S.riftEP={};S.riftEP[z]=1;let m=riftEliteOf();
+  if(!m){const top=B.mobs.reduce((a,b)=>b[2]>=a[2]?b:a),sp=top[0],lv=Math.min(LV_MAX,top[2]+RIFT.eLv);/* 자리: 사냥 구역 안에서 사냥 중이면 플레이어 곁(90~150 — 막 잡아 비운 자리라 딸려 오는 몬스터가 적다) · 막 들어온 문턱이면 사냥 구역 입구 앞 빈터.
+       처음엔 위쪽 끝(문턱에서 먼 쪽)에 뒀는데, 거기까지 가로지르며 몬스터를 끌고 가 물약이 옛 균열의 2.3배 들었다(통제 측정 6.2 → 14.5개/120초) → 바꿈 */
+    let x=Z.c[0],y=Z.r[3]-RIFT_GAP.y;
+    if(gate!==true&&inR(Z.r,player.x,player.y,0))for(let i=0;i<80;i++){const a=Math.random()*6.283,d=90+Math.random()*60,xx=player.x+Math.cos(a)*d,yy=player.y+Math.sin(a)*d,c=ci(xx,yy);if(inR(Z.r,xx,yy,-30)&&!blk[c]&&reach[c]){x=Math.round(xx);y=Math.round(yy);break;}}
+    m=makeMob(sp,lv,x,y,'rz',false,{hpMul:6*RIFT.eHp,ext:{rift:true,riftBoss:true,sc:2,fa:ZFAITH[z]||0,name:'균열의 주인 · '+SPECIES[sp].name}});m.atk=Math.round(m.atk*RIFT.eAtk);m.xp=Math.round(m.xp*RIFT.eXp);m.gold=Math.round(m.gold*RIFT.eGold);}
   else{m.dead=false;m.hp=m.max;m.x=m.home.x;m.y=m.home.y;m.aggro=false;m.ret=false;m.deadT=0;m.respawn=1e9;m.mesh.visible=true;}
   for(let i=0;i<20;i++)spawnP(m.x+rand(-20,20),m.y+rand(-14,14),6,{col:'#c89cff',vx:rand(-20,20),vy:rand(-20,20),vz:rand(50,100),g:-120,life:1.1,size:3});
-  if(hunt&&hunt.zone===z&&!hunt.mob)hunt.mob=m;banner('균열 정예 출현',Z.name+' · Lv'+m.lv+' '+m.name+' · 쓰러뜨리면 균열 상자');lastQKey='';return m;}
+  if(hunt&&hunt.zone==='rz'&&!hunt.mob)hunt.mob=m;banner('균열 정예 출현',riftName(rift.of)+' · Lv'+m.lv+' '+m.name+' · 쓰러뜨리면 균열 상자');lastQKey='';return m;}
 /* v4.44 균열 상자 장비: 등급은 지역 표(RIFT.box.eq[r]) · 부위는 그 등급 이상을 요구하는 미등록 컬렉션 칸 우선(없으면 보통 부위 굴림) · 단계는 정예 Lv */
 function riftBoxGrade(r){const x=Math.random();for(const [g,p] of RIFT.box.eq[r])if(x<p)return g;return 2;}
 function riftBoxSlot(g,t){const c=[];for(const C of COLL)C.req.forEach((q,i)=>{if(!q.bu&&q.k&&(q.g||0)>=2&&(q.g||0)<=g&&(!q.t||q.t===t)&&!collReg(C,i))c.push(q.k);});return c.length?c[Math.floor(Math.random()*c.length)]:rollSlot();}
 /* 그 지역(지금 맵)에서 이미 만난 지역 보스의 전용 장비 후보 — 컬렉션에 아직 없고 등록할 수 있는 사본도 없는 것 우선 */
-function riftBoxBU(){const B=fieldBossQs().flatMap(q=>buOfQ(q.id));if(!B.length)return null;
+function riftBoxBU(){const of=riftOf(),B=QUESTS.filter((q,i)=>q.elite&&i<S.qi&&qMap(q)===of).flatMap(q=>buOfQ(q.id));/* v4.46 전용 공간 안에서는 MAPID가 'rift' — 딸린 지역(riftOf) 기준 */if(!B.length)return null;
   const want=B.filter(b=>COLL.some(c=>c.req.some((q,i)=>q.bu===b.id&&!collReg(c,i)))&&!S.items.some(x=>x.bu===b.id&&!isEq(x)&&!x.lock));const L=want.length?want:B;return L[Math.floor(Math.random()*L.length)];}
-function riftBox(m,r){const z=m.zone;if(S.riftEP)delete S.riftEP[z];S.riftBox=(S.riftBox||0)+1;rift.box=(rift.box||0)+1;
+function riftBox(m,r){const z=rift.base;if(S.riftEP)delete S.riftEP[z];S.riftBox=(S.riftBox||0)+1;rift.box=(rift.box||0)+1;
   const ns=RIFT.box.stone(r),dk=dsgRand(r),rk=RIFT.rcp[r][0],sh=RIFT.box.shard;S.stone+=ns;rift.stone+=ns;S.shard+=sh;
   const g=riftBoxGrade(r),t=tierOfLv(m.lv),it=newItem(riftBoxSlot(g,t),t,g),bu=Math.random()<RIFT.box.buP?riftBoxBU():null;let got=[];
   withAcq('균열 정예 · '+m.name,acqZoneOf(m),()=>{addStk(dk,1);addStk(rk,1);
@@ -1586,28 +1634,40 @@ function riftBox(m,r){const z=m.zone;if(S.riftEP)delete S.riftEP[z];S.riftBox=(S
   floatTxt(m.x,m.y-30,'균열 상자','#e0c0ff',true);const gs=got.length?' · '+got.join(' · '):'';
   banner('균열 상자','강화석 +'+ns+' · '+STK[dk].n+' · '+STK[rk].n+' · 권능 파편 +'+sh+gs);toast('균열 정예 토벌 · 균열 상자: 강화석 +'+ns+' · '+STK[dk].n+' +1 · '+STK[rk].n+' +1 · 권능 파편 +'+sh+gs,true);
   if(hunt&&hunt.mob===m)hunt.mob=null;lastQKey='';save();}
-function riftEnd(why){if(!rift)return;const R=rift,Z=ZALL[R.zone];rift=null;
-  for(const m of mobs)if(m.rift){m.dead=true;m.respawn=1e9;m.deadT=0;m.aggro=false;m.mesh.visible=false;if(target===m)target=null;if(chase===m)chase=null;}
-  const sum=Z.name+' 균열 · '+mmss(Math.max(0,R.t0-S.riftT))+' · 처치 '+R.k+' · 강화석 +'+R.stone+(R.dsg?' · 도면 +'+R.dsg:'')+(R.rcp?' · 비법서 +'+R.rcp:'')+(R.eq?' · 장비 +'+R.eq:'')+(R.sh?' · 권능 파편 +'+R.sh:'')+(R.bu?' · 보스 전용 +'+R.bu:'')+(R.box?' · 균열 상자 '+R.box:'');
-  if(why==='time'&&!player.dead){hunt=null;auto=false;player.x=PLAZA.x;player.y=PLAZA.y+40;snapCam();banner('균열이 닫혔다','입장 시간을 다 썼다 · '+ZONES.village.name+'(으)로 돌아왔다');}
-  toast((why==='time'?'균열 시간 끝 · ':why==='dead'?'쓰러져 균열에서 밀려났다 · ':'균열에서 나왔다 · ')+sum,true);lastQKey='';save();}
-function riftTick(dt){if(!started)return;const T=riftT();
-  if(rift&&(rift.map!==MAPID||player.dead))return riftEnd(player.dead?'dead':'move');
-  if(rift){if(riftIn()){S.riftT=Math.max(0,T-dt);riftRecOf(rift.zone).s+=dt;if(S.riftT<=0)riftEnd('time');}}
+/* 나가는 이유와 도착지 — out(나가기 버튼 · 표석): 들어오기 전 자리 / time(시간 끝) · town(귀환) · supply(물약 보충): 들어온 지역 마을 광장
+   / dead: 쓰러진 채 남고 부활할 때 마을로(revive) / move: 표석으로 다른 지역에 가는 중(doTravel이 옮긴다) */
+function riftEnd(why){if(!rift)return;const R=rift,H=MAPS[R.of];rift=null;
+  for(const m of MAPS.rift.rt?MAPS.rift.rt.mobs:[]){m.dead=true;m.respawn=1e9;m.deadT=1;m.aggro=false;m.mesh.visible=false;}if(target&&target.rift)target=null;if(chase&&chase.rift)chase=null;
+  const sum=H.name+' 균열 · '+mmss(Math.max(0,R.t0-S.riftT))+' · 처치 '+R.k+' · 강화석 +'+R.stone+(R.dsg?' · 도면 +'+R.dsg:'')+(R.rcp?' · 비법서 +'+R.rcp:'')+(R.eq?' · 장비 +'+R.eq:'')+(R.sh?' · 권능 파편 +'+R.sh:'')+(R.bu?' · 보스 전용 +'+R.bu:'')+(R.box?' · 균열 상자 '+R.box:'');
+  if(why==='supply')riftCarry={of:R.of,at:t,s:{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,eq:R.eq,sh:R.sh,bu:R.bu,box:R.box,boxG:R.boxG,t0:R.t0}};
+  else toast((why==='time'?'균열 시간 끝 · ':why==='dead'?'쓰러져 균열에서 밀려났다 · ':'균열에서 나왔다 · ')+sum,true);lastQKey='';
+  if(M.inst&&why!=='move'&&why!=='dead'&&!player.dead){hunt=null;auto=false;const out=why==='out'&&riftRet&&riftRet.map===R.of,at=out?{x:riftRet.x,y:riftRet.y}:{x:H.plaza.x,y:H.plaza.y+40};
+    doTravel(R.of,()=>{graceT=t+3;if(why==='time')banner('균열이 닫혔다','입장 시간을 다 썼다 · '+H.zones.village.name+'(으)로 돌아왔다');if(R.then)R.then();},{quiet:true,now:true,label:'균열에서 나가는 중…',at});}
+  else save();}
+function riftTick(dt){if(!started||traveling)return;const T=riftT();
+  if(rift&&player.dead)return riftEnd('dead');if(rift&&!M.inst)return riftEnd('move');
+  if(!rift&&M.inst){if(!player.dead)riftLeave();return;}
+  if(rift){S.riftT=Math.max(0,T-dt);riftRecOf(rift.base).s+=dt;if(S.riftT<=0)riftEnd('time');}
   else S.riftT=Math.min(RIFT.max,T+dt*RIFT.chg);
-  if(!S.riftSeen)S.riftSeen={};const mid=MAPID;if(riftOpen(mid)&&!S.riftSeen[mid]){S.riftSeen[mid]=1;later(2,()=>toast(MAPS[mid].name+' · '+ZONES[riftZone(mid)].name+'에 시간의 균열이 열렸다 · 길잡이 표석 · 반복 탭',true));lastQKey='';}}
+  if(!S.riftSeen)S.riftSeen={};const mid=MAPID;if(!M.inst&&riftOpen(mid)&&!S.riftSeen[mid]){S.riftSeen[mid]=1;later(2,()=>toast(riftName(mid)+'이 열렸다 · 길잡이 표석 · 메뉴 [균열]',true));lastQKey='';}}
 /* v4.39 균열 안 표시 — 균열 사냥터 안에서는 보라 안개(장면 안개 · 하늘색을 보라로 · 화면 가장자리 보라 그늘 · 떠오르는 보라 입자),
    균열 몬스터는 보랏빛 재질 · 보라 이름, 미니맵에 균열 사냥터(열림 = 점선 · 안 = 칠함 · 균열 몬스터 점 · 정예 큰 점), 미니맵 지역 이름 옆 남은 시간, 메뉴 '균열'(표석과 같은 줄). */
 const RIFT_COL={haze:new T3.Color('#6e4c98'),amb:new T3.Color('#8a6ab8'),hazeK:.55,mote:'#b78aff',name:'#c9a0ff',dot:'#b78aff',moteN:10};
 let riftK=0,riftMoteT=0;const _hz=new T3.Color(),_am=new T3.Color();
-function riftFx(dt){const want=rift&&riftIn()?1:0,k0=riftK;riftK+=(want-riftK)*Math.min(1,dt*2.2);if(Math.abs(riftK-want)<.003)riftK=want;
-  if(riftK>0||k0>0){_hz.set(M.haze).lerp(RIFT_COL.haze,riftK*RIFT_COL.hazeK);HAZE.copy(_hz);scene.background=HAZE;scene.fog.color=HAZE;_am.setHex(M.amb).lerp(RIFT_COL.amb,riftK*.35);amb.color.copy(_am);}
+function riftFx(dt){const want=rift&&riftIn()?1:0,k0=riftK;riftK+=(want-riftK)*Math.min(1,dt*2.2);if(Math.abs(riftK-want)<.003)riftK=want;if(!M.inst)riftK=0;/* v4.46 전용 공간 밖에서는 보라 그늘을 남기지 않는다(맵을 바꾸며 나오므로 서서히 걷힐 것이 없다) */
   const v=$('riftV');if(v){v.style.opacity=riftK.toFixed(3);v.hidden=riftK<=0;}
-  if(rift&&riftK>.2){riftMoteT-=dt;while(riftMoteT<0){riftMoteT+=1/RIFT_COL.moteN;const r=ZONES[rift.zone].r,x=player.x+rand(-170,170),y=player.y+rand(-120,120);if(inR(r,x,y))spawnP(x,y,1+Math.random()*6,{col:RIFT_COL.mote,vx:rand(-4,4),vy:rand(-3,3),vz:8+Math.random()*10,g:2,life:1.6+Math.random()*.8,size:2.6+Math.random()*2,size1:.5});}}}
+  if(rift&&riftK>.2){riftMoteT-=dt;while(riftMoteT<0){riftMoteT+=1/RIFT_COL.moteN;const r=M.bound,x=player.x+rand(-170,170),y=player.y+rand(-120,120);if(inR(r,x,y))spawnP(x,y,1+Math.random()*6,{col:RIFT_COL.mote,vx:rand(-4,4),vy:rand(-3,3),vz:8+Math.random()*10,g:2,life:1.6+Math.random()*.8,size:2.6+Math.random()*2,size1:.5});}}}
+/* v4.46 균열 HUD(G17 · 현 요청): 전용 공간 안에서만 보인다 — 남은 시간 · 정예까지 · 이번 입장 획득 · [나가기] */
+function riftHud(){const h=$('riftHud');if(!h)return;const on=!!(rift&&riftIn()&&!traveling);if(h.hidden===on)h.hidden=!on;document.body.classList.toggle('inrift',on);if(!on)return;
+  const T=S.riftT,el_=alive(riftEliteOf()),left=riftLeft();$('rhN').textContent='⧗ '+riftName(rift.of);
+  const tm=$('rhT');tm.textContent=mmss(T);tm.className='rht'+(T<60?' bad':T<300?' warn':'');$('rhTB').style.width=clamp(T/RIFT.max*100,0,100)+'%';
+  const e=$('rhE');e.textContent=el_?'균열의 주인 등장!':'처치 '+rift.k+' · 정예까지 '+left;e.className='rhe'+(el_?' on':'');$('rhEB').style.width=(el_?100:clamp((RIFT.eN-left)/RIFT.eN*100,0,100))+'%';
+  const L=[['강화석',rift.stone],['도면',rift.dsg],['장비',rift.eq||0],['비법서',rift.rcp],['파편',rift.sh||0]];if(rift.box)L.push(['상자',rift.box]);
+  const key=L.map(x=>x[1]).join(',');if(h.dataset.k!==key){h.dataset.k=key;$('rhL').replaceChildren(...L.map(([n,v])=>el('span',v?'':'z',n+' +'+v)));}}
 function riftBtn(){const b=$('bRift');if(!b)return;const z=riftZone(),op=!!z&&riftOpen();b.classList.toggle('lock',!op);b.classList.toggle('on',!!rift);b.classList.toggle('dot',op&&!rift&&riftT()>=RIFT.max);
-  b.title=!z?'시간의 균열 — 이 지역에는 없다':!op?'시간의 균열 — Lv '+riftLv()+'부터 '+ZONES[z].name:rift?'시간의 균열 · 안에 있음 · '+mmss(S.riftT)+' 남음':'시간의 균열 · '+ZONES[z].name+' · 입장 시간 '+mmss(riftT())+(riftT()>=RIFT.max?' (가득 — 더 충전되지 않음)':'');}
-function openRift(){toggleMenu(false);const z=riftZone();if(!z)return toast('이 지역에는 시간의 균열이 없다');const body=el('div','shop');riftRow(body);riftTable(body);
-  openModal({who:'hero',name:'시간의 균열',sub:MAPS[MAPID].name+' · '+ZONES[z].name+' · 길잡이 표석과 같은 입장',text:'',body,btns:[{t:'닫기',alt:true,f:closeModal}]});}
+  b.title=!z?'시간의 균열 — 이 지역에는 없다':!riftKey()?riftLockMsg():!op?'시간의 균열 — Lv '+riftLv()+'부터':rift?'시간의 균열 · 안에 있음 · '+mmss(S.riftT)+' 남음':riftName()+' · 입장 시간 '+mmss(riftT())+(riftT()>=RIFT.max?' (가득 — 더 충전되지 않음)':'');}
+function openRift(){toggleMenu(false);const z=riftZone();if(!z)return toast('이 지역에는 시간의 균열이 없다');if(!riftKey())return toast(riftLockMsg(),true);/* 잠겨 있으면 창 대신 안내 */const body=el('div','shop');riftRow(body);riftTable(body);
+  openModal({who:'hero',name:'시간의 균열',sub:riftName()+' · 전용 공간 · 길잡이 표석과 같은 입장',text:'',body,btns:[{t:'닫기',alt:true,f:closeModal}]});}
 /* v4.41 균열 보상 표 — 처치 1마리당 기대값 × 분당 처치(내 기록 1분 이상이면 그 값, 아니면 RIFT.kpm 예상).
    강화석/처치 = stoneP × ⌈단계/2⌉(종 마릿수 가중) · 도면 = DROP.dsg × dsgK · 비법서 = rcp 확률 · 상자 = 1/eN(상자 강화석 4+2r · 도면 1 · 비법서 1).
    보통 사냥 비교 = 같은 처치 수일 때(STONE_P × ⌈단계/2⌉) — 균열은 몬스터가 두 배라 실제 처치 속도도 더 빠르다. */
@@ -1624,14 +1684,14 @@ function riftBoxTxt(){const pc=x=>Math.round(x*100)+'%',part=r=>{const T=RIFT.bo
   return '균열 상자(정예 · 처치 '+RIFT.eN+'마다): 장비 1개 확정(희귀 이상 · '+[1,2,3].map(part).join(' / ')+') · 보스 전용 장비 '+pc(RIFT.box.buP)+'(이 지역에서 이미 만난 지역 보스 · 컬렉션에 없는 것 먼저) · 강화석 · 도면 · 비법서 · 권능 파편';}
 function riftTable(body){const w=el('div','rtab');w.appendChild(el('div','rth','지역별 기대 보상 · 입장 시간 60분 기준 (분당 처치 × 처치당 기대값)'));
   const tb=el('table');const hr=el('tr');for(const h of ['균열','열림','분당 처치','60분 강화석','도면','비법서','장비','파편','처치당 강화석'])hr.appendChild(el('th',null,h));tb.appendChild(hr);
-  for(const mid in RIFT.zone){const z=RIFT.zone[mid],E=riftExp(z),cur=mid===MAPID,op=riftOpen(mid),tr=el('tr',(cur?'cur ':'')+(op?'':'lk'));
-    const c=[MAPS[mid].name+' · '+ZALL[z].name,op?'Lv '+E.lv+'+':'Lv '+E.lv+'부터',E.kpm.toFixed(1)+(E.mine?' ✓':''),Math.round(E.stoneM*60)+'',E.dsgH.toFixed(1),E.rcpH.toFixed(1)+' '+STK[E.rcpK].n.split(' ')[0],E.eqH.toFixed(1),E.shH.toFixed(1),'보통의 ×'+E.x.toFixed(1)];
+  for(const mid in RIFT.zone){const z=RIFT.zone[mid],E=riftExp(z),cur=mid===riftOf(),op=riftOpen(mid),tr=el('tr',(cur?'cur ':'')+(op?'':'lk'));
+    const c=[MAPS[mid].name,op?'Lv '+E.lv+'+':'Lv '+E.lv+'부터',E.kpm.toFixed(1)+(E.mine?' ✓':''),Math.round(E.stoneM*60)+'',E.dsgH.toFixed(1),E.rcpH.toFixed(1)+' '+STK[E.rcpK].n.split(' ')[0],E.eqH.toFixed(1),E.shH.toFixed(1),'보통의 ×'+E.x.toFixed(1)];
     for(const v of c)tr.appendChild(el('td',null,v));tb.appendChild(tr);}
   w.appendChild(tb);w.appendChild(el('div','rtn','✓ = 내 기록(그 균열에서 1분 이상) · 나머지는 예상 처치 속도(열린 직후 레벨 기준) · 경험치 · 골드는 보통 사냥과 같다'));w.appendChild(el('div','rtn rbox',riftBoxTxt()));body.appendChild(w);}
 function riftRow(body){const z=riftZone();if(!z)return;const d=el('div','si rift'),nm=el('div','nm'),op=riftOpen(),T=riftT();
-  nm.append(el('b',null,'⧗ 시간의 균열 · '+ZONES[z].name),el('small',null,op?(rift?'균열 안 · ':'')+'입장 시간 '+mmss(T)+' / 60:00 · 균열 밖 2분마다 1분 충전 · 장비 ×2 · 도면 ×2 · 비법서 ×2 · 강화석 ×2 · 권능 파편 · 정예까지 '+riftLeft()+'(상자 확정)':'Lv '+riftLv()+'부터 열린다'));{const E=riftExp(z);nm.appendChild(el('small','rx','기대 · 분당 처치 '+E.kpm.toFixed(1)+(E.mine?'(내 기록)':'(예상)')+' · 강화석 '+E.stoneM.toFixed(1)+'/분 (같은 처치 수 보통 사냥 '+E.stoneN.toFixed(1)+') · 60분 도면 '+E.dsgH.toFixed(1)+' · 비법서 '+E.rcpH.toFixed(1)+' · 장비 '+E.eqH.toFixed(1)+' · 파편 '+E.shH.toFixed(1)));}d.appendChild(nm);
+  nm.append(el('b',null,'⧗ '+riftName()),el('small',null,op?(rift?'균열 안 · ':'')+'입장 시간 '+mmss(T)+' / 60:00 · 균열 밖 2분마다 1분 충전 · 장비 ×2 · 도면 ×2 · 비법서 ×2 · 강화석 ×2 · 권능 파편 · 정예까지 '+riftLeft()+'(상자 확정)':riftKey()?'Lv '+riftLv()+'부터 열린다':riftLockMsg()));{const E=riftExp(z);nm.appendChild(el('small','rx','기대 · 분당 처치 '+E.kpm.toFixed(1)+(E.mine?'(내 기록)':'(예상)')+' · 강화석 '+E.stoneM.toFixed(1)+'/분 (같은 처치 수 보통 사냥 '+E.stoneN.toFixed(1)+') · 60분 도면 '+E.dsgH.toFixed(1)+' · 비법서 '+E.rcpH.toFixed(1)+' · 장비 '+E.eqH.toFixed(1)+' · 파편 '+E.shH.toFixed(1)));}d.appendChild(nm);
   const b=el('button','btn pri',rift?'나가기':op?'입장':'잠김');b.type='button';b.disabled=!op||(!rift&&T<RIFT.minIn);b.onclick=()=>{if(rift){closeModal();riftEnd('out');}else riftEnter();};d.appendChild(b);body.appendChild(d);}
-function invTick(dt){if(!started)return;if(!invUnlocked()){invNext=Math.max(invNext,t+60);return;}if(!S.invSeen){S.invSeen=true;banner('침공 개방','Lv '+INV.unlockLv+' 달성 · 잠시 후 첫 침공 보스가 나타난다');save();}if(inv){if(inv.m.dead){inv=null;invNext=t+INV.every;lastQKey='';}else if(t>inv.until){inv.m.dead=true;inv.m.respawn=1e9;inv.m.deadT=1;inv.m.mesh.visible=false;if(target===inv.m)target=null;if(hunt&&hunt.mob===inv.m)hunt=null;toast('침공 보스가 물러갔다');inv=null;invNext=t+INV.every;lastQKey='';}}
+function invTick(dt){if(!started)return;if(M.inst){invNext=Math.max(invNext,t+30);return;}/* 전용 공간에는 침공이 없다 */if(!invUnlocked()){invNext=Math.max(invNext,t+60);return;}if(!S.invSeen){S.invSeen=true;banner('침공 개방','Lv '+INV.unlockLv+' 달성 · 잠시 후 첫 침공 보스가 나타난다');save();}if(inv){if(inv.m.dead){inv=null;invNext=t+INV.every;lastQKey='';}else if(t>inv.until){inv.m.dead=true;inv.m.respawn=1e9;inv.m.deadT=1;inv.m.mesh.visible=false;if(target===inv.m)target=null;if(hunt&&hunt.mob===inv.m)hunt=null;toast('침공 보스가 물러갔다');inv=null;invNext=t+INV.every;lastQKey='';}}
   else if(t>=invNext&&!player.dead)invSpawn();}
 function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const sec=Math.min(12*3600,(Date.now()-S.lastSeen)/1000);if(sec<60)return;const Z=ZALL[S.aiZone],lv0=Z.mobs[0][1],lv1=Z.mobs[Z.mobs.length-1][2],L=Math.round((lv0+lv1)/2),ms=mobStats(L);
   const kills=Math.floor(sec/7*.4),stone=Math.floor(kills*.04),pot=Math.min(S.hpPot,Math.floor(kills/60)),lv0b=S.lv;let xp=0,gold=0;
@@ -1644,17 +1704,18 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={enchAid,enchRate,riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftPrepGo,riftResupply,riftBack,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftT,winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={enchAid,enchRate,riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftKey,riftKeyIdx,riftLockMsg,riftUnlocked,QORDER_445,die,growthGoal,cancelNav,riftPrepGo,riftResupply,riftSpawn,riftLeave,riftName,riftOf,get riftRet(){return riftRet;},get riftCarry(){return riftCarry;},get graceT(){return graceT;},get MAPID(){return MAPID;},get traveling(){return traveling;},riftHud,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftT,winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 
 /* ================= 시작 ================= */
-async function startGame(fresh){/* v4.35 새 게임이어도 바꾼 단축키는 이어 쓴다(키 설정은 캐릭터가 아니라 사람의 것) */const sv0=fresh?(loadSave()||{}):null,km0=sv0&&sv0.keymap,wu0=sv0&&sv0.winUi;/* v4.36 창 위치 · 크기도 사람의 것 */S=fresh?migrate48(newSave(),true):loadSave()||migrate48(newSave(),true);if(km0)S.keymap=km0;if(wu0)S.winUi=wu0;gearDirty();if(S.map!==MAPID){$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중…';if(!MAPS[S.map].rt||!MAPS[S.map].rt.built)await buildWorld(S.map,p=>{$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});bindMap(S.map);showMapOnly();applyLook();}
+async function startGame(fresh){/* v4.35 새 게임이어도 바꾼 단축키는 이어 쓴다(키 설정은 캐릭터가 아니라 사람의 것) */const sv0=fresh?(loadSave()||{}):null,km0=sv0&&sv0.keymap,wu0=sv0&&sv0.winUi;/* v4.36 창 위치 · 크기도 사람의 것 */S=fresh?migrate48(newSave(),true):loadSave()||migrate48(newSave(),true);if(km0)S.keymap=km0;if(wu0)S.winUi=wu0;gearDirty();if(!MAPS[S.map]||MAPS[S.map].inst){S.map='rowen';S.x=MAPS.rowen.plaza.x;S.y=MAPS.rowen.plaza.y+40;}if(S.map!==MAPID){$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중…';if(!MAPS[S.map].rt||!MAPS[S.map].rt.built)await buildWorld(S.map,p=>{$('loadT').textContent=MAPS[S.map].name+' 지역을 그리는 중… '+Math.round(p*100)+'%';});bindMap(S.map);showMapOnly();applyLook();}
   const st=pStats();player.hp=st.hp;player.mp=st.mp;
   const ok=!fresh&&!blockedAt(S.x,S.y)&&!Object.values(ZONES).some(z=>z.lv&&inR(z.r,S.x,S.y));player.x=ok?S.x:PLAZA.x;player.y=ok?S.y:PLAZA.y+40;
   started=true;kbRefresh();$('title').hidden=true;$('hud').hidden=false;if(document.body.classList.contains('touch')){joyz.hidden=false;joyEl.hidden=false;joyPos();}
   if(S.cfg&&VOL_OLD[S.cfg.volK]!=null&&!S.cfg.vol482){S.cfg.volK=VOL_OLD[S.cfg.volK];}if(S.cfg&&!S.cfg.vol483){S.cfg.vol=false;S.cfg.vol483=true;S.cfg.vol482=true;}setVolume(!!(S.cfg&&S.cfg.vol===true),S.cfg&&S.cfg.volK||VOL_LV.약);portrait('hero',$('face'),true);setZoom(S.zoom||1);zoom=zoomT;snapCam();curZone='';lastQKey='';stage.focus({preventScroll:true});
   if(fresh)setTimeout(()=>toast('왼쪽 퀘스트를 누르면 목적지로 자동 이동한다'),1200);else offlineSettle();
+  if(S.riftNote){delete S.riftNote;if(!fresh)setTimeout(()=>toast('원정대는 이미 시간의 균열을 열었다 · 길잡이 표석 · 메뉴 [균열]',true),2400);}
   if(S.migrated48){delete S.migrated48;setTimeout(()=>{banner('v4.8 장비 시스템','강화 단계를 장비로 옮기고 지금 레벨의 장비를 지급했다');toast('가방(I)에서 장비와 마법 주문서를 확인하자',true);},1600);}save();}
 $('btnStart').onclick=()=>startGame(true);$('btnCont').onclick=()=>startGame(false);
 resize();requestAnimationFrame(loop);

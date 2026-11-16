@@ -35,17 +35,23 @@ with sync_playwright() as p:
             # v4.44: wait 모드는 '지금 레벨에 맞는 균열'만(균열 사냥터 최고 Lv+3 이하) — v4.43에선 Lv26에 로웬 Lv9 균열을 썼다
             if riftOn is None and pg.evaluate(f"__g.riftOpen()&&!__g.rift&&__g.riftT()>=900&&!!__g.hunt&&__g.S.autoQ&&{RCOND}&&!__g.nav"):
                 pg.evaluate("__g.S.hpPot<__g.RIFT.potMin?__g.riftPrepGo():__g.riftEnter(true)");riftOn=i;riftUse['n']+=1;print('BOTRIFT in',i*3,s['map'],'lv',s['lv'],'stone',pg.evaluate('__g.S.stone'))
-            elif riftOn is not None and (i-riftOn>=300 or pg.evaluate("!__g.rift&&!__g.nav")):
-                o=pg.evaluate("(()=>{const g=__g,R=g.rift;const o=R?{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,eq:R.eq||0,sh:R.sh||0,box:R.box||0}:{};if(R)g.riftEnd('out');g.S.autoQ=true;g.autoNext();return o})()")
+            elif riftOn is not None and (i-riftOn>=300 or pg.evaluate("!__g.rift&&!__g.nav&&!__g.riftCarry")):
+                # v4.46 전용 공간: 나가기는 맵 이동(비동기) — 이동이 끝난 뒤 자동 진행을 다시 켠다. 물약 보충으로 잠깐 나간 동안(riftCarry)은 끝으로 보지 않는다
+                o=pg.evaluate("(()=>{const g=__g,R=g.rift;const o=R?{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,eq:R.eq||0,sh:R.sh||0,box:R.box||0}:{};if(R)g.riftEnd('out');return o})()")
+                pg.wait_for_function("!__g.traveling",timeout=90000);pg.evaluate("__g.cancelNav&&__g.cancelNav();__g.S.autoQ=true;__g.autoNext()")
                 riftOn=None;riftUse['k']+=o.get('k',0);riftUse['stone']+=o.get('stone',0);print('BOTRIFT out',i*3,o)
         if RIFTPROBE and not s['modal'] and not s['dead'] and pg.evaluate("__g.riftOpen()&&!__g.rift&&__g.riftT()>=600") and s['map'] not in probed:
             # v4.41 균열 측정: 균열이 처음 열린 시점에 120초(게임 시간) 들어가 분당 처치 · 강화석을 잰다 — 측정 뒤 자동 진행으로 돌아감
-            probed.add(s['map']);pr=pg.evaluate("(()=>{const g=__g;g.riftEnter();return {lv:g.S.lv,st:g.S.stone,k:g.S.kills,z:g.rift&&g.rift.zone,cp:g.cpOf()}})()")
+            probed.add(s['map']);pr=pg.evaluate("(()=>{const g=__g;g.riftEnter(true);return {lv:g.S.lv,st:g.S.stone,k:g.S.kills,z:g.rift&&g.rift.base,cp:g.cpOf()}})()")
+            pg.wait_for_function("!__g.traveling",timeout=90000)  # v4.46 전용 공간: 들어가기는 맵 이동
             for j in range(40):
+                if pg.evaluate("__g.traveling"):
+                    pg.wait_for_timeout(300);continue
                 pg.evaluate("__g.step(60,0.05)")
                 if BOT and j%5==0: pg.evaluate("__bot("+os.environ.get("BOTOPT","{}")+")")
                 if pg.evaluate("!__g.rift"): break
-            r=pg.evaluate("(()=>{const g=__g,R=g.rift;const o=R?{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,sec:R.t0-g.S.riftT,dead:false}:{dead:g.player.dead};if(R)g.riftEnd('out');g.S.autoQ=true;g.autoNext();return o})()")
+            r=pg.evaluate("(()=>{const g=__g,R=g.rift;const o=R?{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,sec:R.t0-g.S.riftT,dead:false}:{dead:g.player.dead};if(R)g.riftEnd('out');return o})()")
+            pg.wait_for_function("!__g.traveling",timeout=90000);pg.evaluate("if(!__g.player.dead){__g.S.autoQ=true;__g.autoNext()}")
             print('RIFTPROBE',i*3,s['map'],pr,r,'kpm',round(r.get('k',0)/max(1,r.get('sec',0))*60,1) if r.get('sec') else '-')
             if pg.evaluate("__g.player.dead"): pg.evaluate("if(__g.modal&&__g.modal.name==='사망했습니다')__g.modal.btns[0].f()")
             continue

@@ -2,15 +2,11 @@
    · 기대 보상 표(열 9개: 60분 강화석 · 도면 · 비법서 · 장비 · 파편) · 처치 시 추가 장비 · 파편 · 나갈 때 요약 · 1280×720 · 버전 v4.43"""
 import sys,os
 from playwright.sync_api import sync_playwright
-HTML=os.path.abspath(sys.argv[1] if len(sys.argv)>1 else 'rowen_mmo_local.html');OUT=sys.argv[2] if len(sys.argv)>2 else 'shots'
-os.makedirs(OUT,exist_ok=True)
+from rift_util import paths,boot,Rift
+HTML,OUT=paths()
 res=[];chk=lambda n,c,v='':(res.append(bool(c)),print(('PASS ' if c else 'FAIL ')+n,v))
 with sync_playwright() as p:
-    b=p.chromium.launch(args=['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist'])
-    pg=b.new_page(viewport={'width':1280,'height':720});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
-    pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
-    pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
-    J=lambda s:pg.evaluate(s)
+    b,pg,errs=boot(p,HTML);RF=Rift(pg);J=RF.J  # v4.46: 개방 스토리를 지난 상태(S.riftKey)로 시작 · 들어가기/나가기는 맵 이동을 기다린다
     chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     R=J("(()=>{const R=__g.RIFT;return {sp:R.stoneP,dk:R.dsgK,ek:R.eqK,sh:R.shardP,rc:[R.rcp[1][1],R.rcp[2][1],R.rcp[3][1]]}})()")
     chk('수치: 강화석 .14(보통 .07의 ×2) · 도면 ×2 · 장비 ×2 · 파편 1%',R['sp']==.14 and R['dk']==2 and R['ek']==2 and R['sh']==.01,R)
@@ -32,8 +28,8 @@ with sync_playwright() as p:
     chk("균열 줄 설명: 장비 ×2 · 도면 ×2 · 파편",'도면 ×2' in row and '장비 ×2' in row and '권능 파편' in row and '강화석 ×3' not in row,row[:160])
     pg.screenshot(path=f"{OUT}/riftrew443_table.png")
     J("__g.closeModal&&__g.closeModal()");J("__g.closeWin&&__g.closeWin()")
-    J("__g.riftEnter(true);__g.step(10,.05)")
-    chk('균열 입장',J("!!__g.rift"))
+    RF.enter();J("__g.step(10,.05)")
+    chk('균열 입장',J("!!__g.rift&&__g.riftIn()"))
     # 확률 고정 처치: 추가 장비 · 파편
     k=J("""(()=>{const g=__g,S=g.S,R=Math.random;S.items=S.items.filter(i=>g.isEq(i));const m=g.mobs.find(x=>x.rift&&!x.dead&&!x.riftBoss);const n0=S.items.length,sh0=S.shard;
       Math.random=()=>0.001;g.killMob(m);Math.random=R;return {it:S.items.length-n0,sh:S.shard-sh0,eq:g.rift.eq,rsh:g.rift.sh}})()""")
@@ -49,8 +45,8 @@ with sync_playwright() as p:
     chk('3000 처치: 파편율 1% ±.6%p',abs(mc['sh']-.01)<.006,mc['sh'])
     chk('3000 처치: 처치당 강화석 .14 ±.04 (로웬 ⌈단계/2⌉=1)',abs(mc['st']-.14)<.04,mc['st'])
     # 나갈 때 요약
-    J("__g.riftEnd('out');__g.step(5,.05)")
-    msg=J("[...document.querySelectorAll('.toast,#toasts div,.banner')].map(e=>e.textContent).join(' | ')")
+    J("__g.riftEnd('out')")
+    msg=J("[...document.querySelectorAll('.toast,#toasts div,.banner')].map(e=>e.textContent).join(' | ')");RF.wait_out();J("__g.step(5,.05)")
     chk("나갈 때 요약에 '장비 +' · '권능 파편 +'",'장비 +' in msg and '권능 파편 +' in msg,msg[-220:])
     pg.screenshot(path=f"{OUT}/riftrew443_out.png")
     chk('왼쪽 아래 버전 표시 보임',J("(()=>{const r=document.getElementById('verTag').getBoundingClientRect();return r.width>0&&r.left<200&&r.bottom>600})()"))

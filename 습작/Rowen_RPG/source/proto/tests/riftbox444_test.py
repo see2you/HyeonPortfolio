@@ -2,15 +2,11 @@
    · 이미 만난 지역 보스의 전용 장비 30%(컬렉션에 없는 것 먼저) · 만난 보스가 없으면 없음 · 표 아래 상자 안내 · 버전 v4.44"""
 import sys,os
 from playwright.sync_api import sync_playwright
-HTML=os.path.abspath(sys.argv[1] if len(sys.argv)>1 else 'rowen_mmo_local.html');OUT=sys.argv[2] if len(sys.argv)>2 else 'shots'
-os.makedirs(OUT,exist_ok=True)
+from rift_util import paths,boot,Rift
+HTML,OUT=paths()
 res=[];chk=lambda n,c,v='':(res.append(bool(c)),print(('PASS ' if c else 'FAIL ')+n,v))
 with sync_playwright() as p:
-    b=p.chromium.launch(args=['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist'])
-    pg=b.new_page(viewport={'width':1280,'height':720});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
-    pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
-    pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
-    J=lambda s:pg.evaluate(s)
+    b,pg,errs=boot(p,HTML);R=Rift(pg);J=R.J  # v4.46: 개방 스토리를 지난 상태(S.riftKey)로 시작 · 들어가기/나가기는 맵 이동을 기다린다
     chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     T=J("(()=>{const B=__g.RIFT.box;return {eq:B.eq,bu:B.buP}})()")
     chk('등급 표: 누적 확률 · 끝 = 1 · 희귀 이상',all(T['eq'][k][-1][1]==1 and all(g>=2 for g,_ in T['eq'][k]) and all(T['eq'][k][i][1]<T['eq'][k][i+1][1] for i in range(len(T['eq'][k])-1)) for k in '123'),T['eq'])
@@ -34,8 +30,8 @@ with sync_playwright() as p:
     pick=J("""(()=>{const g=__g,S=g.S;S.items.push(g.newBU('b6a'),g.newBU('b6b'));const s=new Set();for(let i=0;i<300;i++)s.add(g.riftBoxBU().id);S.items=S.items.filter(x=>!x.bu);return [...s].sort()})()""")
     chk('사본 가진 b6a · b6b 제외 → b10 · b12만',pick==['b10a','b10b','b12a','b12b'],pick)
     # 균열 입장 · 정예 처치(낮은 굴림 = 영웅 · 보스 전용)
-    J("__g.riftEnter(true);__g.step(10,.05);__g.mobs.forEach(m=>m.atk=0)")
-    chk('균열 입장',J("!!__g.rift"))
+    R.enter();J("__g.step(10,.05);__g.mobs.forEach(m=>m.atk=0)")
+    chk('균열 입장',J("!!__g.rift&&__g.riftIn()"))
     lo=J("""(()=>{const g=__g,S=g.S;S.items=S.items.filter(i=>g.isEq(i));const m=g.riftElite();const n0=S.items.length;const R=Math.random;Math.random=()=>0.001;m.hp=1;g.killMob(m);Math.random=R;
       const nw=S.items.slice(n0);return {n:nw.length,hero:nw.filter(i=>!i.bu&&i.g===3).length,bu:nw.filter(i=>i.bu).map(i=>i.bu),rb:g.rift.bu,bg:g.rift.boxG,t:nw.filter(i=>i.g===3).map(i=>i.t)}})()""")
     chk('낮은 굴림: 영웅 장비 1 · 로웬 보스 전용 1',lo['hero']>=1 and len(lo['bu'])==1 and lo['bu'][0][:3] in ('b6a','b6b','b10','b12') and lo['rb']==1 and lo['bg']==3,lo)
@@ -48,8 +44,8 @@ with sync_playwright() as p:
     # 1000 상자 몬테카를로(가방 비우며): 영웅 ≈25% · 보스 전용 ≈30%
     bm=J("""(()=>{const g=__g,S=g.S;let h=0,bu=0,N=1000;for(let i=0;i<N;i++){S.items=S.items.filter(x=>g.isEq(x));const m=g.riftElite();const n0=S.items.length;m.hp=1;g.killMob(m);const nw=S.items.slice(n0);if(nw.some(x=>!x.bu&&x.g===3))h++;if(nw.some(x=>x.bu))bu++;S.stone=0;S.bag={};}return {h:h/N,bu:bu/N}})()""")
     chk('상자 1000: 영웅 25% ±5%p · 보스 전용 30% ±5%p',abs(bm['h']-.25)<.05 and abs(bm['bu']-.30)<.05,bm)
-    J("__g.riftEnd('out');__g.step(5,.05)")
-    msg=J("[...document.querySelectorAll('.toast,#toasts div,.banner')].map(e=>e.textContent).join(' | ')")
+    J("__g.riftEnd('out')")
+    msg=J("[...document.querySelectorAll('.toast,#toasts div,.banner')].map(e=>e.textContent).join(' | ')");R.wait_out();J("__g.step(5,.05)")
     chk("나갈 때 요약에 '보스 전용 +'",'보스 전용 +' in msg,msg[-200:])
     # 표 아래 안내
     J("__g.toggleMenu(true)");pg.wait_for_timeout(60);J("document.getElementById('bRift').click()");pg.wait_for_timeout(100)

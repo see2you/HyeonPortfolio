@@ -1,16 +1,12 @@
-"""v4.41 균열 보상 표: 처치당 기대값(강화석 · 도면 · 비법서 · 상자) × 분당 처치(내 기록 1분 이상 / 예상 RIFT.kpm)
+"""v4.41 (v4.46 전용 공간에 맞춰 고침 — 기록의 키는 딸린 사냥터 z4 그대로) 균열 보상 표: 처치당 기대값(강화석 · 도면 · 비법서 · 상자) × 분당 처치(내 기록 1분 이상 / 예상 RIFT.kpm)
    · 균열 창(메뉴 ⧗) 지역별 표 3줄(현재 지역 강조 · 잠긴 지역 흐리게) · 표석 · 균열 줄에 '기대' 한 줄 · 기록 저장 · 1280×720 화면 안 · 버전 v4.41"""
 import sys,os
 from playwright.sync_api import sync_playwright
-HTML=os.path.abspath(sys.argv[1] if len(sys.argv)>1 else 'rowen_mmo_local.html');OUT=sys.argv[2] if len(sys.argv)>2 else 'shots'
-os.makedirs(OUT,exist_ok=True)
+from rift_util import paths,boot,Rift
+HTML,OUT=paths()
 res=[];chk=lambda n,c,v='':(res.append(bool(c)),print(('PASS ' if c else 'FAIL ')+n,v))
 with sync_playwright() as p:
-    b=p.chromium.launch(args=['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist'])
-    pg=b.new_page(viewport={'width':1280,'height':720});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
-    pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
-    pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
-    J=lambda s:pg.evaluate(s)
+    b,pg,errs=boot(p,HTML);R=Rift(pg);J=R.J  # v4.46: 개방 스토리를 지난 상태(S.riftKey)로 시작 · 들어가기/나가기는 맵 이동을 기다린다
     chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     J("__g.S.autoQ=false;__g.S.lv=12;__g.S.riftT=3600;__g.step(5,.05)")
     # 1) 처치당 기대값 공식 대조 (안개 호숫가 z4)
@@ -39,13 +35,13 @@ with sync_playwright() as p:
     pg.screenshot(path=f"{OUT}/riftexp441_table.png")
     J("__g.closeModal&&__g.closeModal()")
     # 3) 균열 안 기록: 시간 · 처치
-    J("__g.S.hpPot=20;__g.riftEnter(true);__g.mobs.forEach(m=>m.atk=0);(()=>{const c=__g.ZONES.z4.c;__g.player.x=c[0];__g.player.y=c[1];})()")
+    J("__g.S.hpPot=20");R.enter();J("(()=>{const c=__g.ZONES.rz.c;__g.player.x=c[0];__g.player.y=c[1];})()")
     J("__g.step(1300,.05)")  # 65초
-    J("(()=>{const ms=__g.mobs.filter(m=>m.zone==='z4'&&!m.dead&&!m.riftBoss).slice(0,13);ms.forEach(m=>__g.killMob(m));})()")
+    J("(()=>{const ms=__g.mobs.filter(m=>m.zone==='rz'&&!m.dead&&!m.riftBoss).slice(0,13);ms.forEach(m=>__g.killMob(m));})()")
     rec=J("JSON.stringify(__g.S.riftRec.z4)");import json;rec=json.loads(rec)
     chk('균열 안 시간 · 처치 기록(65초 · 13마리 이상)',rec['s']>=64 and rec['k']>=13,rec)
     E2=J("__g.riftExp('z4')");chk('1분 넘으면 내 기록 사용: 분당 처치 = 처치/분',E2['mine'] and abs(E2['kpm']-rec['k']/(rec['s']/60))<1e-6,E2['kpm'])
-    J("__g.riftEnd('out');__g.step(10,.05)")
+    R.leave();J("__g.step(10,.05)")
     s1=J("__g.S.riftRec.z4.s");J("__g.step(400,.05)")
     chk('균열 밖에선 기록 시간이 늘지 않음',abs(J("__g.S.riftRec.z4.s")-s1)<1e-9)
     J("__g.save()");sv=J("JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>localStorage.getItem(k).includes('riftRec')))).riftRec.z4.k")

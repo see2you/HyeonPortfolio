@@ -5,3 +5,4 @@ rowen_mmo_local.html
 shots/
 flow_end.png
 *.log
+__pycache__/
