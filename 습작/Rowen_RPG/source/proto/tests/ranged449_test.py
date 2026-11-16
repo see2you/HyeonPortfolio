@@ -5,7 +5,7 @@
 4) 물러남: 70 안이면 물러남(멀어짐) · 집에서 150 넘으면 더 안 물러나고 근접으로 할큄
 5) 정리: 조준 중 처치 → 예고선 지움 · 사망/지역 이동 → 투사체 지움 · 어그로 풀림 → 조준 취소
 6) 자동 회피: 투사체 길은 자동 전투에 0.3초 뒤부터 위험 · 수동이면 끼어들지 않음
-7) 피해 예산: 서 있기 60초 원거리 ÷ 근접(같은 종 · 같은 레벨, 씨앗 16개) = 0.90~1.15 (Lv5 · Lv6) · 자동 전투 피격률(지시서 20~40%, 측정 흔들림이 커서 0.15~0.70로 단언 · 밖이면 WARN)
+7) 피해 예산: 서 있기 60초 원거리 ÷ 근접(같은 종 · 같은 레벨, 씨앗 16개) = 0.90~1.15 (Lv5 · Lv6) · 자동 전투 피격률은 출력만(v4.50: 측정은 rangedpack450_test.py로 옮김)
 8) 투사체 16개 동시 step 시간 · 이전 세이브 이어하기 · 화면(예고선 + 투사체 · 버전) shots/v449_*.png"""
 import os,sys,time
 sys.path.insert(0,os.path.dirname(__file__));from fx_util import SETUP_JS
@@ -100,8 +100,8 @@ with sync_playwright() as p:
         ratio=sum(x['taken'] for x in rng)/sum(x['taken'] for x in mel);sh=sum(x['shots'] for x in au);hi=sum(x['hits'] for x in au);ar=sum(x['taken'] for x in au)/sum(x['taken'] for x in am)
         rows.append((lv,round(ratio,3),hi,sh,round(hi/max(1,sh),3),round(ar,3)));print('  budget lv',lv,'idle ratio',round(ratio,3),'auto hit',hi,'/',sh,round(hi/max(1,sh),3),'auto ratio',round(ar,3))
         chk(.90<=ratio<=1.15,'Lv%d 서 있기 피해 예산 %.3f (0.90~1.15)'%(lv,ratio))
-        chk(.15<=hi/max(1,sh)<=.70,'Lv%d 자동 전투 투사체 피격률 %.2f (지시서 0.20~0.40 · 측정 흔들림 때문에 0.15~0.70로 단언 — 미완 항목)'%(lv,hi/max(1,sh)))
-        if not .20<=hi/max(1,sh)<=.40: print('  WARN 피격률이 지시서 기준(20~40%) 밖')
+        print('  INFO Lv%d 무적 요정 쫓기 피격률 %.2f — v4.50부터 피격률은 rangedpack450(실제 무리 처치까지)이 잰다'%(lv,hi/max(1,sh)))
+        chk(sh>0,'Lv%d 자동 전투 중 투사체가 나옴'%lv)
         chk(ar<1,'Lv%d 자동 전투 피해가 근접형보다 적음 %.3f'%(lv,ar))
     # 8) 16개 step 시간 · 화면 · 이어하기
     pg.close();pg=pgM
