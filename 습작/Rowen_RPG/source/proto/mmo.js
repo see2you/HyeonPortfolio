@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.55';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.56';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -1433,15 +1433,15 @@ const BEHAV={
     if(dp>R.range){moveTo(player.x,player.y,54);if(!m.stk||Math.hypot(m.x-m.stk.x,m.y-m.stk.y)>EVADE.prog)m.stk={x:m.x,y:m.y,t:0};else if((m.stk.t+=dt)>=EVADE.t){m.stk=null;STAT.evadeMob=(STAT.evadeMob||0)+1;mobEvade(m);}return;}/* v4.53 G1-b2c2: 사거리 밖에서 다가오다 지형에 막혀 EVADE.t초 동안 EVADE.prog도 못 움직이면 몬스터 쪽도 회피(집으로) — 막힌 채 어그로만 남아 자동 전투(범위 밖)와 서로 기다리던 판 */
     if(m.atkT<=0){m.atkT=R.cd;m.face=player.x<m.x?-1:1;m.aim={t:0,e:teleAdd({kind:'line',x:m.x,y:m.y,a:Math.atan2(player.y-m.y,player.x-m.x),len:Math.max(12,dp),w:4,dur:R.aim,aim:true,own:m})};}}},
   /* v4.54 돌진(G1-c): 예고(따라감 → 고정) → 직선 돌진 → 맞힘 ×1.6 / 빗나감 경직. 그 밖은 근접 */
-  charge:{tick(m,dt,dp,moveTo){const C=CHARGE;
+  charge:{tick(m,dt,dp,moveTo){const C=CHARGE,ob=mobB(m)||{},LK=ob.lock||C.lock,SPD=ob.dspd||C.spd;/* v4.56 종마다 고정 시간(lock) · 돌진 속도(dspd) — 트인 사냥터에서 자동 전투가 늘 피하는 종을 피격률 20~40%에 맞춘다(원거리 MOB_B.spd와 같은 방식) */
     if(m.stag>t)return;/* 경직: 움직이지도 때리지도 않는다 */
     const c=m.chg;
     if(c){c.t+=dt;const e=c.e;
       if(c.ph==='aim'){m.face=player.x<m.x?-1:1;
-        if(c.t<C.aim-C.lock){e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);}
-        else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=C.lock;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;}/* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
+        if(c.t<C.aim-LK){e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);}
+        else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=LK;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;}/* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
         if(c.t>=C.aim){c.ph='dash';STAT.chgN=(STAT.chgN||0)+1;}return;}
-      /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,C.spd*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
+      /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,SPD*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
       if(!c.hit&&!player.dead){const px=player.x-x0,py=player.y-y0,u=Math.max(0,Math.min(v,px*ca+py*sa)),qx=x0+ca*u-player.x,qy=y0+sa*u-player.y;
         if(Math.hypot(qx,qy)<C.w/2+6){c.hit=true;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*C.mul,m);if(player.lastHit===t){STAT.chgHit=(STAT.chgHit||0)+1;mobFx(m);burst(player.x,player.y,10,'#e0b080',10,80,4);}else c.hit=false;}}
       if(Math.random()<dt*20)burst(m.x,m.y,1,'#b89a70',3,30,2);

@@ -6,15 +6,19 @@ from rng_probe452 import page,ARGS,IDLE
 from fx_util import SETUP_JS
 from rng_util import PACK_JS
 RST="(sp)=>{for(const e of __g.mobs)if(e.sp===sp){e.chg=null;e.stag=0;e.chgCd=0;e.backT=0;}__g.tele.length=0;}"
-SP={'acornboar':('rowen',(3,4,5))}
+SP={'acornboar':('rowen',(3,4,5)),'bull':('rowen',(8,9)),'goat':('kardo',(17,18))}
+OPT=os.environ.get('CHGOPT')  # v4.56 조정용: '{"lock":.25}'처럼 MOB_B[종]에 덧붙여 잰다
+def opt(pg,sp):
+    if OPT:pg.evaluate('([sp,o])=>Object.assign(__g.MOB_B[sp],JSON.parse(o))',[sp,OPT])
 def idle(pg,sp,lv,seeds):
+    opt(pg,sp)
     pg.evaluate(SETUP_JS,lv);M=[];C=[]
     for s in seeds:
         pg.evaluate(RST,sp);M.append(pg.evaluate(IDLE,[sp,lv,s,'melee']))
         pg.evaluate(RST,sp);C.append(pg.evaluate(IDLE,[sp,lv,s,'charge']))
     return sum(x[0] for x in C)/sum(x[0] for x in M)
 def pack(pg,sp,lv,seeds,n=4):
-    pg.evaluate("()=>{window.__packSec=120;window.__packHpK=1;}");pg.evaluate(SETUP_JS,lv)
+    opt(pg,sp);pg.evaluate("()=>{window.__packSec=120;window.__packHpK=1;}");pg.evaluate(SETUP_JS,lv)
     R=[];RM=[]
     for s in seeds:
         pg.evaluate(RST,sp);R.append(pg.evaluate(PACK_JS,[sp,lv,n,s,'charge']))

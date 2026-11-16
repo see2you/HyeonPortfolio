@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.55';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.56';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -1474,6 +1474,8 @@ function craftItem(k,t,g){const c=craftCheck(k,t,g);if(!c.ok)return null;const R
 const MOB_B={
   lakesnake:{b:'melee',fx:'poison'},
   acornboar:{b:'charge'},/* v4.54 G1-c1: 돌진 첫 종(로웬 도토리 숲 Lv3~5 · 상태이상 없음 — 입문 구간 보호). 관문 정예 '왕멧돼지'(q5 · q6)는 제외(G1-f 보스 패턴) */
+  bull:{b:'charge',lock:.27},/* v4.56 G1-c2a: 로웬 바람 평원 Lv8~9 · 고정 0.35 → 0.27초(트인 평원이라 0.35면 자동 전투 피격률 0.02~0.16) · 기절(돌진 명중)은 G1-e */
+  goat:{b:'charge'},/* v4.56 G1-c2a: 카르도 자갈 언덕 Lv17~18 */
   fairy:{b:'ranged',spd:205},/* v4.49 G1-b: 원거리 첫 종(로웬 도토리 숲 Lv5~6) · v4.53 속도 220 → 205(자동 전투가 공격 중인 요정을 쫓게 되어 evade451 묶음 0.39~0.41) */
   /* v4.52 G1-b2c: 원거리 나머지 5종 — 둔화 · 화상 투사체는 G1-e에서(지금은 피해만). spd = 그 종의 투사체 속도(없으면 RANGED.spd) — 사냥터 지형이 트여 자동 전투가 잘 피하는 종은 빠르게 해 피격률 20~40%에 맞춘다 */
   cavemush:{b:'ranged',spd:190},/* v4.53 G1-b2c2 카르도 버섯 동굴 Lv18~19 (관문 정예 '동굴버섯'(q16)은 제외) */
@@ -3010,15 +3012,15 @@ const BEHAV={
     if(dp>R.range){moveTo(player.x,player.y,54);if(!m.stk||Math.hypot(m.x-m.stk.x,m.y-m.stk.y)>EVADE.prog)m.stk={x:m.x,y:m.y,t:0};else if((m.stk.t+=dt)>=EVADE.t){m.stk=null;STAT.evadeMob=(STAT.evadeMob||0)+1;mobEvade(m);}return;}/* v4.53 G1-b2c2: 사거리 밖에서 다가오다 지형에 막혀 EVADE.t초 동안 EVADE.prog도 못 움직이면 몬스터 쪽도 회피(집으로) — 막힌 채 어그로만 남아 자동 전투(범위 밖)와 서로 기다리던 판 */
     if(m.atkT<=0){m.atkT=R.cd;m.face=player.x<m.x?-1:1;m.aim={t:0,e:teleAdd({kind:'line',x:m.x,y:m.y,a:Math.atan2(player.y-m.y,player.x-m.x),len:Math.max(12,dp),w:4,dur:R.aim,aim:true,own:m})};}}},
   /* v4.54 돌진(G1-c): 예고(따라감 → 고정) → 직선 돌진 → 맞힘 ×1.6 / 빗나감 경직. 그 밖은 근접 */
-  charge:{tick(m,dt,dp,moveTo){const C=CHARGE;
+  charge:{tick(m,dt,dp,moveTo){const C=CHARGE,ob=mobB(m)||{},LK=ob.lock||C.lock,SPD=ob.dspd||C.spd;/* v4.56 종마다 고정 시간(lock) · 돌진 속도(dspd) — 트인 사냥터에서 자동 전투가 늘 피하는 종을 피격률 20~40%에 맞춘다(원거리 MOB_B.spd와 같은 방식) */
     if(m.stag>t)return;/* 경직: 움직이지도 때리지도 않는다 */
     const c=m.chg;
     if(c){c.t+=dt;const e=c.e;
       if(c.ph==='aim'){m.face=player.x<m.x?-1:1;
-        if(c.t<C.aim-C.lock){e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);}
-        else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=C.lock;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;}/* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
+        if(c.t<C.aim-LK){e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);}
+        else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=LK;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;}/* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
         if(c.t>=C.aim){c.ph='dash';STAT.chgN=(STAT.chgN||0)+1;}return;}
-      /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,C.spd*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
+      /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,SPD*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
       if(!c.hit&&!player.dead){const px=player.x-x0,py=player.y-y0,u=Math.max(0,Math.min(v,px*ca+py*sa)),qx=x0+ca*u-player.x,qy=y0+sa*u-player.y;
         if(Math.hypot(qx,qy)<C.w/2+6){c.hit=true;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*C.mul,m);if(player.lastHit===t){STAT.chgHit=(STAT.chgHit||0)+1;mobFx(m);burst(player.x,player.y,10,'#e0b080',10,80,4);}else c.hit=false;}}
       if(Math.random()<dt*20)burst(m.x,m.y,1,'#b89a70',3,30,2);
