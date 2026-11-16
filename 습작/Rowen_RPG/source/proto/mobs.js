@@ -4,7 +4,13 @@
    지역 보스 · 관문 정예(boss · eliteOf)에는 아직 붙이지 않는다(보스 패턴은 G1-f~g). */
 const MOB_B={
   lakesnake:{b:'melee',fx:'poison'},
-  fairy:{b:'ranged'},/* v4.49 G1-b: 원거리 첫 종(로웬 도토리 숲 Lv5~6) — 통과 뒤 나머지 5종 */
+  fairy:{b:'ranged'},/* v4.49 G1-b: 원거리 첫 종(로웬 도토리 숲 Lv5~6) */
+  /* v4.52 G1-b2c: 원거리 나머지 5종 — 둔화 · 화상 투사체는 G1-e에서(지금은 피해만). spd = 그 종의 투사체 속도(없으면 RANGED.spd) — 사냥터 지형이 트여 자동 전투가 잘 피하는 종은 빠르게 해 피격률 20~40%에 맞춘다 */
+  /* G1-b2c2 대기: cavemush:{b:'ranged',spd:280} — 자동 전투가 다 맞는 꼬리 판(180초 130발 이상) 원인 확인 뒤 */
+  /* G1-b2c2 대기: mosswisp:{b:'ranged',spd:250} — 자동 전투가 다 맞는 꼬리 판(180초 130발 이상) 원인 확인 뒤 */
+  mist:{b:'ranged',spd:250},/* 카르도 수정 호숫가 Lv26~27 */
+  /* G1-b2c2 대기: flamewisp:{b:'ranged'} — 자동 전투가 다 맞는 꼬리 판(180초 130발 이상) 원인 확인 뒤 */
+  embertree:{b:'ranged'},/* 에르나 불티 숲 Lv32~33 (관문 정예 '불티나무'(q27)는 제외) */
 };
 /* 상태이상 정의: dur=기본 지속(초) · 갱신만 하고 중첩 없음. 지속은 반드시 fxDur()를 거친다(§G2 저항 · §G3 장비 · §G12 정화가 붙을 자리). */
 const FXDEF={
@@ -13,7 +19,7 @@ const FXDEF={
 /* 부여 확률: 일반 25% · 정예/보스 100% · 입문 · 물약 민감 구간(Lv1~6 · Lv9~11) 15% */
 /* v4.49 원거리 원형(지시서 §G1 · G1-b): 거리 range 안이면 멈춰 aim초 조준(가는 예고선 · 플레이어를 따라감) → 조준 끝 시점의 플레이어 위치로 투사체.
    flee 안으로 오면 fleeK 속도로 물러남(집에서 leash까지만). 투사체 spd/초 · 반경 pr · 피해 ×mul · 주기 cd초 · 사거리 range×fly · 체력 ×hpK */
-const RANGED={range:110,aim:1.2,flee:70,fleeK:.6,leash:150,spd:220,pr:8,mul:1.11,cd:2.6,fly:1.7,hpK:.8};
+const RANGED={range:110,aim:1.2,flee:70,fleeK:.6,leash:150,spd:220,pr:8,mul:1.4,cd:2.6,fly:1.7,hpK:.8};
 /* v4.51 G1-b2b 회피(evade): 자동 전투가 t초 동안 prog만큼도 못 다가가면 원거리 대상이 집으로 돌아가 체력 회복 · 자동 전투는 skip초 건너뜀 · 집 도착 뒤 lock초 선공 안 함 */
 const EVADE={t:4,prog:12,skip:8,lock:3};
 const FX_P={base:.25,early:.15,elite:1};

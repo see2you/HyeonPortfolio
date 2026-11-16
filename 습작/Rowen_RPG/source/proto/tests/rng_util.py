@@ -1,16 +1,16 @@
 """v4.50 G1-b2 원거리 원형 측정 공용: 실제 체력 몬스터 무리를 자동 전투로 '처치까지' 잡으며 피격률 · 피해를 잰다.
 PACK_JS([sp,lv,n,seed,beh]) — 지금 맵에서 종 sp 일반 개체 n마리(레벨 lv · 실제 능력치 · 원거리면 체력 ×hpK)를 집 근처에 두고
-플레이어를 무리에서 100 떨어뜨린 뒤 자동 전투로 다 잡을 때까지(최대 120초). beh='melee'면 같은 무리를 근접형(체력 그대로)으로.
+플레이어를 무리에서 100 떨어뜨린 뒤 자동 전투로 다 잡을 때까지(최대 120초 · window.__packSec로 바꿈 · v4.52: window.__packHpK로 무리 체력 배율 — 측정 캐릭터가 Lv18 이상에서 4마리를 2~5분 걸려 잡아 회피 · 추격 순환이 측정을 덮던 것). beh='melee'면 같은 무리를 근접형(체력 그대로)으로.
 돌려주는 값: taken(받은 피해) · shots · hits · sec(처치까지 초) · killed"""
 PACK_JS="""([sp,lv,n,seed,beh])=>{const g=__g,S=g.S,P=g.player;let a=seed>>>0;Math.random=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
  const keep=g.MOB_B[sp];if(beh==='melee')delete g.MOB_B[sp];const rng=g.mobBeh({sp})==='ranged';
  const L=g.mobs.filter(e=>e.sp===sp&&!e.boss&&!e.eliteOf).slice(0,n);if(L.length<n){if(keep)g.MOB_B[sp]=keep;return null;}
  for(const e of g.mobs){e.aggro=false;e.ret=false;e.aim=null;if(!L.includes(e)){e.dead=true;e.deadT=-1e9;e.respawn=1e9;}}
  const c=L[0];let rot=(seed*2.399963)%6.2832;/* 씨앗마다 무리 방향 · 다가오는 방향을 돌린다(지형 · 나무가 한 방향만 막아 결과가 씨앗과 무관해지던 것) */if(!c._h0)c._h0={x:c.home.x,y:c.home.y};const cx=c._h0.x,cy=c._h0.y;/* v4.51: 플레이어 · 집 자리가 막힌 칸(물 · 나무)이면 방향을 돌린다 — v4.50 묶음 B의 꼬리 한 판은 플레이어가 막힌 칸에 놓여 한 걸음도 못 움직인 측정 잘못이었다 */
- if(g.blockedAt){const G=window.__gap||70,bad=r=>g.blockedAt(cx+Math.cos(r+1)*100,cy+Math.sin(r+1)*100)||[1,2,3].some(i=>g.blockedAt(cx+Math.cos(r+i*2.1)*G,cy+Math.sin(r+i*2.1)*G));for(let k=0;k<12&&bad(rot);k++)rot+=.5236;}
- L.forEach((m,i)=>{const an=rot+i*2.1;m.home.x=cx+Math.cos(an)*(window.__gap||70)*(i>0);m.home.y=cy+Math.sin(an)*(window.__gap||70)*(i>0);m.x=m.home.x;m.y=m.home.y;m.dead=false;m.deadT=0;m.respawn=1e9;m.lv=lv;const ms=g.mobStats(lv,false);m.atk=ms.atk;m.def=ms.def;m.max=m.hp=Math.max(1,Math.round(ms.hp*(rng?g.RANGED.hpK:1)));m.atkT=.5+i*.4;m.wind=0;m.aggro=true;m.ret=false;m.aim=null;});
+ if(g.blockedAt){const G=window.__gap||70,no=g.reachOk?(x,y)=>!g.reachOk(x,y):(x,y)=>g.blockedAt(x,y)/* v4.52: 막힌 칸뿐 아니라 마을에서 닿지 않는 칸(용암 · 물 사이 섬)도 피한다 — 에르나 · 수정 호숫가에서 무리가 섬에 놓여 180초 동안 못 잡던 판 */,bad=r=>no(cx+Math.cos(r+1)*100,cy+Math.sin(r+1)*100)||[1,2,3].some(i=>no(cx+Math.cos(r+i*2.1)*G,cy+Math.sin(r+i*2.1)*G));for(let k=0;k<12&&bad(rot);k++)rot+=.5236;}
+ L.forEach((m,i)=>{const an=rot+i*2.1;m.home.x=cx+Math.cos(an)*(window.__gap||70)*(i>0);m.home.y=cy+Math.sin(an)*(window.__gap||70)*(i>0);m.x=m.home.x;m.y=m.home.y;m.dead=false;m.deadT=0;m.respawn=1e9;m.lv=lv;const ms=g.mobStats(lv,false);m.atk=ms.atk;m.def=ms.def;m.max=m.hp=Math.max(1,Math.round(ms.hp*(rng?g.RANGED.hpK:1)*(window.__packHpK||1)));m.atkT=.5+i*.4;m.wind=0;m.aggro=true;m.ret=false;m.aim=null;m.evd=false;m.evU=0;m.evL=0;m.apT=0;});/* v4.52: 회피 표시(evd · evU · evL)도 판마다 지운다 — 앞 판의 회피 상태가 다음 판에 남아 같은 씨앗이 혼자 돌릴 때와 달랐다 */
  g.shots.length=0;g.tele.length=0;g.clearStatus();P.dead=false;P.x=cx+Math.cos(rot+1)*100;P.y=cy+Math.sin(rot+1)*100;P.hp=1e8;P.shield=0;P.mp=9999;P.dash=0;S.hpPot=0;g.setTarget(null);g.resetAuto&&g.resetAuto();P.cd.fill(0);P.atkT=0;P.spin=0;P.swing=0;P.buffT=0;P.guardT=0;P.fervT=0;P.dead=false;
  const n0=g.STAT.shotN||0,h0=g.STAT.shotHit||0;g.setAuto(true);let sec=0;
- while(sec<120&&L.some(m=>!m.dead)){g.step(1,.05);sec+=.05;P.lastHit=1e12;if(P.hp<1e7)P.hp=1e8;}
- const taken=1e8-P.hp;g.setAuto(false);for(const m of L){m.respawn=1e9;m.dead=true;m.deadT=-1e9;}g.shots.length=0;g.tele.length=0;if(keep)g.MOB_B[sp]=keep;
- return {taken,shots:(g.STAT.shotN||0)-n0,hits:(g.STAT.shotHit||0)-h0,sec,killed:L.filter(m=>m.dead).length};}"""
+ const SEC=window.__packSec||120;while(sec<SEC&&L.some(m=>!m.dead)){g.step(1,.05);sec+=.05;for(const m of L)if(m.dead)m.respawn=1e9;/* v4.52: 처치 때 killMob이 재출현 시간을 다시 넣어 잡은 개체가 되살아나던 것(처치가 늦은 Lv18+ 무리에서 끝나지 않음) */P.lastHit=1e12;if(P.hp<1e7)P.hp=1e8;}
+ const taken=1e8-P.hp,killed=L.filter(m=>m.dead).length;/* v4.52: 처치 수는 정리 전에 센다(전엔 정리 뒤라 늘 n) */g.setAuto(false);for(const m of L){m.respawn=1e9;m.dead=true;m.deadT=-1e9;}g.shots.length=0;g.tele.length=0;if(keep)g.MOB_B[sp]=keep;
+ return {taken,shots:(g.STAT.shotN||0)-n0,hits:(g.STAT.shotHit||0)-h0,sec,killed};}"""

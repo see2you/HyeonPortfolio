@@ -36,7 +36,7 @@ with sync_playwright() as p:
     r=pg.evaluate("""()=>{const g=__g;const ranged=Object.keys(g.MOB_B).filter(k=>g.MOB_B[k].b==='ranged');const z1=g.MAPS.rowen.zones.z1.mobs.map(x=>x[0]);
       const f=g.mobs.filter(m=>m.sp==='fairy'&&!m.boss&&!m.eliteOf),o=g.mobs.filter(m=>m.zone==='z2'&&m.sp!=='fairy'&&!m.boss&&!m.eliteOf);
       return {ranged,z1b:z1.map(s=>g.mobBeh({sp:s})),fk:f.map(m=>m.max/g.mobStats(m.lv,false).hp),ok:o.map(m=>m.max/g.mobStats(m.lv,false).hp)};}""")
-    chk(r['ranged']==['fairy'],'원거리 배정은 들꽃요정 하나 '+str(r['ranged']))
+    chk('fairy' in r['ranged'] and all(k in ('fairy','mist','embertree','cavemush','mosswisp','flamewisp') for k in r['ranged']),'원거리 배정에 들꽃요정 · 지시서 6종 밖은 없음(v4.52부터 안개정령 · 불티나무도) '+str(r['ranged']))
     chk(all(b=='melee' for b in r['z1b']),'솜꼬리 들판 종은 전부 근접')
     chk(r['fk'] and all(abs(k-.8)<.03 for k in r['fk']),'들꽃요정 체력 ×0.8 '+str([round(k,3) for k in r['fk'][:3]]))
     chk(r['ok'] and all(abs(k-1)<.03 for k in r['ok']),'도토리 숲 다른 종 체력 그대로')
