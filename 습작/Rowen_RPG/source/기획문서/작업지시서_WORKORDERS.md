@@ -39,7 +39,8 @@
 |---|---|
 | 몬스터 생성 · 능력치 | `makeMob(sp,lv,hx,hy,zone,isBoss,o)`(추가 필드는 `o.ext`) · `mobStats(L,boss)` · `spawnMobs()` · 사냥터 표 `ZONES[z].mobs=[[종,최저Lv,최고Lv,수]]` |
 | 몬스터 AI | `updateMobs(dt)` — 선공(`aggroOn`) → 접근 → `m.wind` 0.45초 → `hurtPlayer`. 보스만 `m.aoe`(7초마다 원형 r58 · 1.4초 뒤 ×2.2) |
-| 장판 표시 | 데칼 **한 벌뿐**: `aoeMesh` · `aoeFill`(`decal(FX_RING/FX_DISC)`), 가장 가까운 장판 하나만 보임(`aoeMob()`) |
+| 장판 표시 | (v4.47~) 예고 풀 `TELE_POOL`(원형 6 · 직선 4 · 부채꼴 2) · `teleDraw()` · 새 예고는 `teleAdd({kind,x,y,r|len,w,a,dur,hit})` → `tele` 배열 · `dangerAt(x,y,pad,auto)` · 보스 장판 `m.aoe`도 같은 풀로 그림 |
+| 행동 원형 · 상태이상 | (v4.47~) `mobs.js`의 `MOB_B` · `FXDEF` · `FX_P` · mmo.js `BEHAV[원형].tick(m,dt,dp,moveTo)` · `mobB(m)` · `mobFx(m)` · `addFx` · `fxDur` · `tickStatus` · `player.fx` · HUD `#fxRow` |
 | 자동 전투 | `autoTick` — 장판 안이면 스스로 걸어 나온다(`aoeMob` 회피) · `autoOrder` · `skillFits` · 설정 `S.cfg.{tgt,scan,order,counter,potAt}` |
 | 피해 | `calcDmg(atk,mul,def,aL,dL)` = max(20%, 공격×배율−방어)×레벨 보정 · `playerHit` · `hurtMob` · `hurtPlayer(dmg,src)`(대시 중 무효 · 신앙 보정 `faithIn/faithOut`) |
 | 플레이어 능력치 | `pStats(st,noBuff)` · `cpOf()` · `STATS` · 추천 분배 `REC=['str','vit','dex','str','int']` · `autoGrowNow()` |
@@ -111,7 +112,7 @@
 - 데이터는 새 파일 `mobs.js`(mmo.js에 `/*MOBS*/` 자리 · build.sh의 마커 목록에 추가)를 권장. 어려우면 mmo.js 데이터 구역.
 
 ### 조각
-- [ ] **G1-a** 틀: `BEHAV` 구조(근접만 옮김 · 동작 불변) + 예고 데칼 풀 + `dangerAt` + 상태이상 틀(`player.fx` · `fxDur` · HP 바 아이콘) + 독 1종만 호수뱀에 시험 배정.
+- [x] v4.47 **G1-a** 틀: `BEHAV` 구조(근접만 옮김 · 동작 불변) + 예고 데칼 풀 + `dangerAt` + 상태이상 틀(`player.fx` · `fxDur` · HP 바 아이콘) + 독 1종만 호수뱀에 시험 배정.
 - [ ] **G1-b** 원거리 + 투사체: 로웬 들꽃요정에만 먼저 → 시뮬 통과 후 6종 전부.
 - [ ] **G1-c** 돌진: 도토리멧돼지 먼저 → 6종.
 - [ ] **G1-d** 방어 태세 + 자폭: 각 1종 먼저 → 전부.
@@ -140,7 +141,13 @@
 - 원형을 붙이며 그 종의 기본 공격력을 올리지 않는다(예산 초과).
 
 **변경 기록**
-- (비어 있음)
+- v4.47 (G1-a): 독 초당 피해 1.2% → **0.4%** — 같은 레벨(Lv11 · 12, 고급 +3 장비) 60초 서 있기에서 1.2%면 근접 대비 1.3배 안팎(0.8%도 1.16~1.24)이라 예산 0.90~1.15를 넘음. 0.4%로 1.07~1.11.
+- v4.47 (G1-a): 호수뱀 독은 일반 개체에만 — 같은 종인 관문 정예 '큰물뱀'(q10)은 G1-f의 보스 패턴(② 부채꼴 명중 시 독)에서 붙인다. `mobB(m)`이 boss · eliteOf면 null.
+- v4.47 (G1-a): 자동 회피 0.3초 늦음 · 스킬 동작 중 못 움직임은 **새 예고(`tele`)에만** 적용. 보스 원형 장판(`m.aoe`)은 지금처럼 바로 피한다 — 이 조각의 '근접 동작 불변'(보스 장판 회피 포함)을 지키려고. 보스 장판을 같은 규칙으로 바꾸는 것은 G1-f에서.
+- v4.47 (G1-a): 독 틱은 `hurtPlayer`를 거치지 않는다(방어 · 신앙 · 보호막 무시, `player.lastHit`도 안 바꿈 → 자연 회복을 막지 않음). 사망 시 `die({name:건 몬스터})`.
+- v4.47 (G1-a): 상태이상은 저장하지 않는다(런타임 `player.fx`) — 세이브 필드 추가 없음.
+- v4.47 (G1-a): '자동 전투 피해 비율 0.60~0.90 · 특수 공격 피격률 20~40%'와 방어 태세 처치 시간은 예고가 있는 원형(G1-b~d)부터 잰다 — 독(근접 부가 효과)은 피할 수 없는 공격이라 해당 없음.
+
 
 ---
 

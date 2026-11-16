@@ -6,8 +6,8 @@ cd "$(dirname "$0")"
 python3 - <<'PY'
 import os
 art=open('art.js').read();g=open('mmo.js').read();sh=open('shell.html').read()
-for m in ('/*ART*/','/*ITEMS*/','/*WINDOWS*/'):assert m in g,m
-js=g.replace('/*ART*/',art).replace('/*ITEMS*/',open('items.js').read()).replace('/*WINDOWS*/',open('windows.js').read())
+for m in ('/*ART*/','/*ITEMS*/','/*MOBS*/','/*WINDOWS*/'):assert m in g,m
+js=g.replace('/*ART*/',art).replace('/*ITEMS*/',open('items.js').read()).replace('/*MOBS*/',open('mobs.js').read()).replace('/*WINDOWS*/',open('windows.js').read())
 open('game_full.js','w').write(js)
 html=sh+js+'\n</script>\n<script data-goatcounter="https://hyeonportfolio.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>\n</body>\n</html>\n'
 open('rowen_mmo.html','w').write(html)
