@@ -12,7 +12,7 @@ import json
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
     b=p.chromium.launch(args=['--use-gl=swiftshader','--enable-webgl','--ignore-gpu-blocklist'])
-    pg=b.new_page(viewport={'width':1280,'height':720});errs=[];pg.on('pageerror',lambda e:errs.append(str(e)))
+    pg=b.new_page(viewport={'width':1280,'height':720});errs=[];pg.on('pageerror',lambda e:(errs.append(str(e)),print('PAGEERR',str(e),(getattr(e,'stack','') or '')[:600].replace('\n',' | '))))
     HTML=os.path.abspath(sys.argv[1] if len(sys.argv)>1 else 'rowen_mmo_local.html')
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000)
     pg.evaluate("localStorage.clear()");pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")

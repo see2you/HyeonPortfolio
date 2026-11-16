@@ -183,7 +183,11 @@ function renderEnc(B,F){const g=el('div','enw');B.appendChild(g);const L=el('div
   const nx=Object.assign({},it,{en:Math.min(ENH.max,it.en+1)});nm.append(t1,el('small',null,G.n+' · '+SLOTN[it.k]+' · '+(isEq(it)?'장착 중':'가방')),el('div','enlv',it.en>=ENH.max?'최대 강화 +'+ENH.max:'+'+it.en+'  →  +'+nx.en));hd.append(ic,nm);P.appendChild(hd);
   if(it.en<ENH.max)P.appendChild(statLines(nx,it));
   const safe=it.en<enchSafe(it.k),rate=enchRate(it),bl=encBless&&cnt('bls')>0;
-  const rb=el('div','enrate'+(safe||bl?' safe':''));rb.append(el('span',null,'성공 확률'),el('b',null,bl&&safe?'100% · +1~'+(it.en<=2?3:2):Math.round(rate*100)+'%'),el('small',null,safe?'안전 강화 (+'+enchSafe(it.k)+'까지 실패 없음)':'실패해도 파괴·하락 없음'+(it.ff?' · 연속 실패 '+it.ff+'회 (3회마다 +5%p)':'')));P.appendChild(rb);
+  const rb=el('div','enrate'+(safe||bl?' safe':''));rb.append(el('span',null,'성공 확률'),el('b',null,bl&&safe?'100% · +1~'+(it.en<=2?3:2):Math.round(rate*100)+'%'),el('small',null,safe?'안전 강화 (+'+enchSafe(it.k)+'까지 실패 없음)':'실패해도 파괴·하락 없음'+(it.ff?' · 연속 실패 '+it.ff+'회 (3회마다 +5%p)':'')+(!bl&&enchAid(it)?' · 보조 +'+Math.round((rate-enchRate(it,0))*100)+'%p':'')));P.appendChild(rb);
+  /* v4.45 보조 강화석: 안전 구간 위에서 강화석을 더 넣어 확률 +5%p씩 (선택은 저장 · 목표 강화에도 적용) */
+  if(!safe&&!bl&&it.en<ENH.max){const ar=el('div','enaid'),bc=enchCost(it,0).stone;ar.appendChild(el('span','tgl','보조 강화석'));
+    for(let k=0;k<=ENH.aid.max;k++){const b=el('button','aidb'+((S.encAid|0)===k?' on':''),k?'+'+Math.round((enchRate(it,k)-enchRate(it,0))*100)+'%p':'없음');b.type='button';b.title=k?'강화석 ×'+(k+1)+' ('+fmt(bc*(k+1))+'개)':'보조 없음';b.onclick=()=>{S.encAid=k;save();renderWin();};ar.appendChild(b);}
+    ar.appendChild(el('small','aidn',(S.encAid|0)?'강화석 ×'+((S.encAid|0)+1)+' · 시도 수(골드)를 줄인다':'남는 강화석 → 확률'));P.appendChild(ar);}
   const c=enchCost(it),need=el('div','cfn');const row=(ico,label,have,req)=>{const d=el('div','cfm'+(have>=req?'':' no'));const l=el('span');if(ico)l.appendChild(icv(stkIcon(ico),'sic'));l.append(label);d.append(l,el('b',null,fmt(have)+' / '+fmt(req)));need.appendChild(d);};
   if(bl)row('bls',STK.bls.n,cnt('bls'),1);else row('stone','강화석',S.stone,c.stone);row(null,'골드',S.gold,c.gold);P.appendChild(need);
   if(cnt('bls')){const tg=el('label','enbl');const cb=document.createElement('input');cb.type='checkbox';cb.checked=encBless;cb.onchange=()=>{encBless=cb.checked;renderWin();};tg.append(cb,' 축복받은 강화 주문서 사용 ('+cnt('bls')+'장) — 안전 구간에서 +1~3');A.appendChild(tg);}

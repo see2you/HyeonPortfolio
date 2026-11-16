@@ -11,7 +11,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.44',J("document.getElementById('verTag').textContent")=='v4.44')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     T=J("(()=>{const B=__g.RIFT.box;return {eq:B.eq,bu:B.buP}})()")
     chk('등급 표: 누적 확률 · 끝 = 1 · 희귀 이상',all(T['eq'][k][-1][1]==1 and all(g>=2 for g,_ in T['eq'][k]) and all(T['eq'][k][i][1]<T['eq'][k][i+1][1] for i in range(len(T['eq'][k])-1)) for k in '123'),T['eq'])
     chk('보스 전용 30%',T['bu']==.3,T['bu'])

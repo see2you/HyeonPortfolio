@@ -43,7 +43,10 @@ window.__bot=function(opt){const g=__g,S=g.S;opt=opt||{};const log=[];if(g.win||
   for(const [s] of plan){const it=eqd(s);if(it&&g.cnt('bls')&&it.en<g.enchSafe(it.k)&&g.enchCheck(it,true).ok){g.enchant(it.u,true);log.push('bless '+s);}}
   let n=0;for(const [s,cap] of plan){while(n<40&&tryEnch(s,cap)){n++;}}
   const over=opt.over||[['weapon',8],...ARM.map(x=>[x,6]),...ACC.map(x=>[x,3])];
-  if(!opt.lite&&S.gold>reserve()*3)for(const [s,cap] of over){let k=0;while(k++<6&&S.gold>reserve()*2&&tryEnch(s,cap))n++;}
+  /* v4.45 보조 강화석: 안전 구간 위에서 남는 강화석으로 확률을 올린다(강화석 300+ → 3단계 · 150+ → 2 · 60+ → 1) — 보조분은 사지 않는다 */
+  const aidOf=()=>opt.noAid?0:S.stone>=300?3:S.stone>=150?2:S.stone>=60?1:0;
+  if(!opt.lite&&S.gold>reserve()*3)for(const [s,cap] of over){let k=0;while(k++<6&&S.gold>reserve()*2){S.encAid=aidOf();const it=eqd(s);if(it&&S.encAid&&g.enchCheck(it).c&&S.stone<g.enchCheck(it).c.stone)S.encAid=0;if(!tryEnch(s,cap))break;n++;}}
+  S.encAid=0;
   if(n)log.push('ench x'+n);
   g.autoEquipAll();
   /* 4b) 보스 컬렉션 대기: 다른 맵의 지역 보스가 필요하면 그 맵으로 */

@@ -40,9 +40,12 @@ const ENCH={weapon:{atk:5},armor:{def:2,hp:10},helm:{def:1,hp:5},boots:{def:1,hp
 const isAcc=k=>k==='neck'||k==='ring',canEnch=k=>!!ENCH[k];
 const ENH={max:10,safe:{weapon:5,armor:5,acc:1},rate:{weapon:[.7,.6,.5,.4,.35],armor:[.7,.6,.5,.45,.4],acc:[.6,.5,.4,.35,.3,.25,.2,.2,.2]},failBonus:.05};
 const enchCls=k=>k==='weapon'?'weapon':isAcc(k)?'acc':'armor',enchSafe=k=>ENH.safe[enchCls(k)];
-function enchRate(it){const k=enchCls(it.k),s=ENH.safe[k];if(it.en<s)return 1;return Math.min(1,(ENH.rate[k][it.en-s]||.2)+Math.floor((it.ff||0)/3)*ENH.failBonus);}
+/* v4.45 보조 강화석(아이온 '강화 보조제' 방식): 안전 구간 위에서만 · 단계 k(0~3)마다 강화석 +100% · 성공 확률 +5%p(최대 95%) — 남는 강화석으로 시도 수(골드 수수료)를 줄인다 */
+ENH.aid={max:3,rate:.05,cap:.95};
+const enchAid=(it,aid)=>it.en<enchSafe(it.k)?0:Math.max(0,Math.min(ENH.aid.max,aid==null?(S.encAid|0):aid|0));
+function enchRate(it,aid){const k=enchCls(it.k),s=ENH.safe[k];if(it.en<s)return 1;const a=enchAid(it,aid),b=Math.min(1,(ENH.rate[k][it.en-s]||.2)+Math.floor((it.ff||0)/3)*ENH.failBonus);return a?Math.min(Math.max(b,ENH.aid.cap),b+a*ENH.aid.rate):b;}
 /* 강화 비용: 강화석은 단계·지역에 비례(무기 ×1.5 · 장신구 ×2), 골드는 수수료 */
-function enchCost(it){const m=it.k==='weapon'?1.5:isAcc(it.k)?2:1,st=Math.max(1,Math.round((1+it.en*.6)*(1+.5*(it.t-1))*m));return{stone:st,gold:Math.round(60*it.t*(it.en+1)*(it.bu?1.5:1))};}
+function enchCost(it,aid){const m=it.k==='weapon'?1.5:isAcc(it.k)?2:1,st=Math.max(1,Math.round((1+it.en*.6)*(1+.5*(it.t-1))*m)),a=enchAid(it,aid);return{stone:st*(1+a),gold:Math.round(60*it.t*(it.en+1)*(it.bu?1.5:1)),aid:a,base:st};}
 const STATN={atk:'공격력',def:'방어',hp:'최대 HP',mp:'최대 MP',crit:'치명',skm:'스킬 피해',faith:'신앙'};
 const statFmt=(k,v)=>k==='crit'||k==='skm'?'+'+(v*100).toFixed(1)+(k==='crit'?'%p':'%'):'+'+v;
 const WT={weapon:40,armor:55,helm:20,cloak:15,gloves:15,boots:20,neck:3,ring:3};
@@ -209,12 +212,12 @@ function betterThanEq(it){const s=targetSlot(it),cur=S.eq[s]&&itemById(S.eq[s]);
 /* 축복받은 주문서: 안전 구간 안에서는 +0~2 → +1~3, +3~5 → +1~2, 그 위 +1 (리니지). 안전 구간을 넘어서는 일반과 같은 확률로 +1 */
 function blessUp(en){const m=en<=2?3:en<=5?2:1;return 1+Math.floor(Math.random()*m);}
 /* blessed: 축복받은 강화 주문서 1장 + 골드 (강화석 없음) */
-function enchCheck(it,blessed){if(!it||!canEnch(it.k))return{ok:false,why:'강화할 수 없다'};if(it.en>=ENH.max)return{ok:false,why:'최대 강화'};const c=enchCost(it);
+function enchCheck(it,blessed){if(!it||!canEnch(it.k))return{ok:false,why:'강화할 수 없다'};if(it.en>=ENH.max)return{ok:false,why:'최대 강화'};const c=enchCost(it,blessed?0:null);
   if(S.gold<c.gold)return{ok:false,why:'골드 부족',c};if(blessed){if(!cnt('bls'))return{ok:false,why:'축복받은 강화 주문서가 없다',c};}else if(S.stone<c.stone)return{ok:false,why:'강화석 '+S.stone+'/'+c.stone,c};return{ok:true,c};}
 function enchant(u,blessed){const it=itemById(u),ck=enchCheck(it,blessed);if(!ck.ok)return it&&it.en>=ENH.max?{max:true,it}:null;
-  S.gold-=ck.c.gold;if(blessed)setCnt('bls',cnt('bls')-1);else S.stone-=ck.c.stone;STAT.ench=(STAT.ench||0)+1;STAT.enchG=(STAT.enchG||0)+ck.c.gold;
+  S.gold-=ck.c.gold;if(blessed)setCnt('bls',cnt('bls')-1);else{S.stone-=ck.c.stone;if(ck.c.aid)STAT.aidSt=(STAT.aidSt||0)+ck.c.stone-ck.c.base;}STAT.ench=(STAT.ench||0)+1;STAT.enchG=(STAT.enchG||0)+ck.c.gold;
   if(blessed&&it.en<enchSafe(it.k)){const up=Math.min(ENH.max-it.en,blessUp(it.en));it.en+=up;it.ff=0;bumpGear();growthEvent('ench',it);save();return{ok:true,it,rate:1,up};}
-  const rate=enchRate(it),ok=Math.random()<rate;
+  const rate=enchRate(it,blessed?0:null),ok=Math.random()<rate;
   if(ok){it.en++;it.ff=0;bumpGear();growthEvent('ench',it);}else it.ff=(it.ff||0)+1;save();return{ok,it,rate,up:ok?1:0};}
 function enchantEquipped(slot){const it=S.eq[slot]&&itemById(S.eq[slot]);if(!it||it.en>=ENH.max){S.stone+=4;return false;}it.en++;bumpGear();return true;}
 /* 무기 스프라이트(휘두르기) = 장착 무기 티어 */
