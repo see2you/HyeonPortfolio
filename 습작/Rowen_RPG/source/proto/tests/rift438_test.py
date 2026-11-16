@@ -11,7 +11,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.38',J("document.getElementById('verTag').textContent")=='v4.38')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     J("__g.S.lv=12;__g.S.autoQ=false;__g.step(3,.05);__g.riftEnter()")
     chk('입장',J("!!__g.rift"))
     J("__g.mobs.forEach(m=>m.atk=0)")

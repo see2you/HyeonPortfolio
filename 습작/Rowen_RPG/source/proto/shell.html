@@ -220,6 +220,9 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .clbatch{display:flex;align-items:center;gap:.8em;margin-bottom:.4em}.clbatch small{color:var(--mut)}.btn.alt2{margin-top:.4em;background:rgba(40,30,58,.9);border-color:rgba(232,184,100,.5);color:var(--gold2)}
 .mpop{position:absolute;right:0;top:calc(100% + var(--u)*.6);display:grid;grid-template-columns:repeat(4,auto);gap:calc(var(--u)*.5);padding:calc(var(--u)*.7);z-index:30}.mpop[hidden]{display:none}
 #bMenu[aria-expanded=true]{border-color:var(--gold);background:linear-gradient(180deg,rgba(80,60,30,.95),rgba(40,30,20,.95))}
+.tmb.rift .ti{color:#c9a0ff}.tmb.rift.on{border-color:#b78aff;box-shadow:0 0 calc(var(--u)*1) rgba(170,110,255,.5)}
+.riftv{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(110,60,190,0) 55%,rgba(90,40,170,.28) 85%,rgba(60,20,130,.5) 100%);transition:none}.riftv[hidden]{display:none}
+.mzone .rz{color:#d8b8ff;font-weight:700}.mzone.rift{color:#e0c8ff}
 .tmb.warn{border-color:#ffb050}.tmb.bad{border-color:#ff5a4a;animation:potlow 1.2s ease-in-out infinite}
 .mzone{font-family:var(--disp);font-weight:700;color:var(--gold2);font-size:.82em;padding:.1em .2em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mzone small{font-family:var(--ui);font-weight:400;color:var(--mut);margin-left:.4em}
 .topgold b{font-weight:700;color:#ffd76a;font-size:1.05em}.topgold .coin{margin-right:.45em}
@@ -379,6 +382,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 </head>
 <body>
 <div id="stage" tabindex="0" aria-label="게임 화면">
+  <div class="riftv" id="riftV" hidden aria-hidden="true"></div>
   <canvas id="ov"></canvas>
   <div class="hud" id="hud" hidden>
     <div class="me panel np">
@@ -405,6 +409,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
       <button class="tmb" id="bCraft" type="button" title="장비 제작 (U)"><span class="ti">⚒</span><span class="tl">제작</span><kbd>U</kbd></button>
       <button class="tmb" id="bColl" type="button" title="컬렉션 (O)"><span class="ti">❖</span><span class="tl">컬렉션</span><kbd>O</kbd></button>
       <button class="tmb" id="bLog" type="button" title="획득 기록 (L) — 최근 얻은 장비 · 도면 · 비법서"><span class="ti">☷</span><span class="tl">기록</span><kbd>L</kbd></button>
+      <button class="tmb rift" id="bRift" type="button" title="시간의 균열"><span class="ti">⧗</span><span class="tl">균열</span></button>
       <button class="tmb god" id="bGod" type="button" title="신의 권능 (P)"><span class="ti">ϟ</span><span class="tl">권능</span><kbd>P</kbd></button>
       <button class="tmb" id="bSet" type="button" title="설정 — 자동 전투 · 물약 · 화면"><span class="ti">⚙</span><span class="tl">설정</span></button>
       </div>
@@ -452,7 +457,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.38</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.39</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>
