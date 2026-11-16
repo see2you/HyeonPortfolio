@@ -29,7 +29,7 @@ if __name__=='__main__':
         r=pg.evaluate("()=>{const g=__g;const o={};for(const k of ['bull','goat','crystalbat','ashbat','phoenix','acornboar'])o[k]=g.mobBeh({sp:k});o.bossBull=g.mobB({sp:'bull',boss:true});o.fx=[g.MOB_B.bull.fx,g.MOB_B.goat.fx];o.lock=[g.MOB_B.bull.lock,g.MOB_B.goat.lock];return o;}")
         print('  INFO 배정',r)
         chk(r['bull']=='charge' and r['goat']=='charge' and r['acornboar']=='charge','초원황소 · 절벽산양 · 도토리멧돼지 = 돌진')
-        chk(r['crystalbat']=='melee' and r['ashbat']=='melee' and r['phoenix']=='melee','박쥐 2종 · 불새 새끼는 아직 근접(G1-c2b)')
+        chk(r['crystalbat']=='charge' and r['ashbat']=='charge' and r['phoenix']=='charge','박쥐 2종 · 불새 새끼도 돌진(v4.57 G1-c2b — 측정은 charge457)')
         chk(r['bossBull'] is None and r['fx']==[None,None],'보스 · 정예는 원형 없음 · 상태이상 없음(기절은 G1-e)')
         pg.close()
         for sp,mid,lk in CASES:

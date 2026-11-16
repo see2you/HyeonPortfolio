@@ -63,7 +63,7 @@ if __name__=='__main__':
         pg=page(b,errs)
         v=pg.evaluate("()=>{const g=__g;return {R:g.RANGED,C:g.CHARGE,f:g.MOB_B.fairy}}")
         chk(v['R']=={'range':110,'aim':1.2,'flee':70,'fleeK':.6,'leash':150,'spd':220,'pr':8,'mul':1.4,'cd':2.6,'fly':1.7,'hpK':.8},'RANGED 그대로')
-        chk(v['C']=={'min':60,'max':140,'aim':.8,'lock':.35,'w':22,'spd':260,'dist':170,'over':30,'mul':1.45,'cd':8,'stag':1.5,'stagK':1.3,'back':1.2,'rest':1.6},'CHARGE 그대로')
+        chk(v['C']=={'min':60,'max':140,'aim':.8,'lock':.35,'w':22,'spd':260,'dist':170,'over':30,'mul':1.45,'cd':8,'stag':1.5,'stagK':1.3,'back':1.2,'rest':1.6,'leash':200},'CHARGE 그대로(v4.57 leash 200 추가)')
         chk(v['f']=={'b':'ranged','spd':205},'들꽃요정 원거리 · 속도 205 그대로')
         pg.evaluate(SETUP_JS,5)
         pg.evaluate("""()=>{const g=__g,P=g.player;const L=g.mobs.filter(e=>e.sp==='fairy'&&!e.boss&&!e.eliteOf).slice(0,3);for(const e of g.mobs)if(!L.includes(e)){e.dead=true;e.respawn=1e9;}

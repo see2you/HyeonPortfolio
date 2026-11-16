@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.56';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.57';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -1476,6 +1476,10 @@ const MOB_B={
   acornboar:{b:'charge'},/* v4.54 G1-c1: 돌진 첫 종(로웬 도토리 숲 Lv3~5 · 상태이상 없음 — 입문 구간 보호). 관문 정예 '왕멧돼지'(q5 · q6)는 제외(G1-f 보스 패턴) */
   bull:{b:'charge',lock:.27},/* v4.56 G1-c2a: 로웬 바람 평원 Lv8~9 · 고정 0.35 → 0.27초(트인 평원이라 0.35면 자동 전투 피격률 0.02~0.16) · 기절(돌진 명중)은 G1-e */
   goat:{b:'charge'},/* v4.56 G1-c2a: 카르도 자갈 언덕 Lv17~18 */
+  /* v4.57 G1-c2b: 돌진 날짐승 — 날짐승도 지형에 막힌다(모든 몬스터 stepMove · 막히면 빗나감 경직). 침공 '불새 새끼'(isBoss)는 원형 없음(G1-g) */
+  crystalbat:{b:'charge'},/* 카르도 버섯 동굴숲 Lv20~21 */
+  ashbat:{b:'charge',lock:.25},/* 고정 0.35 → 0.25초(0.35면 피격률 e1 0.19 · e3 0.13) · 에르나 잿가루 언덕 Lv29~30 · 용암 호수 Lv36~37 */
+  phoenix:{b:'charge',lock:.25},/* 고정 0.35 → 0.25초(0.35면 피격률 0.14~0.15) · 에르나 불새 둥지 Lv37~38 */
   fairy:{b:'ranged',spd:205},/* v4.49 G1-b: 원거리 첫 종(로웬 도토리 숲 Lv5~6) · v4.53 속도 220 → 205(자동 전투가 공격 중인 요정을 쫓게 되어 evade451 묶음 0.39~0.41) */
   /* v4.52 G1-b2c: 원거리 나머지 5종 — 둔화 · 화상 투사체는 G1-e에서(지금은 피해만). spd = 그 종의 투사체 속도(없으면 RANGED.spd) — 사냥터 지형이 트여 자동 전투가 잘 피하는 종은 빠르게 해 피격률 20~40%에 맞춘다 */
   cavemush:{b:'ranged',spd:190},/* v4.53 G1-b2c2 카르도 버섯 동굴 Lv18~19 (관문 정예 '동굴버섯'(q16)은 제외) */
@@ -1498,7 +1502,7 @@ const FX_P={base:.25,early:.15,elite:1};
 /* v4.54 돌진 원형(지시서 §G1 · G1-c): 거리 min~max에서 aim초 예고(일직선 띠 폭 w) — 앞 (aim−lock)초는 플레이어를 따라가고 마지막 lock초는 방향이 고정(띠가 밝아짐) →
    spd/초로 직선 돌진(고정 순간 거리 + over, 최대 dist) · 지나가며 한 번 맞히면 ×mul(방어 뒤) · 빗나가거나 벽에 막히면 stag초 경직(받는 피해 ×stagK) · 쿨 cd초.
    맞힌 뒤 rest초 숨 고르기(근접 공격 안 함) · 쿨이 찼는데 min보다 가까우면 back초까지 뒷걸음질쳐 거리를 벌린다(못 벌리면 근접으로 · 3초 뒤 다시). 그 밖에는 근접형 그대로 */
-const CHARGE={min:60,max:140,aim:.8,lock:.35,w:22,spd:260,dist:170,over:30,mul:1.45,cd:8,stag:1.5,stagK:1.3,back:1.2,rest:1.6};
+const CHARGE={min:60,max:140,aim:.8,lock:.35,w:22,spd:260,dist:170,over:30,mul:1.45,cd:8,stag:1.5,stagK:1.3,back:1.2,rest:1.6,leash:200};/* v4.57 leash: 돌진 끝은 집에서 200 안(추격 한계 210 — 넘으면 체력 가득으로 귀환) */
 
 
 /* ================= 퀘스트 =================
@@ -3018,7 +3022,7 @@ const BEHAV={
     if(c){c.t+=dt;const e=c.e;
       if(c.ph==='aim'){m.face=player.x<m.x?-1:1;
         if(c.t<C.aim-LK){e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);}
-        else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=LK;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;}/* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
+        else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=LK;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;{const ca=Math.cos(c.a),sa=Math.sin(c.a);while(c.rem>20&&Math.hypot(m.x+ca*c.rem-m.home.x,m.y+sa*c.rem-m.home.y)>C.leash){c.rem-=5;}if(c.rem<e.len)STAT.chgClamp=(STAT.chgClamp||0)+1;e.len=c.rem;}}/* v4.57: 돌진 끝이 집에서 C.leash 밖이면 그만큼 짧게 — 지나쳐 달린 돌진이 추격 한계(210)를 넘겨 몬스터가 체력 가득으로 집에 돌아가던 것(불새 둥지 측정에서 찾음) *//* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
         if(c.t>=C.aim){c.ph='dash';STAT.chgN=(STAT.chgN||0)+1;}return;}
       /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,SPD*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
       if(!c.hit&&!player.dead){const px=player.x-x0,py=player.y-y0,u=Math.max(0,Math.min(v,px*ca+py*sa)),qx=x0+ca*u-player.x,qy=y0+sa*u-player.y;
