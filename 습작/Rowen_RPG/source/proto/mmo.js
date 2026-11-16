@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.39';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.40';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -1486,7 +1486,7 @@ function updateHud(dt){hudT-=dt;const st=pStats();
   $('hpT').textContent=Math.ceil(player.hp)+' / '+st.hp;$('mpT').textContent=Math.floor(player.mp)+' / '+st.mp;$('lvTxt').textContent='Lv '+S.lv;
   $('xpB').style.width=(S.lv>=LV_MAX?100:S.xp/need(S.lv)*100)+'%';$('xpT').textContent=S.lv>=LV_MAX?'MAX':(S.xp/need(S.lv)*100).toFixed(1)+'%';
   $('cpT').textContent=fmt(cpOf());$('goldTop').textContent=fmt(S.gold);{const zf=ZFAITH[curZone]||0,fe=$('faT');fe.textContent=st.faith;fe.parentNode.classList.toggle('low',zf>st.faith);fe.parentNode.title=zf?'이 지역 권장 신앙 '+zf:'신앙 — 등급·강화·컬렉션으로 오른다';}$('goldT').textContent=fmt(S.gold);$('bGod').classList.toggle('lock',!godUnlocked()&&!TRIALS.some(id=>S.sq[id]));
-  {const p=wPct(),wt=$('wtT');wt.textContent='무게 '+Math.round(p*100)+'%';wt.className=p>=.82?'bad':p>=.5?'warn':'';$('bBag').classList.toggle('warn',p>=.5&&p<.82);$('bBag').classList.toggle('bad',p>=.82);$('bBag').classList.toggle('dot',S.items.some(it=>it.nw));}$('shB').style.width=Math.min(100,player.shield/st.hp*100)+'%';$('pHPn').textContent=S.hpPot;$('bTown').textContent='귀환 '+S.scroll;$('pHP').classList.toggle('low',S.hpPot<POT_LOW.hp);$('pMPn').textContent=S.mpPot;$('pHP').classList.toggle('autoon',!!S.autoPot);
+  {const p=wPct(),wt=$('wtT');wt.textContent='무게 '+Math.round(p*100)+'%';wt.className=p>=.82?'bad':p>=.5?'warn':'';$('bBag').classList.toggle('warn',p>=.5&&p<.82);$('bBag').classList.toggle('bad',p>=.82);$('bBag').classList.toggle('dot',S.items.some(it=>it.nw)||equipBetterN()>0);}$('shB').style.width=Math.min(100,player.shield/st.hp*100)+'%';$('pHPn').textContent=S.hpPot;$('bTown').textContent='귀환 '+S.scroll;$('pHP').classList.toggle('low',S.hpPot<POT_LOW.hp);$('pMPn').textContent=S.mpPot;$('pHP').classList.toggle('autoon',!!S.autoPot);
   $('bStat').classList.toggle('gold',S.sp>0);$('bStat').classList.toggle('dot',S.sp>0);
   if(t>=menuDotT){menuDotT=t+1;{const q=curQ();if(q.type==='fboss'&&S.qs==='active'&&hunt&&!hunt.sub&&hunt.zone===q.zone&&!alive(hunt.mob)&&qMap(q)===MAPID){const bm=eliteOf(QFB(q));if(alive(bm)){hunt.mob=bm;toast(bm.name+' 출현 · 토벌하자',true);}}}$('bEnc').classList.toggle('dot',enchHint());$('bCraft').classList.toggle('dot',craftHint());$('bLog').classList.toggle('dot',acqMissNew());riftBtn();$('bColl').classList.toggle('dot',collCanAny());$('bGod').classList.toggle('dot',godHint());}$('bStatN').textContent=S.sp>0?'+'+S.sp:'';$('bSkill').classList.toggle('dot',SK.some((s,i)=>skCan(i)));
   const Z=ZONES[curZone];$('zoneT').replaceChildren(Z?Z.name:M.name+' 들녘');if(Z&&Z.lv&&!(rift&&rift.map===MAPID))$('zoneT').appendChild(el('small',null,'Lv '+Z.lv+(ZFAITH[curZone]?' · 신앙 '+ZFAITH[curZone]:'')));if(rift&&rift.map===MAPID){/* 균열 중엔 남은 시간이 잘리지 않게 Lv 표기 대신 */const rz=el('small','rz','⧗ 균열 '+mmss(S.riftT));rz.title=ZONES[rift.zone].name+' 시간의 균열 · 남은 입장 시간';$('zoneT').appendChild(rz);}$('zoneT').classList.toggle('rift',riftK>.05);
