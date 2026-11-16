@@ -11,7 +11,7 @@ with sync_playwright() as p:
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000);pg.evaluate("localStorage.clear()")
     pg.click('#btnStart');pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     J=lambda s:pg.evaluate(s)
-    chk('버전 v4.41',J("document.getElementById('verTag').textContent")=='v4.41')
+    chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
     J("__g.S.autoQ=false;__g.S.lv=12;__g.S.riftT=3600;__g.step(5,.05)")
     # 1) 처치당 기대값 공식 대조 (안개 호숫가 z4)
     e=J("(()=>{const g=__g,E=g.riftExp('z4'),Z=g.ZALL.z4,R=g.RIFT;let w=0,sn=0;for(const [sp,l0,l1,n] of Z.mobs){w+=n;sn+=n*Math.ceil(g.tierOfLv(l1+R.lvUp)/2);}sn/=w;return {E,sn,st:R.stoneP*sn+(R.box.stone(1))/R.eN,dsg:.06*R.dsgK+1/R.eN,rcp:R.rcp[1][1]+1/R.eN}})()")
@@ -39,7 +39,7 @@ with sync_playwright() as p:
     pg.screenshot(path=f"{OUT}/riftexp441_table.png")
     J("__g.closeModal&&__g.closeModal()")
     # 3) 균열 안 기록: 시간 · 처치
-    J("__g.riftEnter();__g.mobs.forEach(m=>m.atk=0);(()=>{const c=__g.ZONES.z4.c;__g.player.x=c[0];__g.player.y=c[1];})()")
+    J("__g.S.hpPot=20;__g.riftEnter(true);__g.mobs.forEach(m=>m.atk=0);(()=>{const c=__g.ZONES.z4.c;__g.player.x=c[0];__g.player.y=c[1];})()")
     J("__g.step(1300,.05)")  # 65초
     J("(()=>{const ms=__g.mobs.filter(m=>m.zone==='z4'&&!m.dead&&!m.riftBoss).slice(0,13);ms.forEach(m=>__g.killMob(m));})()")
     rec=J("JSON.stringify(__g.S.riftRec.z4)");import json;rec=json.loads(rec)

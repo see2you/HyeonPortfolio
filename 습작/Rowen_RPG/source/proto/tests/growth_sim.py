@@ -19,7 +19,7 @@ with sync_playwright() as p:
     BOT=os.environ.get("BOT","1")=="1";pg.add_script_tag(path=os.path.join(os.path.dirname(os.path.abspath(__file__)),"growth_bot.js"))
     pg.evaluate("__g.S.autoGrow=true;__g.S.cfg.autoEq=true;__g.S.autoQ=true;__g.autoNext()")
     st="(()=>{const q=__g.curQ(),g=__g.gateState(q);return {qi:__g.S.qi,qs:__g.S.qs,lv:__g.S.lv,cp:__g.cpOf(),map:__g.map,trav:__g.traveling,nav:__g.nav&&__g.nav.label,hunt:__g.hunt&&(__g.hunt.sub||__g.hunt.sp||'mob'),modal:__g.modal&&__g.modal.name,sub:JSON.stringify(Object.fromEntries(Object.entries(__g.S.sq).filter(([k,v])=>v.st!=='clear'&&!__g.SUBQ[k].trial).map(([k,v])=>[k,v.st+v.n]))),gate:q.gate?g.ok:null,sk:JSON.stringify(__g.S.sk),hpPot:__g.S.hpPot,w:Math.round(__g.wPct()*100),it:__g.S.items.length,mpPot:__g.S.mpPot,stat:JSON.stringify(__g.STAT),dead:__g.player.dead,gold:__g.S.gold,inv:__g.inv?__g.inv.m.lv+' '+__g.inv.zone:null,invSeen:!!__g.S.invSeen}})()"
-    last=None;stall=0;gatelog={};RIFTPROBE=os.environ.get('RIFTPROBE')=='1';probed=set();NQ=pg.evaluate('__g.QUESTS.length')
+    last=None;stall=0;gatelog={};RIFTPROBE=os.environ.get('RIFTPROBE')=='1';BOTRIFT=os.environ.get('BOTRIFT')=='1';RIFT_ST=int(os.environ.get('BOTRIFT_ST','40'));riftOn=None;riftUse={'n':0,'k':0,'stone':0};probed=set();NQ=pg.evaluate('__g.QUESTS.length')
     for i in range(int(os.environ.get('ITERS','3600'))):
         if pg.evaluate("__g.traveling"):
             pg.wait_for_timeout(300);continue
@@ -28,6 +28,13 @@ with sync_playwright() as p:
             lg=pg.evaluate("__bot("+os.environ.get("BOTOPT","{}")+")")
             if lg and os.environ.get("BOTLOG"): print("BOT",i*3,lg)
         s=pg.evaluate(st)
+        if BOTRIFT and not s['modal'] and not s['dead']:
+            # v4.42 봇 균열 사용: 자동 진행으로 사냥 중 강화석이 모자라면(< BOTRIFT_ST) 균열에 15분(게임 시간) — 물약 10 미만이면 [채우고 입장]
+            if riftOn is None and pg.evaluate(f"__g.riftOpen()&&!__g.rift&&__g.riftT()>=900&&!!__g.hunt&&__g.S.autoQ&&__g.S.stone<{RIFT_ST}&&!__g.nav"):
+                pg.evaluate("__g.S.hpPot<__g.RIFT.potMin?__g.riftPrepGo():__g.riftEnter(true)");riftOn=i;riftUse['n']+=1;print('BOTRIFT in',i*3,s['map'],'lv',s['lv'],'stone',pg.evaluate('__g.S.stone'))
+            elif riftOn is not None and (i-riftOn>=300 or pg.evaluate("!__g.rift&&!__g.nav")):
+                o=pg.evaluate("(()=>{const g=__g,R=g.rift;const o=R?{k:R.k,stone:R.stone,dsg:R.dsg,rcp:R.rcp,box:R.box||0}:{};if(R)g.riftEnd('out');g.S.autoQ=true;g.autoNext();return o})()")
+                riftOn=None;riftUse['k']+=o.get('k',0);riftUse['stone']+=o.get('stone',0);print('BOTRIFT out',i*3,o)
         if RIFTPROBE and not s['modal'] and not s['dead'] and pg.evaluate("__g.riftOpen()&&!__g.rift&&__g.riftT()>=600") and s['map'] not in probed:
             # v4.41 균열 측정: 균열이 처음 열린 시점에 120초(게임 시간) 들어가 분당 처치 · 강화석을 잰다 — 측정 뒤 자동 진행으로 돌아감
             probed.add(s['map']);pr=pg.evaluate("(()=>{const g=__g;g.riftEnter();return {lv:g.S.lv,st:g.S.stone,k:g.S.kills,z:g.rift&&g.rift.zone,cp:g.cpOf()}})()")
@@ -57,4 +64,4 @@ with sync_playwright() as p:
             open(os.environ['TRACE'],'a').write(json.dumps(tr)+'\n')
         if i%100==0: print('  faith',pg.evaluate('__g.pStats().faith'),'coll',pg.evaluate('__g.collDoneN()'),'bcoll',pg.evaluate('__g.bcollDoneN()'),'bu',pg.evaluate('JSON.stringify(__g.S.items.filter(x=>x.bu).map(x=>x.bu+"+"+x.en))'),'stone',pg.evaluate('__g.S.stone'),'open',pg.evaluate('__g.COLL.filter(c=>!__g.collDone(c)).map(c=>c.id+":"+c.req.filter((r,i)=>__g.collReg(c,i)).length+"/"+c.req.length).join(" ")'),'resup',pg.evaluate('__g.STAT.resup||0'))
     pg.evaluate("__g.snap();__g.render()");pg.screenshot(path='flow_end.png')
-    print('gates',gatelog);print('FINAL',pg.evaluate("JSON.stringify({lv:__g.S.lv,gold:__g.S.gold,kills:__g.S.kills,stone:__g.S.stone,ore:[__g.cnt('ore1'),__g.cnt('ore2'),__g.cnt('ore3')],bls:__g.cnt('bls'),items:__g.S.items.length,eq:Object.values(__g.S.eq).filter(Boolean).map(u=>{const it=__g.S.items.find(i=>i.u===u);return __g.GRADES[it.g].n+' '+__g.itemName(it)}),slots:__g.S.slots,sk:__g.S.sk,w:Math.round(__g.wPct()*100),stat:__g.STAT,t:__g.t})"));print('ERRORS',errs[:5] or 'none');b.close()
+    print('gates',gatelog);print('BOTRIFT use',riftUse) if BOTRIFT else None;print('FINAL',pg.evaluate("JSON.stringify({lv:__g.S.lv,gold:__g.S.gold,kills:__g.S.kills,stone:__g.S.stone,ore:[__g.cnt('ore1'),__g.cnt('ore2'),__g.cnt('ore3')],bls:__g.cnt('bls'),items:__g.S.items.length,eq:Object.values(__g.S.eq).filter(Boolean).map(u=>{const it=__g.S.items.find(i=>i.u===u);return __g.GRADES[it.g].n+' '+__g.itemName(it)}),slots:__g.S.slots,sk:__g.S.sk,w:Math.round(__g.wPct()*100),stat:__g.STAT,t:__g.t})"));print('ERRORS',errs[:5] or 'none');b.close()

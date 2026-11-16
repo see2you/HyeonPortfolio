@@ -29,7 +29,7 @@ with sync_playwright() as p:
     row=J("(()=>{const r=document.querySelector('.si.rift');return r?r.textContent:null})()")
     chk('메뉴 균열 → 균열 창(표석과 같은 줄)',row and '시간의 균열' in row and '입장' in row,row)
     pg.screenshot(path=f"{OUT}/rift439_menu.png")
-    J("document.querySelector('.si.rift .btn').click()");pg.wait_for_timeout(60)
+    J("__g.S.hpPot=20");J("document.querySelector('.si.rift .btn').click()");pg.wait_for_timeout(60)
     chk('입장 버튼으로 균열 입장',J("!!__g.rift"))
     J("__g.mobs.forEach(m=>m.atk=0);(()=>{const z=__g.rift.zone,c=__g.ZONES[z].c;__g.player.x=c[0];__g.player.y=c[1];})();__g.stopAuto&&__g.stopAuto()")
     J("__g.step(60,.05)")
