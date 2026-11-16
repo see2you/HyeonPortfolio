@@ -1,5 +1,6 @@
-"""v4.43 균열 보상 재구성(#3-4c): 강화석 ×3→×2(stoneP .14) · 도면 ×2 · 장비 드롭 ×2(eqK) · 비법서 ×2 · 권능 파편 처치당 1%
-   · 기대 보상 표(열 9개: 60분 강화석 · 도면 · 비법서 · 장비 · 파편) · 처치 시 추가 장비 · 파편 · 나갈 때 요약 · 1280×720 · 버전 v4.43"""
+"""v4.43 균열 보상 재구성(#3-4c) — v4.47 한 판짜리 균열에 맞춰 고침(60분 기준 → 한 판 기준)
+   강화석 ×3→×2(stoneP .14) · 도면 ×2 · 장비 드롭 ×2(eqK) · 비법서 ×2 · 권능 파편 처치당 1%
+   · 기대 보상 표(열 9개: 한 판 강화석 · 도면 · 비법서 · 장비 · 파편) · 처치 시 추가 장비 · 파편 · 나갈 때 요약 · 1280×720"""
 import sys,os
 from playwright.sync_api import sync_playwright
 from rift_util import paths,boot,Rift
@@ -11,18 +12,18 @@ with sync_playwright() as p:
     R=J("(()=>{const R=__g.RIFT;return {sp:R.stoneP,dk:R.dsgK,ek:R.eqK,sh:R.shardP,rc:[R.rcp[1][1],R.rcp[2][1],R.rcp[3][1]]}})()")
     chk('수치: 강화석 .14(보통 .07의 ×2) · 도면 ×2 · 장비 ×2 · 파편 1%',R['sp']==.14 and R['dk']==2 and R['ek']==2 and R['sh']==.01,R)
     chk('비법서 ×2: .008 · .006 · .003',R['rc']==[.008,.006,.003],R['rc'])
-    J("__g.S.autoQ=false;__g.S.lv=12;__g.S.riftT=3600;__g.S.hpPot=20;__g.step(5,.05)")
+    J("__g.S.autoQ=false;__g.S.lv=12;__g.S.hpPot=20;__g.step(5,.05)")
     E=J("__g.riftExp('z4')")
     chk('처치당 장비 = 보통 4% × 2',abs(E['pk']['eq']-.08)<1e-9,E['pk']['eq'])
-    chk('처치당 파편 = 1% + 상자 몫(5/150)',abs(E['pk']['sh']-(.01+5/150))<1e-9,E['pk']['sh'])
-    chk('60분 장비 · 파편 = 처치당 × 분당 처치 × 60',abs(E['eqH']-E['pk']['eq']*E['kpm']*60)<1e-9 and abs(E['shH']-E['pk']['sh']*E['kpm']*60)<1e-9,(E['eqH'],E['shH']))
+    chk('처치당 파편 = 1% + 상자 몫(5/한 판 분량 100)',abs(E['pk']['sh']-(.01+5/100))<1e-9,E['pk']['sh'])
+    chk('한 판 장비 · 파편 = 처치당 × 한 판 분량(100)',abs(E['runEq']-E['pk']['eq']*100)<1e-9 and abs(E['runSh']-E['pk']['sh']*100)<1e-9,(E['runEq'],E['runSh']))
     chk('강화석은 보통 사냥의 ×2 안팎(×1.8~×3)',1.8<=E['x']<=3,E['x'])
     # 표
     J("__g.toggleMenu(true)");pg.wait_for_timeout(60);J("document.getElementById('bRift').click()");pg.wait_for_timeout(100)
     tb=J("""(()=>{const t=document.querySelector('.rtab table');if(!t)return null;const rs=[...t.querySelectorAll('tr')].slice(1);const box=document.querySelector('.rtab').getBoundingClientRect();
       return {n:rs.length,hd:[...t.querySelectorAll('th')].map(h=>h.textContent),c0:[...rs[0].children].map(c=>c.textContent),box:[box.left,box.right,box.bottom],sw:t.scrollWidth,cw:t.parentElement.clientWidth}})()""")
     chk('표 3줄 · 열 9개 · 장비 · 파편 열',tb and tb['n']==3 and len(tb['hd'])==9 and '장비' in tb['hd'] and '파편' in tb['hd'],tb and tb['hd'])
-    chk('장비 · 파편 칸 값 = 기대값',tb['c0'][6]==f"{E['eqH']:.1f}" and tb['c0'][7]==f"{E['shH']:.1f}",tb['c0'])
+    chk('장비 · 파편 칸 값 = 한 판 기대값',tb['c0'][6]==f"{E['runEq']:.1f}" and tb['c0'][7]==f"{E['runSh']:.1f}",tb['c0'])
     chk('표 화면 안 · 가로 넘침 없음',tb['box'][0]>=0 and tb['box'][1]<=1280 and tb['box'][2]<=720 and tb['sw']<=tb['cw']+1,tb)
     row=J("document.querySelector('.si.rift').textContent")
     chk("균열 줄 설명: 장비 ×2 · 도면 ×2 · 파편",'도면 ×2' in row and '장비 ×2' in row and '권능 파편' in row and '강화석 ×3' not in row,row[:160])

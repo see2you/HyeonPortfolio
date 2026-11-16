@@ -39,6 +39,7 @@ html,body{margin:0;height:100%;background:var(--ink);color:var(--txt);font-famil
 .chip.zone{font-family:var(--disp);font-weight:700;color:var(--gold2)}.chip.zone small{font-family:var(--ui);font-weight:400;color:var(--mut);margin-left:.4em}
 .chip.cp{color:#ffe6a0}.chip.cp em{font-style:normal;color:var(--mut);font-size:.8em;margin-right:.4em}
 .chip.gold{color:#ffd76a}
+.chip.rc{font:inherit;color:#cfc0ea;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}.chip.rc[hidden]{display:none}.chip.rc em{font-style:normal;color:var(--mut);font-size:.8em;margin-right:.4em}.chip.rc.up{color:#fff;border-color:#c79cff;animation:rglow 1.6s ease-in-out infinite}.chip.rc.up em{color:#e6d2ff}.chip.rc.up.warn{color:#ffb060;border-color:#ffb060}
 .chip.fa{color:#d8c8ff}.chip.fa em{font-style:normal;color:var(--mut);font-size:.8em;margin-right:.4em}.chip.fa.low{color:#ff9a8a;box-shadow:inset 0 0 0 1px rgba(255,120,100,.6)}
 .qe .tg.grow{background:#b890ff;color:#1a1030}.qe .tg.fb{background:#c8503a;color:#fff}.qe.fb{border-left-color:#c8503a}
 .tgt .tn small.tfa{margin-left:.6em;color:#d8c8ff}.tgt .tn small.tfa.low{color:#ff9a8a}
@@ -410,6 +411,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
       <div class="chip panel gold topgold" title="보유 골드"><span class="coin"></span><b id="goldTop">0</b></div>
       <div class="chip panel cp"><em>전투력</em><span id="cpT">0</span></div>
       <div class="chip panel fa" title="신앙"><em>신앙</em><span id="faT">0</span></div>
+      <button class="chip panel rc" id="riftChip" type="button" hidden title="시간의 균열"><em>⧗ 균열</em><span id="rcT">15:00</span></button>
     </div>
     <div class="tgt panel np" id="tgt" hidden><div class="tn" id="tgtN"></div><div class="bar" style="--c:#e0584a"><i id="tgtB"></i><b id="tgtT"></b></div></div>
     <nav class="topmenu" aria-label="메뉴">
@@ -436,9 +438,9 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
     </div>
     <div class="qt">
       <div class="rhud panel" id="riftHud" hidden aria-label="시간의 균열">
-        <div class="rh1"><span class="rhn" id="rhN">⧗ 시간의 균열</span><button class="rhx" id="rhX" type="button" title="균열에서 나가기 — 들어오기 전 자리로 돌아간다">나가기</button></div>
-        <div class="rh2"><b class="rht" id="rhT">60:00</b><span class="rbar"><i id="rhTB"></i></span></div>
-        <div class="rh2"><span class="rhe" id="rhE">정예까지 150</span><span class="rbar e"><i id="rhEB"></i></span></div>
+        <div class="rh1"><span class="rhn" id="rhN">⧗ 시간의 균열</span><button class="rhx" id="rhX" type="button" title="균열에서 나가기 — 들어오기 전 자리로 돌아간다 (진행은 남지만 균열의 시간은 계속 흐른다)">나가기</button></div>
+        <div class="rh2"><b class="rht" id="rhT" title="균열이 닫히기까지">10:00</b><span class="rbar"><i id="rhTB"></i></span></div>
+        <div class="rh2"><span class="rhe" id="rhE">처치 0 / 100</span><span class="rbar e"><i id="rhEB"></i></span></div>
         <div class="rhl" id="rhL"></div><div class="rhq">균열 안의 처치는 퀘스트에 들지 않는다</div>
       </div>
       <div class="qth"><b>퀘스트</b><button class="tog" id="autoQ" type="button" aria-pressed="false" title="퀘스트 자동 진행 (T)">자동 진행</button></div>
@@ -476,7 +478,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.47</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.48</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>

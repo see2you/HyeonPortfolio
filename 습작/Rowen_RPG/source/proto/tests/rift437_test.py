@@ -1,68 +1,130 @@
-"""v4.37 시간의 균열(시간 제한 사냥터) — v4.46 전용 공간에 맞춰 고침
-   잠김(개방 스토리 · Lv) · 표석 창 줄 · 입장 → 전용 맵 '시간의 균열'(사냥 구역 rz) · 균열 몬스터 한 벌(보통 + 최고 Lv+1) · 안에서만 시간 감소
-   · 나가면 충전(2분 → 1분) · 처치 보너스(강화석 · 도면 · 비법서) · 시간 끝 → 마을 · 1분 미만 입장 불가 · 세이브에 남은 시간 · 자동 진행은 들어가지 않음"""
+"""v4.37 시간의 균열 → v4.47 '주기적으로 열리는 한 판짜리 균열'(현 요청)에 맞춰 다시 씀 — 기본 규칙
+   잠김(개방 스토리) · 개방과 함께 첫 균열 · 월드 HUD ⧗ 표시(열림 남은 시간 / 다음 균열까지) · 표석 창 줄 · 입장 → 전용 맵(몬스터 = 내 레벨 +1 · 한 번에 pop마리)
+   · 유지 시간은 안팎 어디서나 흐른다 · 나가도 진행(처치 수) 유지 · 다시 들어가면 남은 수만큼만 · 몬스터는 한 판 분량만 나오고 더는 나오지 않는다
+   · 균열의 주인(내 레벨 +3) → 처치 = 균열 종료 · 다음 균열까지 15분 · 닫힌 동안 입장 불가 · 시간 끝(밖 · 안) · 쓰러져도 균열은 열려 있다 · 세이브 · 자동 진행은 들어가지 않음 · 레벨대 연동"""
 import sys,os,json
 from playwright.sync_api import sync_playwright
 from rift_util import paths,boot,Rift
 HTML,OUT=paths()
 res=[];chk=lambda n,c,v='':(res.append(bool(c)),print(('PASS ' if c else 'FAIL ')+n,v))
+TOAST="[...document.querySelectorAll('.toast,#toasts div')].map(e=>e.textContent).join(' | ')"
+CHIP="(()=>{const c=document.getElementById('riftChip');__g.riftChip();const r=c.getBoundingClientRect();return {hid:c.hidden,t:document.getElementById('rcT').textContent,up:c.classList.contains('up'),w:r.width,in:r.left>=0&&r.right<=innerWidth&&r.top>=0}})()"
 with sync_playwright() as p:
     b,pg,errs=boot(p,HTML,key=False);R=Rift(pg);J=R.J
     chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
-    chk('시작: 잠김 · 60:00 · 딸린 사냥터 z4',J("!__g.riftOpen()&&__g.riftT()===3600&&__g.riftZone()==='z4'"))
-    J("__g.S.lv=10;__g.riftEnter(true)");chk('개방 스토리 전이면 Lv가 돼도 입장 안 됨',J("__g.rift===null&&__g.MAPID==='rowen'&&!__g.traveling"))
-    J("__g.S.lv=1;__g.S.riftKey=1;__g.riftEnter(true)");chk('스토리를 지나도 Lv 모자라면 입장 안 됨',J("__g.rift===null&&!__g.traveling"))
-    J("__g.S.lv=10;__g.S.autoQ=true;__g.step(3,.05)")
-    chk('스토리 + Lv10: 열림',J("__g.riftOpen()"))
-    J("__g.openWay()");pg.wait_for_timeout(80)
-    row=J("(()=>{const r=document.querySelector('.si.rift');if(!r)return null;const b=r.querySelector('button').getBoundingClientRect();return {t:r.textContent,dis:r.querySelector('button').disabled,in:b.bottom<=innerHeight&&b.right<=innerWidth}})()")
-    chk('표석 창에 균열 줄 · [입장] 화면 안',row and '입장' in row['t'] and not row['dis'] and row['in'],row)
+    C=J("({every:__g.RIFT.every,stay:__g.RIFT.stay,pop:__g.RIFT.pop,add:__g.RIFT.lvAdd,eLv:__g.RIFT.eLv,eN:__g.RIFT.eN})")
+    chk('수치: 15분마다 · 유지 10분(5~10분 범위) · 몬스터 +1 · 주인 +3 · 분량 로웬 100 / 카르도 80 / 에르나 65',C['every']==900 and 300<=C['stay']<=600 and C['add']==1 and C['eLv']==3 and C['eN']=={'rowen':100,'kardo':80,'erna':65},C)
+    # 1) 잠김
+    J("__g.S.lv=13;__g.S.autoQ=false;__g.S.hpPot=20;__g.step(40,.05)")
+    chk('개방 스토리 전: 균열이 열리지 않는다(시계도 돌지 않음) · 위쪽 표시 없음',J("!__g.riftUp()&&__g.S.riftOpenT==null&&__g.S.riftCd==null") and J(CHIP)['hid'])
+    J("__g.riftEnter(true)");chk('개방 스토리 전이면 입장 안 됨',J("__g.rift===null&&__g.MAPID==='rowen'&&!__g.traveling"))
+    # 2) 개방 → 첫 균열이 바로 열린다
+    J("__g.S.riftKey=1;__g.step(3,.05)")
+    st=J("({up:__g.riftUp(),T:__g.S.riftOpenT,map:__g.S.riftMap,q:__g.S.riftQ,need:__g.riftNeed(),lv:__g.riftLv(),zone:__g.riftZone(),dot:document.getElementById('bRift').classList.contains('dot'),ban:document.getElementById('banT').textContent})")
+    chk('열쇠가 생기면 첫 균열이 바로 열린다: 유지 10분 · 내 레벨대(로웬 z4) · 분량 100 · 몬스터 Lv = 내 레벨 +1',st['up'] and 598<=st['T']<=600 and st['map']=='rowen' and st['q']==100 and st['need']==100 and st['lv']==14 and st['zone']=='z4',st)
+    chk("열림 알림 배너 '시간의 균열이 열렸다'",'시간의 균열이 열렸다' in st['ban'],st['ban'])
+    J("__g.step(25,.05)");ch=J(CHIP)
+    chk("월드 HUD 위쪽 ⧗ 표시: '열림 9:5x' · 강조 · 화면 안 · 메뉴 버튼 점",not ch['hid'] and ch['t'].startswith('열림 9:5') and ch['up'] and ch['w']>40 and ch['in'] and J("document.getElementById('bRift').classList.contains('dot')"),ch)
+    J("__g.render()");pg.screenshot(path=f"{OUT}/rift437_chip.png")
+    J("document.getElementById('riftChip').click()");pg.wait_for_timeout(80)
+    chk('⧗ 표시를 누르면 균열 창',J("__g.modal&&__g.modal.name")=='시간의 균열' and J("!!document.querySelector('.si.rift')"),J("__g.modal&&__g.modal.sub"))
+    J("__g.closeModal();__g.openWay()");pg.wait_for_timeout(80)
+    row=J("(()=>{const r=document.querySelector('.si.rift');if(!r)return null;const b=r.querySelector('button').getBoundingClientRect();return {t:r.textContent,bt:r.querySelector('button').textContent,dis:r.querySelector('button').disabled,in:b.bottom<=innerHeight&&b.right<=innerWidth}})()")
+    chk('표석 창에 균열 줄: 열려 있다 · 뒤 닫힌다 · [입장] 화면 안',row and row['bt']=='입장' and '열려 있다' in row['t'] and '뒤 닫힌다' in row['t'] and not row['dis'] and row['in'],row)
     pg.screenshot(path=f"{OUT}/rift437_way.png")
-    n0=J("__g.ZALL.z4.mobs.reduce((a,m)=>a+m[3],0)");p0=J("[Math.round(__g.player.x),Math.round(__g.player.y)]")
-    J("__g.S.hpPot=20");J("document.querySelector('.si.rift button').click()");R.wait_in()
-    st=J("({r:!!__g.rift,auto:__g.S.autoQ,in:__g.riftIn(),map:__g.MAPID,hz:__g.hunt&&__g.hunt.zone,n:__g.mobs.filter(m=>m.rift&&!m.dead).length,nn:__g.mobs.filter(m=>m.riftN).length,lv:Math.min(...__g.mobs.filter(m=>m.rift&&!m.riftN).map(m=>m.lv)),nm:(__g.mobs.find(m=>m.rift)||{}).name,all:__g.mobs.every(m=>m.rift&&m.zone==='rz'),base:__g.rift.base,of:__g.rift.of})")
+    # 3) 입장
+    J("(()=>{const g=__g,c=g.ZONES.z1.c;g.closeModal();g.player.x=c[0];g.player.y=c[1];g.snap();g.S.autoQ=true;})()");p0=J("[Math.round(__g.player.x),Math.round(__g.player.y)]")
+    J("__g.openWay()");pg.wait_for_timeout(60);J("document.querySelector('.si.rift button').click()");R.wait_in()
+    st=J("({r:!!__g.rift,auto:__g.S.autoQ,in:__g.riftIn(),map:__g.MAPID,hz:__g.hunt&&__g.hunt.zone,n:__g.mobs.filter(m=>m.rift&&!m.dead).length,lvs:[...new Set(__g.mobs.map(m=>m.lv))],nm:(__g.mobs.find(m=>m.rift)||{}).name,all:__g.mobs.every(m=>m.rift&&m.zone==='rz'),base:__g.rift.base,of:__g.rift.of,left:__g.rift.left,rl:__g.rift.lv,chip:document.getElementById('riftChip').hidden})")
     chk('입장: 전용 맵 · 자동 진행 끔 · 사냥 시작(rz)',st['r'] and not st['auto'] and st['in'] and st['map']=='rift' and st['hz']=='rz' and st['base']=='z4' and st['of']=='rowen',st)
-    chk('균열 몬스터 한 벌(보통 n + 높은 Lv n) · 최고 Lv+1 · 이름',st['n']>=n0*2*0.8 and abs(st['nn']-st['n']/2)<=3 and st['lv']>=11 and st['nm'].startswith('균열 ') and st['all'],[st['n'],st['nn'],n0])
-    chk('옛 사냥터(z4)에는 균열 몬스터가 없다(맵이 다르다)',J("!__g.mobs.some(m=>m.zone==='z4')"))
-    J("__g.mobs.forEach(m=>m.atk=0)")  # 테스트: 몬스터 무해
-    J("__g.step(200,.05)")  # 10초
-    t1=J("__g.S.riftT");chk('안에서 시간 감소(10초)',3587<=t1<=3591,t1)
-    J("__g.player.x=__g.ZONES.village.c[0];__g.player.y=__g.ZONES.village.c[1];__g.step(100,.05)")
-    t2=J("__g.S.riftT");chk('문턱(안전 구역)에 서 있어도 전용 맵 안이면 시간이 준다',4.5<=t1-t2<=5.5 and J("!!__g.rift"),[t1,t2])
-    # 처치 보너스: 확률 고정
-    J("__g.player.x=__g.ZONES.rz.c[0];__g.player.y=__g.ZONES.rz.c[1];")
-    rb=J("""(()=>{const g=__g,S=g.S,R=Math.random;const m=g.mobs.find(x=>x.rift&&!x.riftN&&!x.dead);const s0=S.stone,r0=g.cnt('rcp2');Math.random=()=>0.001;g.killMob(m);Math.random=R;
-      const n=g.mobs.find(x=>x.riftN&&!x.dead);g.mobs.forEach(x=>x.atk=0);const k0=g.rift.k;g.killMob(n);
-      return {st:S.stone-s0,rcp:g.cnt('rcp2')-r0,k:g.rift.k,rs:g.rift.stone,resp:m.respawn,nresp:n.respawn,nk:g.rift.k-k0}})()""")
-    chk('균열 처치: 강화석 · 비법서 · 기록 · 4초 재생성',rb['st']>=1 and rb['rcp']==1 and rb['k']>=1 and rb['resp']==4,rb)
-    chk('보통 레벨 균열 몬스터도 균열 처치로 센다 · 9초 재생성',rb['nk']==1 and rb['nresp']==9,rb)
-    hud=J("(()=>{const h=document.getElementById('riftHud');__g.riftHud();const r=h.getBoundingClientRect(),x=document.getElementById('rhX').getBoundingClientRect();return {vis:!h.hidden&&r.width>0,t:document.getElementById('rhT').textContent,e:document.getElementById('rhE').textContent,x:x.width>0&&x.right<=innerWidth&&x.bottom<=innerHeight}})()")
-    chk('균열 HUD: 남은 시간 · 정예까지 · [나가기]',hud['vis'] and ':' in hud['t'] and '정예까지' in hud['e'] and hud['x'],hud)
+    chk('균열 몬스터: 한 번에 pop(42)마리 · 전부 내 레벨 +1(Lv14) · 이름 · 나올 몬스터 58 남음',st['n']==C['pop'] and st['lvs']==[14] and st['rl']==14 and st['nm'].startswith('균열 ') and st['all'] and st['left']==100-C['pop'],st)
+    chk('균열 안에서는 위쪽 ⧗ 표시를 숨긴다(균열 HUD가 대신한다)',st['chip'])
+    J("__g.mobs.forEach(m=>m.atk=0)");t0=J("__g.S.riftOpenT");J("__g.step(200,.05)")
+    t1=J("__g.S.riftOpenT");chk('안에서 유지 시간 감소(10초)',9.5<=t0-t1<=10.5,[t0,t1])
+    rb=J("""(()=>{const g=__g,S=g.S,R=Math.random;const m=g.mobs.find(x=>x.rift&&!x.dead);const s0=S.stone,r0=g.cnt('rcp2'),l0=g.rift.left;Math.random=()=>0.001;g.killMob(m);Math.random=R;g.mobs.forEach(x=>x.atk=0);
+      return {st:S.stone-s0,rcp:g.cnt('rcp2')-r0,k:g.rift.k,rs:g.rift.stone,resp:m.respawn,dl:l0-g.rift.left,ek:S.riftEK}})()""")
+    chk('균열 처치: 강화석 · 비법서 · 기록 · 처치 수 +1 · 4초 뒤 다시 나옴(나올 몬스터 −1)',rb['st']>=1 and rb['rcp']==1 and rb['k']==1 and rb['resp']==4 and rb['dl']==1 and rb['ek']==1,rb)
+    hud=J("(()=>{const h=document.getElementById('riftHud');__g.riftHud();const r=h.getBoundingClientRect(),x=document.getElementById('rhX').getBoundingClientRect();return {vis:!h.hidden&&r.width>0,n:document.getElementById('rhN').textContent,t:document.getElementById('rhT').textContent,e:document.getElementById('rhE').textContent,x:x.width>0&&x.right<=innerWidth&&x.bottom<=innerHeight}})()")
+    chk("균열 HUD: 'Lv 14' · 남은 유지 시간 9:4x · '처치 1 / 100' · [나가기]",hud['vis'] and 'Lv 14' in hud['n'] and hud['t'].startswith('9:4') and hud['e']=='처치 1 / 100' and hud['x'],hud)
     J("__g.player.x=__g.ZONES.rz.c[0]+40;__g.player.y=__g.ZONES.rz.c[1]+60;__g.step(40,.05);__g.render()");pg.screenshot(path=f"{OUT}/rift437_in.png")
-    # 시간 끝 → 마을
-    J("__g.S.riftT=0.5;__g.step(20,.05)");R.wait_out()
-    st=J("({r:__g.rift,t:__g.S.riftT,map:__g.MAPID,v:Math.hypot(__g.player.x-__g.ZONES.village.c[0],__g.player.y-__g.ZONES.village.c[1]),alive:__g.mobs.filter(m=>m.rift&&!m.dead).length,hud:document.getElementById('riftHud').hidden})")
-    chk('시간 끝: 닫힘 · 로웬 마을로 · 균열 몬스터 없음 · HUD 숨김',st['r'] is None and st['map']=='rowen' and st['v']<300 and st['alive']==0 and st['hud'],st)
-    ta=J("__g.S.riftT");J("__g.step(1200,.05)")  # 60초 → 30초 충전
-    t3=J("__g.S.riftT");chk('밖에서 60초 → 약 30초 충전',28<=t3-ta<=32,[ta,t3])
-    J("__g.S.riftT=30;__g.riftEnter(true)");chk('1분 미만이면 입장 불가',J("__g.rift===null&&!__g.traveling"))
+    # 4) 나가도 진행은 남고 시계는 흐른다
+    R.kill(11);ek=J("__g.S.riftEK")
+    R.leave();p1=J("[Math.round(__g.player.x),Math.round(__g.player.y)]")
+    chk('나가기 → 들어오기 전 자리 · 균열은 아직 열려 있다 · 처치 수 유지',J("__g.rift===null&&__g.MAPID==='rowen'&&__g.riftUp()") and abs(p1[0]-p0[0])<=2 and abs(p1[1]-p0[1])<=2 and ek==12 and J("__g.S.riftEK")==12,[p0,p1,ek])
+    t2=J("__g.S.riftOpenT");J("__g.step(200,.05)");t3=J("__g.S.riftOpenT")
+    chk('밖에 있어도 유지 시간은 흐른다(10초)',9.5<=t2-t3<=10.5,[t2,t3])
+    ch=J(CHIP);chk("위쪽 표시: 진행 '12/100 m:ss'",not ch['hid'] and ch['t'].startswith('12/100 ') and ch['up'],ch)
+    J("(()=>{const m=__g.mobs.find(x=>x.zone==='z1'&&!x.dead);__g.killMob(m)})()");chk('균열 밖 처치는 세지 않음',J("__g.S.riftEK")==12)
     ps=J("""(()=>{const g=__g,R=Math.random;const m=g.mobs.find(x=>x.zone==='z1'&&!x.dead);const s0=g.S.stone;Math.random=()=>0.15;g.killMob(m);Math.random=R;return g.S.stone-s0})()""")
     chk('균열 밖 몬스터: 강화석 7%는 그대로(0.15면 안 나옴)',ps==0,ps)
-    J("__g.S.riftT=600");R.enter();n2=J("__g.mobs.filter(m=>m.rift).length")
-    chk('다시 입장: 한 벌 새로 깔림(늘지 않음)',J("!!__g.rift") and abs(n2-st['alive']-n0*2)<=n0*2*0.2,n2)
-    R.leave();chk('나가기 → 들어오기 전 자리',J("__g.rift===null&&__g.MAPID==='rowen'") and J("Math.hypot(__g.player.x-__g.ZONES.village.c[0],__g.player.y-__g.ZONES.village.c[1])")<400)
-    J("__g.S.riftT=600");R.enter();J("__g.player.dead=true;__g.step(2,.05)");chk('쓰러지면 균열 끝',J("__g.rift===null"))
-    J("__g.player.dead=false;document.body.classList.remove('dead');__g.player.hp=999;__g.S.riftT=600;__g.step(2,.05)");R.wait_out()
-    chk('입장 없이 전용 맵에 남으면 마을로 내보낸다(예외 처리)',J("__g.MAPID==='rowen'"))
-    J("__g.save()");sv=J("JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>localStorage.getItem(k).includes('riftT')))).riftT")
-    chk('세이브에 남은 시간',abs(sv-600)<2,sv)
-    # 자동 진행은 균열에 들어가지 않는다
-    J("__g.S.autoQ=true;__g.autoNext&&__g.autoNext();__g.step(200,.05)");chk('자동 진행은 균열 안 들어감',J("__g.rift===null&&__g.MAPID==='rowen'"))
-    # 반복 탭 입장 카드
-    J("__g.S.autoQ=false;__g.setQTab('rep');__g.step(20,.05)")
+    # 5) 다시 입장: 남은 수만큼만 · 다 나오면 더는 나오지 않는다 → 균열의 주인
+    J("__g.S.riftEK=70");R.enter()
+    st=J("({n:__g.mobs.length,left:__g.rift.left,need:__g.riftLeft()})")
+    chk('다시 입장(처치 70): 남은 30마리만 나온다 · 더 나올 몬스터 0',st['n']==30 and st['left']==0 and st['need']==30,st)
+    r1=J("(()=>{const g=__g,m=g.mobs.find(x=>!x.dead);g.killMob(m);return m.respawn})()");J("__g.step(200,.05);__g.mobs.forEach(m=>m.atk=0)")
+    chk('분량이 다 나온 뒤에는 잡아도 다시 나오지 않는다(10초 뒤 29마리)',r1>=1e8 and J("__g.mobs.filter(m=>!m.dead).length")==29,r1)
+    J("(()=>{const c=__g.ZONES.rz.c;__g.player.x=c[0];__g.player.y=c[1];})()");lv0=J("__g.rift.lv");J("__g.S.lv=15");k=R.kill(29)
+    e=J("(()=>{const m=__g.riftEliteOf();if(!m)return null;const Z=__g.ZONES.rz;return {lv:m.lv,nm:m.name,dead:m.dead,ek:__g.S.riftEK,pend:__g.riftPend(),left:__g.riftLeft(),alive:__g.mobs.filter(x=>!x.dead&&!x.riftBoss).length,inZ:m.x>=Z.r[0]&&m.x<=Z.r[2]&&m.y>=Z.r[1]&&m.y<=Z.r[3]}})()")
+    chk('분량(100)을 다 잡으면 균열의 주인 등장 · Lv = 들어올 때의 내 레벨 +3 · 남은 몬스터 없음',k==29 and e and e['lv']==lv0-1+3 and e['nm'].startswith('균열의 주인') and not e['dead'] and e['ek']==100 and e['pend'] and e['left']==0 and e['alive']==0 and e['inZ'],e)
+    J("__g.S.lv=13;__g.step(4,.05)")
+    hud=J("(()=>{__g.riftHud();const e=document.getElementById('rhE');return {t:e.textContent,on:e.classList.contains('on')}})()")
+    chk("균열 HUD: '균열의 주인 등장!' 강조",'등장' in hud['t'] and hud['on'],hud)
+    # 6) 주인 처치 → 균열 종료 → 포탈 → 월드
+    J("(()=>{const m=__g.riftEliteOf();m.hp=1;__g.killMob(m);})()")
+    st=J("({clear:__g.rift&&__g.rift.clear,T:__g.S.riftOpenT,cd:__g.S.riftCd,ek:__g.S.riftEK,ep:__g.S.riftEP,box:__g.rift.box,lock:__g.cineT-__g.t,clr:__g.S.riftClr})")
+    chk('주인 처치: 균열 종료(유지 시간 0 · 다음 균열까지 15분) · 균열 상자 1 · 포탈 연출 동안 조작 잠금',st['clear']==1 and st['T']==0 and st['cd']==900 and st['ek']==0 and st['ep']==0 and st['box']==1 and 2.5<st['lock']<=3.2 and st['clr']==1,st)
+    J("__g.step(70,.05)");R.wait_out();J("__g.step(30,.05)")
+    st=J("({map:__g.MAPID,rift:__g.rift,up:__g.riftUp(),modal:__g.modal&&__g.modal.name,live:__g.modal&&__g.modal.live,last:__g.STAT.riftLast&&__g.STAT.riftLast.why})")
+    chk("포탈을 지나 월드로 · 안내 팝업 '균열을 닫았다'",st['map']=='rowen' and st['rift'] is None and not st['up'] and st['modal']=='균열을 닫았다' and st['live'] and st['last']=='clear',st)
+    J("__g.closeModal();__g.step(25,.05)");ch=J(CHIP)
+    chk("위쪽 표시: 다음 균열까지 '14:5x'(강조 없음)",not ch['hid'] and ch['t'].startswith('14:5') and not ch['up'],ch)
+    # 7) 닫힌 동안
+    J("__g.riftEnter(true)");chk("닫힌 동안 입장 불가 · '다음 균열까지' 안내",J("__g.rift===null&&!__g.traveling") and '다음 균열까지' in J(TOAST),J(TOAST)[-60:])
+    J("__g.openWay()");pg.wait_for_timeout(80)
+    row=J("(()=>{const r=document.querySelector('.si.rift');const b=r.querySelector('button');return {t:r.textContent,bt:b.textContent,dis:b.disabled}})()")
+    chk('표석 줄: 다음 균열까지 · [대기](누를 수 없음)',row['bt']=='대기' and row['dis'] and '다음 균열까지' in row['t'],row)
+    J("__g.closeModal()");c0=J("__g.S.riftCd");J("__g.step(200,.05)");c1=J("__g.S.riftCd")
+    chk('다음 균열까지 시간이 흐른다(10초)',9.5<=c0-c1<=10.5,[c0,c1])
+    J("__g.S.riftCd=1;__g.step(30,.05)")
+    st=J("({up:__g.riftUp(),T:__g.S.riftOpenT,ek:__g.S.riftEK,ban:document.getElementById('banT').textContent,msg:"+TOAST+"})")
+    chk('시간이 되면 새 균열이 열린다: 유지 10분 · 처치 0부터 · 배너 · 안내',st['up'] and 598<=st['T']<=600 and st['ek']==0 and '시간의 균열이 열렸다' in st['ban'] and '시간의 균열이 열렸다' in st['msg'],st)
+    # 8) 시간 끝 — 밖(한 번도 안 들어감) / 밖(진행 있음) / 안
+    f0=J("__g.S.riftFail||0");J("__g.S.riftOpenT=1;__g.step(30,.05)")
+    st=J("({up:__g.riftUp(),cd:__g.S.riftCd,fail:__g.S.riftFail,modal:__g.modal&&__g.modal.name,ban:document.getElementById('banT').textContent})")
+    chk('시간 끝(들어가지 않음): 닫힘 · 다음 균열까지 15분 · 팝업 없이 배너만',not st['up'] and 898<=st['cd']<=900 and st['fail']==f0+1 and st['modal'] is None and '시간의 균열이 닫혔다' in st['ban'],st)
+    R.enter();R.kill(5);R.leave();J("__g.S.riftOpenT=1;__g.step(30,.05)")
+    st=J("({up:__g.riftUp(),ek:__g.S.riftEK,modal:__g.modal&&__g.modal.name,live:__g.modal&&__g.modal.live,text:__g.modal&&__g.modal.text})")
+    chk("시간 끝(나와 있는 동안 · 진행 있음): 안내 팝업 '시간의 균열이 닫혔다' · 진행이 사라졌다고 알림",not st['up'] and st['ek']==0 and st['modal']=='시간의 균열이 닫혔다' and st['live'] and '처치 5 / 100' in st['text'] and '사라졌다' in st['text'],st)
+    J("__g.step(320,.05)");chk('그 팝업은 15초 뒤 저절로 닫힌다',J("!__g.modal"))
+    J("(()=>{const g=__g,c=g.ZONES.z1.c;g.player.x=c[0];g.player.y=c[1];g.snap();})()");p0=J("[Math.round(__g.player.x),Math.round(__g.player.y)]")
+    R.enter();R.kill(3);J("__g.S.riftOpenT=1;__g.step(30,.05)");R.wait_out();J("__g.step(4,.05)");p1=J("[Math.round(__g.player.x),Math.round(__g.player.y)]")
+    st=J("({rift:__g.rift,map:__g.MAPID,up:__g.riftUp(),ek:__g.S.riftEK,modal:__g.modal&&__g.modal.name,text:__g.modal&&__g.modal.text,alive:__g.mobs.filter(m=>m.rift&&!m.dead).length,hud:document.getElementById('riftHud').hidden,last:__g.STAT.riftLast.why})")
+    chk("시간 끝(안에 있음): 밖으로 밀려남(들어오기 전 자리) · 팝업 '균열이 닫혔다' · 진행 사라짐 · HUD 숨김",st['rift'] is None and st['map']=='rowen' and not st['up'] and st['ek']==0 and st['modal']=='균열이 닫혔다' and '처치 3 / 100' in st['text'] and '얻은 것은 그대로' in st['text'] and st['alive']==0 and st['hud'] and st['last']=='time' and abs(p1[0]-p0[0])<=2 and abs(p1[1]-p0[1])<=2,st)
+    J("__g.render()");pg.screenshot(path=f"{OUT}/rift437_timeout.png");J("__g.closeModal()")
+    # 9) 쓰러져도 균열은 열려 있다
+    R.enter();R.kill(4);J("__g.die('test');__g.step(32,.05)")
+    st=J("({rift:__g.rift,up:__g.riftUp(),ek:__g.S.riftEK,modal:__g.modal&&__g.modal.name,text:__g.modal&&__g.modal.text})")
+    chk('쓰러지면 균열에서 나오지만 균열은 열려 있다(진행 유지) · 사망 창에 남은 시간 안내',st['rift'] is None and st['up'] and st['ek']==4 and st['modal']=='사망했습니다' and '시간의 균열은 아직 열려 있다' in st['text'],st)
+    J("__g.modal.btns[0].f()");pg.wait_for_function("!__g.traveling&&!__g.player.dead",timeout=90000);J("__g.step(3,.05)")
+    chk('입장 없이 전용 맵에 남지 않는다(부활 = 마을)',J("__g.MAPID==='rowen'&&!__g.rift"))
+    # 10) 세이브
+    J("__g.save()");sv=json.loads(J("localStorage.getItem('rowen-mmo-v4')"))
+    chk('세이브: 남은 유지 시간 · 처치 수 · 레벨대 · 분량(옛 입장 시간 값은 없다)',abs(sv['riftOpenT']-J("__g.S.riftOpenT"))<1 and sv['riftEK']==4 and sv['riftMap']=='rowen' and sv['riftQ']==100 and 'riftT' not in sv,[sv.get('riftOpenT'),sv.get('riftEK'),sv.get('riftMap')])
+    # 11) 자동 진행은 균열에 들어가지 않는다 · 반복 탭 카드
+    J("__g.S.autoQ=true;__g.autoNext&&__g.autoNext();__g.step(200,.05)");chk('자동 진행은 균열 안 들어감(균열이 열려 있어도)',J("__g.rift===null&&__g.MAPID==='rowen'&&__g.riftUp()"))
+    J("__g.S.autoQ=false;__g.cancelNav();__g.setQTab('rep');__g.step(20,.05)")
     rc=J("(()=>{const c=[...document.querySelectorAll('.qe')].find(e=>e.textContent.includes('시간의 균열'));if(!c)return null;const r=c.getBoundingClientRect();return {t:c.textContent,in:r.bottom<=innerHeight}})()")
-    chk('반복 탭: 입장 카드',rc and '입장' in rc['t'] and rc['in'],rc)
+    chk('반복 탭: 균열 카드(열림 · 남은 시간 · 입장)',rc and '입장' in rc['t'] and '열림' in rc['t'] and rc['in'],rc)
     pg.screenshot(path=f"{OUT}/rift437_rep.png")
+    # 12) 레벨대 연동: 열린 균열은 그대로 · 다음 균열부터 내 레벨대
+    J("__g.S.lv=25;__g.S.maps=['rowen','kardo']")
+    chk('열려 있는 균열은 레벨대가 바뀌어도 그대로(로웬 · 100)',J("__g.riftBaseMap()")=='kardo' and J("__g.riftZone()")=='z4' and J("__g.riftNeed()")==100)
+    R.open();st=J("({map:__g.S.riftMap,q:__g.S.riftQ,zone:__g.riftZone(),lv:__g.riftLv()})")
+    chk('새 균열: 카르도 레벨대(k3) · 분량 80 · 몬스터 Lv26',st=={'map':'kardo','q':80,'zone':'k3','lv':26},st)
+    R.enter();st=J("({base:__g.rift.base,lvs:[...new Set(__g.mobs.map(m=>m.lv))],sp:[...new Set(__g.mobs.map(m=>m.sp))].every(s=>__g.ZALL.k3.mobs.some(a=>a[0]===s)),of:__g.rift.of,reg:__g.MAP_REG?__g.MAP_REG.rift:null})")
+    chk('입장: 카르도 종 · 전부 Lv26 · 들어온 지역은 로웬 그대로',st['base']=='k3' and st['lvs']==[26] and st['sp'] and st['of']=='rowen',st)
+    R.leave();J("__g.S.lv=40;__g.S.maps=['rowen','kardo','erna']");R.open()
+    chk('Lv40(최고 레벨): 에르나 레벨대 · 분량 65 · 몬스터 Lv41',J("({map:__g.S.riftMap,q:__g.S.riftQ,lv:__g.riftLv()})")=={'map':'erna','q':65,'lv':41})
     chk('JS 오류 없음',not errs,errs[:3])
     b.close()
 print(f"{sum(res)}/{len(res)}");sys.exit(0 if all(res) else 1)

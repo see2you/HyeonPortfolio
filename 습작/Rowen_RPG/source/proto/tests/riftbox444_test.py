@@ -1,5 +1,6 @@
-"""v4.44 균열 상자를 병목에 닿게(#3-4d): 정예 상자에 장비 1개 확정(지역별 등급 표 · 영웅/전설 확률) · 부위는 못 채운 컬렉션 칸 우선
-   · 이미 만난 지역 보스의 전용 장비 30%(컬렉션에 없는 것 먼저) · 만난 보스가 없으면 없음 · 표 아래 상자 안내 · 버전 v4.44"""
+"""v4.44 균열 상자를 병목에 닿게(#3-4d) — v4.47: 상자는 균열의 주인(한 판에 하나)이 준다
+   상자에 장비 1개 확정(레벨대별 등급 표 · 영웅/전설 확률) · 부위는 못 채운 컬렉션 칸 우선
+   · 이미 만난 지역 보스의 전용 장비 30%(컬렉션에 없는 것 먼저) · 만난 보스가 없으면 없음 · 표 아래 상자 안내"""
 import sys,os
 from playwright.sync_api import sync_playwright
 from rift_util import paths,boot,Rift
@@ -29,22 +30,23 @@ with sync_playwright() as p:
     # 등록할 사본이 이미 있는 b6a · b6b는 뒤로
     pick=J("""(()=>{const g=__g,S=g.S;S.items.push(g.newBU('b6a'),g.newBU('b6b'));const s=new Set();for(let i=0;i<300;i++)s.add(g.riftBoxBU().id);S.items=S.items.filter(x=>!x.bu);return [...s].sort()})()""")
     chk('사본 가진 b6a · b6b 제외 → b10 · b12만',pick==['b10a','b10b','b12a','b12b'],pick)
-    # 균열 입장 · 정예 처치(낮은 굴림 = 영웅 · 보스 전용)
+    # 균열 입장 · 균열의 주인 처치(낮은 굴림 = 영웅 · 보스 전용) — 상자 굴림만 여러 번 보려고 균열이 닫히지 않게 한다(rift.clear를 잠깐 세워 riftClear를 건너뜀)
     R.enter();J("__g.step(10,.05);__g.mobs.forEach(m=>m.atk=0)")
     chk('균열 입장',J("!!__g.rift&&__g.riftIn()"))
-    lo=J("""(()=>{const g=__g,S=g.S;S.items=S.items.filter(i=>g.isEq(i));const m=g.riftElite();const n0=S.items.length;const R=Math.random;Math.random=()=>0.001;m.hp=1;g.killMob(m);Math.random=R;
+    lo=J("""(()=>{const g=__g,S=g.S;S.items=S.items.filter(i=>g.isEq(i));const m=g.riftElite();const n0=S.items.length;const R=Math.random;Math.random=()=>0.001;g.rift.clear=1;m.hp=1;g.killMob(m);g.rift.clear=0;Math.random=R;
       const nw=S.items.slice(n0);return {n:nw.length,hero:nw.filter(i=>!i.bu&&i.g===3).length,bu:nw.filter(i=>i.bu).map(i=>i.bu),rb:g.rift.bu,bg:g.rift.boxG,t:nw.filter(i=>i.g===3).map(i=>i.t)}})()""")
     chk('낮은 굴림: 영웅 장비 1 · 로웬 보스 전용 1',lo['hero']>=1 and len(lo['bu'])==1 and lo['bu'][0][:3] in ('b6a','b6b','b10','b12') and lo['rb']==1 and lo['bg']==3,lo)
     msg=J("[...document.querySelectorAll('.toast,#toasts div,.banner')].map(e=>e.textContent).join(' | ')")
     chk("상자 알림에 '영웅' · '★'",'영웅' in msg and '★' in msg,msg[-200:])
     pg.screenshot(path=f"{OUT}/riftbox444_box.png")
-    hi=J("""(()=>{const g=__g,S=g.S;S.items=S.items.filter(i=>g.isEq(i));const m=g.riftElite();const n0=S.items.length;const R=Math.random;Math.random=()=>0.99;m.hp=1;g.killMob(m);Math.random=R;
+    hi=J("""(()=>{const g=__g,S=g.S;S.items=S.items.filter(i=>g.isEq(i));const m=g.riftElite();const n0=S.items.length;const R=Math.random;Math.random=()=>0.99;g.rift.clear=1;m.hp=1;g.killMob(m);g.rift.clear=0;Math.random=R;
       const nw=S.items.slice(n0);return {n:nw.length,g:nw.map(i=>i.g),bu:nw.filter(i=>i.bu).length,rb:g.rift.bu}})()""")
     chk('높은 굴림: 희귀 장비 1 · 보스 전용 없음',hi['n']==1 and hi['g']==[2] and hi['bu']==0 and hi['rb']==1,hi)
     # 1000 상자 몬테카를로(가방 비우며): 영웅 ≈25% · 보스 전용 ≈30%
-    bm=J("""(()=>{const g=__g,S=g.S;let h=0,bu=0,N=1000;for(let i=0;i<N;i++){S.items=S.items.filter(x=>g.isEq(x));const m=g.riftElite();const n0=S.items.length;m.hp=1;g.killMob(m);const nw=S.items.slice(n0);if(nw.some(x=>!x.bu&&x.g===3))h++;if(nw.some(x=>x.bu))bu++;S.stone=0;S.bag={};}return {h:h/N,bu:bu/N}})()""")
+    bm=J("""(()=>{const g=__g,S=g.S;let h=0,bu=0,N=1000;for(let i=0;i<N;i++){S.items=S.items.filter(x=>g.isEq(x));const m=g.riftElite();const n0=S.items.length;g.rift.clear=1;m.hp=1;g.killMob(m);g.rift.clear=0;const nw=S.items.slice(n0);if(nw.some(x=>!x.bu&&x.g===3))h++;if(nw.some(x=>x.bu))bu++;S.stone=0;S.bag={};}return {h:h/N,bu:bu/N}})()""")
     chk('상자 1000: 영웅 25% ±5%p · 보스 전용 30% ±5%p',abs(bm['h']-.25)<.05 and abs(bm['bu']-.30)<.05,bm)
-    J("__g.riftEnd('out')")
+    chk('굴림 시험 뒤에도 균열은 열려 있다(닫기를 건너뜀)',J("__g.riftUp()&&!!__g.rift&&!__g.rift.clear"))
+    J("__g.S.riftEP=0;__g.riftEnd('out')")
     msg=J("[...document.querySelectorAll('.toast,#toasts div,.banner')].map(e=>e.textContent).join(' | ')");R.wait_out();J("__g.step(5,.05)")
     chk("나갈 때 요약에 '보스 전용 +'",'보스 전용 +' in msg,msg[-200:])
     # 표 아래 안내

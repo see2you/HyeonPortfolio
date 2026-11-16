@@ -1,5 +1,6 @@
-"""v4.41 (v4.46 전용 공간에 맞춰 고침 — 기록의 키는 딸린 사냥터 z4 그대로) 균열 보상 표: 처치당 기대값(강화석 · 도면 · 비법서 · 상자) × 분당 처치(내 기록 1분 이상 / 예상 RIFT.kpm)
-   · 균열 창(메뉴 ⧗) 지역별 표 3줄(현재 지역 강조 · 잠긴 지역 흐리게) · 표석 · 균열 줄에 '기대' 한 줄 · 기록 저장 · 1280×720 화면 안 · 버전 v4.41"""
+"""v4.41 균열 보상 표 — v4.46 전용 공간 · v4.47 한 판짜리 균열에 맞춰 고침(60분 기준 → 한 판 기준 · 기록의 키는 딸린 사냥터 z4 그대로)
+   처치당 기대값(강화석 · 도면 · 비법서 · 상자 몫 1/분량) × 한 판 분량(레벨대별 100 · 80 · 65) · 분당 처치(내 기록 1분 이상 / 예상 RIFT.kpm) → 한 판에 걸리는 시간
+   · 균열 창(메뉴 ⧗) 레벨대별 표 3줄(지금 레벨대 강조 · 잠긴 레벨대 흐리게) · 표석 · 균열 줄에 '기대' 한 줄 · 기록 저장 · 1280×720 화면 안"""
 import sys,os
 from playwright.sync_api import sync_playwright
 from rift_util import paths,boot,Rift
@@ -8,15 +9,16 @@ res=[];chk=lambda n,c,v='':(res.append(bool(c)),print(('PASS ' if c else 'FAIL '
 with sync_playwright() as p:
     b,pg,errs=boot(p,HTML);R=Rift(pg);J=R.J  # v4.46: 개방 스토리를 지난 상태(S.riftKey)로 시작 · 들어가기/나가기는 맵 이동을 기다린다
     chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
-    J("__g.S.autoQ=false;__g.S.lv=12;__g.S.riftT=3600;__g.step(5,.05)")
+    J("__g.S.autoQ=false;__g.S.lv=12;__g.step(5,.05)")
     # 1) 처치당 기대값 공식 대조 (안개 호숫가 z4)
-    e=J("(()=>{const g=__g,E=g.riftExp('z4'),Z=g.ZALL.z4,R=g.RIFT;let w=0,sn=0;for(const [sp,l0,l1,n] of Z.mobs){w+=n;sn+=n*Math.ceil(g.tierOfLv(l1+R.lvUp)/2);}sn/=w;return {E,sn,st:R.stoneP*sn+(R.box.stone(1))/R.eN,dsg:.06*R.dsgK+1/R.eN,rcp:R.rcp[1][1]+1/R.eN}})()")
+    e=J("(()=>{const g=__g,E=g.riftExp('z4'),Z=g.ZALL.z4,R=g.RIFT;let w=0,sn=0;for(const [sp,l0,l1,n] of Z.mobs){w+=n;sn+=n*Math.ceil(g.tierOfLv(g.riftLv())/2);}sn/=w;const N=g.riftNeed();return {E,sn,N,st:R.stoneP*sn+(R.box.stone(1))/N,dsg:.06*R.dsgK+1/N,rcp:R.rcp[1][1]+1/N}})()")
     E=e['E']
     chk('기록 없음 → 예상 처치 속도(RIFT.kpm) 사용',not E['mine'] and E['kpm']==J("__g.RIFT.kpm.z4"),E['kpm'])
     chk('처치당 강화석 = stoneP×⌈단계/2⌉ + 상자 몫',abs(E['pk']['stone']-e['st'])<1e-9,(E['pk']['stone'],e['st']))
     chk('처치당 도면 · 비법서 = 확률 + 상자 몫',abs(E['pk']['dsg']-e['dsg'])<1e-9 and abs(E['pk']['rcp']-e['rcp'])<1e-9)
     chk('분당 강화석 = 처치당 × 분당 처치',abs(E['stoneM']-E['pk']['stone']*E['kpm'])<1e-9)
-    chk('60분 상자 = 60 × 분당 처치 / 150',abs(E['boxH']-60*E['kpm']/150)<1e-9,E['boxH'])
+    chk('한 판 = 분량(로웬 100): 걸리는 시간 = 분량 / 분당 처치 · 한 판 강화석 = 처치당 × 분량 · 상자 몫 = 1/분량',e['N']==100 and E['n']==100 and abs(E['runMin']-100/E['kpm'])<1e-9 and abs(E['runStone']-E['pk']['stone']*100)<1e-9 and abs(E['pk']['box']-1/100)<1e-9,[E['runMin'],E['runStone']])
+    Ek=J("__g.riftExp('k3')");chk('다른 레벨대는 그 레벨대의 분량(카르도 80 · 에르나 65)',Ek['n']==80 and J("__g.riftExp('e3').n")==65 and abs(Ek['pk']['box']-1/80)<1e-9,Ek['n'])
     chk('보통 사냥보다 강화석이 많다(×2 이상)',E['x']>=2,E['x'])
     for z in ('k3','e3'):
         Ez=J(f"__g.riftExp('{z}')");chk(f'{z}: 단계가 높을수록 처치당 강화석 ↑',Ez['pk']['stone']>E['pk']['stone'],Ez['pk']['stone'])
@@ -28,10 +30,10 @@ with sync_playwright() as p:
         box:[box.left,box.right,box.bottom],sw:t.scrollWidth,cw:t.parentElement.clientWidth,btn:btn&&[btn.bottom,btn.right]}})()""")
     chk('균열 창: 지역별 표 3줄 · 열 9개',tb and tb['n']==3 and tb['hd']==9,tb)
     chk('현재 지역(로웬) 줄 강조 · 다른 맵은 잠김(흐림)',tb['cur']==[True,False,False] and tb['lk']==[False,True,True],(tb['cur'],tb['lk']))
-    chk('첫 줄 값: 분당 처치 · 강화석 ×N',tb['c0'][2].startswith(str(J("__g.RIFT.kpm.z4"))+'.0') and tb['c0'][8].startswith('보통의 ×'),tb['c0'])
+    chk('첫 줄 값: 한 판 분량 · 분당 처치 · 한 판 강화석 · 강화석 ×N',tb['c0'][2]=='100마리 · '+str(J("__g.RIFT.kpm.z4"))+'.0' and tb['c0'][3]==str(round(E['runStone'])) and tb['c0'][8].startswith('보통의 ×') and tb['c0'][1].startswith('지금 · Lv 13'),tb['c0'])
     chk('표가 1280×720 화면 안 · 가로 넘침 없음',tb['box'][0]>=0 and tb['box'][1]<=1280 and tb['box'][2]<=720 and tb['sw']<=tb['cw']+1,tb)
     chk('[닫기] 버튼 화면 안',tb['btn'] and tb['btn'][0]<=720 and tb['btn'][1]<=1280,tb['btn'])
-    row=J("document.querySelector('.si.rift .rx').textContent");chk("균열 줄에 '기대 · 분당 처치 … (예상)'",'기대' in row and '(예상)' in row and '/분' in row,row)
+    row=J("document.querySelector('.si.rift .rx').textContent");chk("균열 줄에 '기대 · 분당 처치 … (예상) · 한 판 약 n분'",'기대' in row and '(예상)' in row and '한 판 약 5.0분' in row,row)
     pg.screenshot(path=f"{OUT}/riftexp441_table.png")
     J("__g.closeModal&&__g.closeModal()")
     # 3) 균열 안 기록: 시간 · 처치

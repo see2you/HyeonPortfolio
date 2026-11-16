@@ -1,7 +1,8 @@
-"""v4.38 균열 정예 · 균열 상자 — v4.46 전용 공간에 맞춰 고침
-   균열 안 처치 150마다 정예(가장 높은 종 Lv+3 · 체력 ×5) · 카운트 누적(나가도 유지) · 균열 밖 처치는 안 셈 · 정예는 재생성 안 함
-   · 처치 시 상자(강화석 4+2r · 도면 1 · 비법서 1 · 파편 5) · 나갔다 오면 남은 정예 다시 등장 · 균열 HUD '정예까지 N' / '균열의 주인 등장!'"""
-import sys,os
+"""v4.38 균열 정예 · 균열 상자 → v4.47 균열의 주인(한 판의 끝)에 맞춰 다시 씀
+   한 판 분량(로웬 100)을 다 잡으면 균열의 주인(들어올 때의 내 레벨 +3 · 체력 ×5) · 처치 수는 균열이 열려 있는 동안 유지(나가도) · 균열 밖 처치는 안 셈
+   · 주인은 사냥 중인 플레이어 곁에 · 나갔다 오면 입구 앞 빈터에 주인만 다시 · 처치 시 상자(강화석 4+2r · 도면 1 · 비법서 1 · 파편 5) + 균열 종료 → 포탈 연출(열림 → 빨려 들어감 → 월드 도착)
+   · 균열 HUD '처치 n / 100' → '균열의 주인 등장!' → '포탈이 열린다…' · 위쪽 ⧗ 표시 '주인 m:ss' · 획득 기록 출처"""
+import sys,os,json
 from playwright.sync_api import sync_playwright
 from rift_util import paths,boot,Rift
 HTML,OUT=paths()
@@ -9,50 +10,69 @@ res=[];chk=lambda n,c,v='':(res.append(bool(c)),print(('PASS ' if c else 'FAIL '
 with sync_playwright() as p:
     b,pg,errs=boot(p,HTML);R=Rift(pg);J=R.J
     chk('버전 v4.x',J("document.getElementById('verTag').textContent").startswith('v4.'))
-    J("__g.S.lv=12;__g.S.autoQ=false;__g.S.hpPot=20;__g.step(3,.05)");R.enter()
+    J("__g.S.lv=12;__g.S.autoQ=false;__g.S.hpPot=20;__g.step(3,.05)")
+    J("(()=>{const g=__g,c=g.ZONES.z1.c;g.player.x=c[0];g.player.y=c[1];g.snap();})()");p0=J("[Math.round(__g.player.x),Math.round(__g.player.y)]")
+    R.enter()
     chk('입장',J("!!__g.rift&&__g.riftIn()"))
-    chk('처음: 정예까지 150',J("__g.riftLeft()")==150)
-    KILL="""(n=>{const g=__g;for(let i=0;i<n;i++){const m=g.mobs.find(x=>x.rift&&!x.riftBoss&&!x.dead)||g.mobs.find(x=>x.rift&&!x.riftBoss);m.dead=false;m.hp=1;g.killMob(m);}})"""
-    J(KILL+"(149)")
-    chk('149처치: 정예 없음 · 남은 1',J("!__g.riftEliteOf()&&__g.riftLeft()===1"),J("__g.riftLeft()"))
+    chk('처음: 주인까지 100',J("__g.riftLeft()")==100)
+    k=R.kill(99)
+    chk('99처치: 주인 없음 · 남은 1',k==99 and J("!__g.riftEliteOf()&&__g.riftLeft()===1&&!__g.riftPend()"),[k,J("__g.riftLeft()")])
     hud=J("(()=>{__g.riftHud();return document.getElementById('rhE').textContent})()")
-    chk("균열 HUD: '처치 149 · 정예까지 1'",'149' in hud and '정예까지 1' in hud,hud)
-    R.leave();chk('나가도 카운트 유지',J("__g.riftLeft()")==1)
-    # 균열 밖 처치는 안 셈
+    chk("균열 HUD: '처치 99 / 100'",hud=='처치 99 / 100',hud)
+    R.leave();chk('나가도 처치 수 유지(균열이 열려 있는 동안)',J("__g.riftLeft()")==1 and J("__g.riftUp()"))
     J("(()=>{const m=__g.mobs.find(x=>x.zone==='z1'&&!x.dead);__g.killMob(m)})()")
     chk('균열 밖 처치는 세지 않음',J("__g.riftLeft()")==1)
-    J("__g.S.riftT=900");R.enter()
-    J("(()=>{const c=__g.ZONES.rz.c;__g.player.x=c[0];__g.player.y=c[1];})()");J(KILL+"(1)")  # 사냥 구역 한가운데에서 150번째 처치
-    e=J("(()=>{const m=__g.riftEliteOf();if(!m)return null;const top=Math.max(...__g.ZALL.z4.mobs.map(a=>a[2]));const n=__g.mobs.find(x=>x.rift&&!x.riftBoss&&x.lv===m.lv-2);const Z=__g.ZONES.rz,d=Math.hypot(m.x-__g.player.x,m.y-__g.player.y);return {lv:m.lv,top,nm:m.name,hp:m.max,nhp:n?n.max:0,dead:m.dead,left:__g.riftLeft(),hm:__g.hunt&&__g.hunt.mob===m,d:Math.round(d),inZ:m.x>=Z.r[0]&&m.x<=Z.r[2]&&m.y>=Z.r[1]&&m.y<=Z.r[3],zone:m.zone}})()")
-    chk('150번째: 정예 출현 · Lv 최고+3 · 이름 · 카운트 0',e and e['lv']==e['top']+3 and e['nm'].startswith('균열의 주인') and not e['dead'] and e['left']==150,e)
-    chk('정예 체력 ≈ ×5 (같은 Lv 일반 대비 큼)',e and e['hp']>0 and (not e['nhp'] or e['hp']>e['nhp']*3),e)
-    chk('정예는 사냥 중인 플레이어 곁(90~150)에 나타난다 · 사냥 구역 안',e and 85<=e['d']<=155 and e['inZ'] and e['zone']=='rz',e)
-    chk('자동 사냥이 정예를 노림',e and e['hm'],e)
+    R.enter();chk('다시 들어오면 남은 1마리만 나온다',J("__g.mobs.length")==1 and J("__g.rift.left")==0)
+    J("(()=>{const g=__g,c=g.ZONES.rz.c,m=g.mobs[0];g.player.x=c[0];g.player.y=c[1];m.x=c[0]+20;m.y=c[1];})()");R.kill(1)  # 사냥 구역 한가운데에서 100번째 처치
+    e=J("(()=>{const m=__g.riftEliteOf();if(!m)return null;const Z=__g.ZONES.rz,d=Math.hypot(m.x-__g.player.x,m.y-__g.player.y),n=__g.mobStats?__g.mobStats(m.lv):null;return {lv:m.lv,rl:__g.rift.lv,nm:m.name,hp:m.max,nhp:n&&n.hp,dead:m.dead,left:__g.riftLeft(),ek:__g.S.riftEK,pend:__g.riftPend(),hm:__g.hunt&&__g.hunt.mob===m,d:Math.round(d),inZ:m.x>=Z.r[0]&&m.x<=Z.r[2]&&m.y>=Z.r[1]&&m.y<=Z.r[3],zone:m.zone,fa:m.fa,rfa:__g.rift.fa}})()")
+    chk('100번째: 균열의 주인 등장 · Lv = 들어올 때의 내 레벨 +3(균열 몬스터 +2) · 이름 · 처치 수 100(가득)',e and e['lv']==e['rl']+2 and e['nm'].startswith('균열의 주인') and not e['dead'] and e['left']==0 and e['ek']==100 and e['pend'],e)
+    chk('주인 체력: 같은 Lv 보통 몬스터의 ×3 이상',e and e['hp']>0 and (not e['nhp'] or e['hp']>e['nhp']*3),e)
+    chk('주인은 사냥 중인 플레이어 곁(90~150)에 나타난다 · 사냥 구역 안',e and 85<=e['d']<=155 and e['inZ'] and e['zone']=='rz',e)
+    chk('자동 사냥이 주인을 노림 · 신앙 요구치는 균열의 것',e and e['hm'] and e['fa']==e['rfa'],e)
     J("__g.step(4,.05)")
     hud=J("(()=>{__g.riftHud();const e=document.getElementById('rhE');return {t:e.textContent,on:e.classList.contains('on')}})()")
     chk("균열 HUD: '균열의 주인 등장!' 강조",'등장' in hud['t'] and hud['on'],hud)
     J("(()=>{const m=__g.riftEliteOf();__g.player.x=m.x-30;__g.player.y=m.y+10;return 1})()")
     J("__g.step(30,.05);__g.render()");pg.screenshot(path=f"{OUT}/rift438_elite.png")
-    # 나갔다 오면 다시 등장
-    R.leave();chk('나가면 정예는 대기(S.riftEP) · 밖에는 정예 없음',J("__g.S.riftEP.z4===1&&!__g.mobs.some(m=>m.riftBoss)"))
-    J("__g.S.riftT=900");R.enter();J("__g.step(40,.05)")
-    chk('다시 들어오면 남은 정예 다시 등장(하나뿐)',J("!!__g.riftEliteOf()&&!__g.riftEliteOf().dead&&__g.mobs.filter(m=>m.riftBoss).length===1"))
-    gp=J("(()=>{const m=__g.riftEliteOf(),Z=__g.ZONES.rz,gx=Z.c[0],gy=Z.r[3]-95;return {d:Math.round(Math.hypot(m.home.x-gx,m.home.y-gy)),near:__g.mobs.filter(x=>!x.riftBoss&&Math.hypot(x.home.x-gx,x.home.y-gy)<110).length}})()")
-    chk('다시 들어왔을 때 정예 자리 = 사냥 구역 입구 앞 빈터(주변에 몬스터 자리 없음)',gp['d']<=2 and gp['near']==0,gp)
-    bx=J("""(()=>{const g=__g,S=g.S,m=g.riftEliteOf();const s0=S.stone,sh0=S.shard,r0=g.cnt('rcp2'),d0=['dw1','da1','dc1'].reduce((a,k)=>a+g.cnt(k),0),b0=S.riftBox||0;const R=Math.random;Math.random=()=>0.99;m.hp=1;g.killMob(m);Math.random=R;
-      return {st:S.stone-s0,sh:S.shard-sh0,rcp:g.cnt('rcp2')-r0,dsg:['dw1','da1','dc1'].reduce((a,k)=>a+g.cnt(k),0)-d0,box:(S.riftBox||0)-b0,resp:m.respawn,left:g.riftLeft(),rb:g.rift.box}})()""")
+    # 나갔다 오면 주인만 다시 등장
+    R.leave();chk('나가면 주인은 대기(S.riftEP) · 밖에는 주인 없음',J("__g.S.riftEP===1&&__g.riftPend()&&!__g.mobs.some(m=>m.riftBoss)"))
+    J("__g.step(25,.05)");ch=J("(()=>{__g.riftChip();return document.getElementById('rcT').textContent})()");chk("위쪽 ⧗ 표시: '주인 m:ss'",ch.startswith('주인 '),ch)
+    J("__g.openWay()");pg.wait_for_timeout(80);row=J("(()=>{const r=document.querySelector('.si.rift');return r?r.textContent:null})()")
+    chk('표석 줄: 균열의 주인이 기다린다',row and '균열의 주인이 기다린다' in row,row);J("__g.closeModal()")
+    R.enter();J("__g.step(40,.05)")
+    chk('다시 들어오면 주인만 다시 등장(하나뿐 · 다른 몬스터 없음)',J("!!__g.riftEliteOf()&&!__g.riftEliteOf().dead&&__g.mobs.filter(m=>m.riftBoss).length===1&&__g.mobs.filter(m=>!m.riftBoss&&!m.dead).length===0"))
+    gp=J("(()=>{const m=__g.riftEliteOf(),Z=__g.ZONES.rz,gx=Z.c[0],gy=Z.r[3]-95;return {d:Math.round(Math.hypot(m.home.x-gx,m.home.y-gy))}})()")
+    chk('다시 들어왔을 때 주인 자리 = 사냥 구역 입구 앞 빈터',gp['d']<=2,gp)
+    bx=J("""(()=>{const g=__g,S=g.S,m=g.riftEliteOf();g.player.x=m.x-40;g.player.y=m.y+30;const s0=S.stone,sh0=S.shard,r0=g.cnt('rcp2'),d0=['dw1','da1','dc1'].reduce((a,k)=>a+g.cnt(k),0),b0=S.riftBox||0;const R=Math.random;Math.random=()=>0.99;m.hp=1;g.killMob(m);Math.random=R;
+      return {st:S.stone-s0,sh:S.shard-sh0,rcp:g.cnt('rcp2')-r0,dsg:['dw1','da1','dc1'].reduce((a,k)=>a+g.cnt(k),0)-d0,box:(S.riftBox||0)-b0,resp:m.respawn,rb:g.rift.box,clear:g.rift.clear,ep:S.riftEP,T:S.riftOpenT,cd:S.riftCd,px:g.player.x,py:g.player.y}})()""")
     chk('균열 상자: 강화석 +6 · 도면 1 · 비법서 1 · 파편 5',bx['st']==6 and bx['dsg']==1 and bx['rcp']==1 and bx['sh']==5 and bx['box']==1 and bx['rb']==1,bx)
-    chk('정예는 재생성 안 함 · 정예 처치는 카운트에 안 듦',bx['resp']>=1e9 and bx['left']==150,bx)
-    J("__g.step(200,.05)");chk('10초 뒤에도 정예 없음',J("__g.riftEliteOf().dead"))
+    chk('주인 처치 = 균열 종료(다시 나오지 않음 · 대기 해제 · 다음 균열까지 15분)',bx['resp']>=1e9 and bx['clear']==1 and bx['ep']==0 and bx['T']==0 and bx['cd']==900,bx)
     lg=J("JSON.stringify(__g.S.acqLog||__g.S.acq||'')")
-    chk('획득 기록에 균열 정예 출처','균열 정예' in lg,lg[:120])
-    J("__g.step(30,.05);__g.render()");pg.screenshot(path=f"{OUT}/rift438_box.png")
-    J("__g.save()");sv=J("JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>localStorage.getItem(k).includes('riftT'))))")
-    chk('세이브: 카운트 · 상자 수',sv.get('riftBox')==1 and 'riftEK' in sv,[sv.get('riftBox'),sv.get('riftEK')])
-    chk('세이브: 균열 안에서 저장해도 맵 · 자리는 들어오기 전 것',sv.get('map')=='rowen',sv.get('map'))
-    R.leave();J("__g.openWay()");pg.wait_for_timeout(80)
+    chk('획득 기록에 균열 상자 출처','균열 상자' in lg,lg[:120])
+    # 포탈 연출: 1.2초 뒤 플레이어 자리에 포탈 → 2.3초부터 빨려 들어감(작아짐) → 2.9초에 월드로
+    J("__g.step(10,.05)");chk('연출 0.5초: 아직 포탈 전 · 조작 잠금(움직이지 않음)',J("__g.pCine===null&&__g.t<__g.cineT&&!!__g.rift"))
+    J("__g.S.autoQ=false;__g.player.moving=true;__g.step(2,.05)");chk('잠금 중에는 걷지 않는다',J("!__g.player.moving") and abs(J("__g.player.x")-bx['px'])<1)
+    J("__g.step(16,.05)")
+    hud=J("(()=>{__g.riftHud();return {e:document.getElementById('rhE').textContent,t:document.getElementById('rhT').textContent,ban:document.getElementById('banT').textContent}})()")
+    chk("연출 1.4초: 배너 '균열이 닫힌다' · HUD '포탈이 열린다…' · 시간 '닫힘'",'균열이 닫힌다' in hud['ban'] and '포탈' in hud['e'] and hud['t']=='닫힘',hud)
+    J("__g.render()");pg.screenshot(path=f"{OUT}/rift438_portal.png")
+    J("__g.step(22,.05)");pc=J("__g.pCine&&{dir:__g.pCine.dir,dur:__g.pCine.dur}")
+    chk('연출 2.5초: 플레이어가 포탈로 빨려 들어가는 중(크기 줄어듦)',pc and pc['dir']==-1 and 0<J("__g.pScale?__g.pScale():0.5")<1,pc)
+    J("__g.render()");pg.screenshot(path=f"{OUT}/rift438_portal_in.png")
+    J("__g.step(12,.05)");R.wait_out()
+    p1=J("[Math.round(__g.player.x),Math.round(__g.player.y)]");pc=J("__g.pCine&&__g.pCine.dir")
+    chk('월드 도착: 들어오기 전 자리 · 포탈에서 걸어 나오는 중',J("__g.MAPID==='rowen'&&!__g.rift") and abs(p1[0]-p0[0])<=2 and abs(p1[1]-p0[1])<=2 and pc==1,[p0,p1,pc])
+    J("__g.render()");pg.screenshot(path=f"{OUT}/rift438_arrive.png")
+    J("__g.step(30,.05)")
+    m=J("({name:__g.modal&&__g.modal.name,sub:__g.modal&&__g.modal.sub,text:__g.modal&&__g.modal.text,sc:__g.pScale(),pc:__g.pCine})")
+    chk("도착 뒤 안내 팝업 '균열을 닫았다': 열린 지 m:ss 만에 · 얻은 것(균열 상자 1) · 다음 균열까지",m['name']=='균열을 닫았다' and '만에 닫았다' in m['sub'] and '균열 상자 1' in m['text'] and '다음 균열까지 14:5' in m['text'] and m['pc'] is None and m['sc']==1,m)
+    J("__g.render()");pg.wait_for_timeout(80);pg.screenshot(path=f"{OUT}/rift438_box.png")
+    J("__g.closeModal();__g.save()");sv=json.loads(J("localStorage.getItem('rowen-mmo-v4')"))
+    chk('세이브: 상자 수 · 닫은 횟수 · 다음 균열까지',sv.get('riftBox')==1 and sv.get('riftClr')==1 and sv.get('riftEK')==0 and 880<sv.get('riftCd')<=900,[sv.get('riftBox'),sv.get('riftClr'),sv.get('riftCd')])
+    chk('세이브: 맵 · 자리는 월드',sv.get('map')=='rowen',sv.get('map'))
+    J("__g.openWay()");pg.wait_for_timeout(80)
     row=J("(()=>{const r=document.querySelector('.si.rift');return r?r.textContent:null})()")
-    chk('표석 줄: 정예까지 N(상자 확정)',row and '정예까지 150' in row,row)
+    chk('표석 줄: 다음 균열까지 · 15분마다 열려 10분 유지',row and '다음 균열까지' in row and '15분마다' in row and '10분 유지' in row,row)
     pg.screenshot(path=f"{OUT}/rift438_way.png")
     chk('JS 오류 없음',not errs,errs[:3])
     b.close()

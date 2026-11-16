@@ -1,6 +1,6 @@
-"""v4.39 균열 안 표시 — v4.46 전용 공간에 맞춰 고침
+"""v4.39 균열 안 표시 — v4.46 전용 공간 · v4.47 한 판짜리 균열에 맞춰 고침
    전용 맵의 보라 하늘 · 안개(맵 값) · 화면 가장자리 보라 그늘 · 균열 몬스터 보랏빛 재질 · 미니맵(전용 맵 확대 · 균열 몬스터 보라 점)
-   · 균열 HUD(이름 · 남은 시간) · 메뉴 '균열' 버튼(잠김 → 안내 · 가득 점 · 입장 · 안에 있음) · 메뉴 팝업 화면 안 · 나가면 원래대로"""
+   · 균열 HUD(이름 · Lv · 남은 유지 시간) · 메뉴 '균열' 버튼(잠김 → 안내 · 열려 있는 동안 점 · 입장 · 안에 있음 · 닫힌 동안 다음 균열까지) · 메뉴 팝업 화면 안 · 나가면 원래대로"""
 import sys,os
 from playwright.sync_api import sync_playwright
 from rift_util import paths,boot,Rift
@@ -21,9 +21,9 @@ with sync_playwright() as p:
     # 미니맵의 보라 점(균열 몬스터 색) 수 — 지역 맵에는 없다
     PUR="""(()=>{const c=document.getElementById('mini'),d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;let n=0;for(let i=0;i<d.length;i+=4)if(d[i]>150&&d[i]<215&&d[i+1]>105&&d[i+1]<170&&d[i+2]>225)n++;return n})()"""
     J("__g.render&&__g.render()");px0=J(PUR)
-    J("__g.S.lv=12;__g.S.riftKey=1;__g.S.riftT=3600;__g.step(25,.05)")
+    J("__g.S.lv=12;__g.S.riftKey=1;__g.step(25,.05)")
     st=J("(()=>{const b=document.getElementById('bRift');return {lock:b.classList.contains('lock'),dot:b.classList.contains('dot'),t:b.title}})()")
-    chk('스토리 + Lv12 · 60:00 가득: 잠김 풀림 · 점 · 제목에 가득',not st['lock'] and st['dot'] and '가득' in st['t'],st)
+    chk('스토리를 지나면: 잠김 풀림 · 열려 있는 동안 점 · 제목에 열려 있다 · 뒤 닫힌다',not st['lock'] and st['dot'] and '열려 있다' in st['t'] and '뒤 닫힌다' in st['t'],st)
     chk('메뉴 버튼 점이 메뉴(☰)에도',J("document.getElementById('bMenu').classList.contains('dot')"))
     J("document.getElementById('bRift').click()");pg.wait_for_timeout(80)
     row=J("(()=>{const r=document.querySelector('.si.rift');return r?r.textContent:null})()")
@@ -40,7 +40,7 @@ with sync_playwright() as p:
     bg=J("(()=>{const c=__g.scene.background;return [c.r,c.g,c.b]})()")
     chk('하늘 · 안개 색이 보라(파랑 > 초록 · 로웬 하늘과 다름)',bg[2]>bg[1] and abs(bg[1]-hz0[1])>.05,[bg,hz0])
     hd=J("(()=>{__g.riftHud();const h=document.getElementById('riftHud');return {vis:!h.hidden,n:document.getElementById('rhN').textContent,t:document.getElementById('rhT').textContent,zt:document.getElementById('zoneT').textContent}})()")
-    chk('균열 HUD: ⧗ 로웬 시간의 균열 · 남은 시간 / 지역 이름 줄',hd['vis'] and '⧗' in hd['n'] and '시간의 균열' in hd['n'] and ':' in hd['t'] and '균열' in hd['zt'],hd)
+    chk('균열 HUD: ⧗ 시간의 균열 · Lv · 남은 유지 시간 / 지역 이름 줄',hd['vis'] and '⧗' in hd['n'] and '시간의 균열 · Lv 13' in hd['n'] and ':' in hd['t'] and '균열' in hd['zt'],hd)
     J("__g.render()");mt=J("(()=>{const rs=__g.mobs.filter(m=>m.rift&&!m.dead&&m.mesh.visible);return {r:rs.length,rt:rs.every(m=>m.mesh.userData.tint&&m.mesh.material===__g.matOfR(m.mesh.userData.img)),all:__g.mobs.every(m=>m.rift)}})()")
     chk('균열 몬스터 보랏빛 재질 · 전용 맵에는 균열 몬스터뿐',mt['r']>0 and mt['rt'] and mt['all'],mt)
     px1=J(PUR);chk('미니맵: 전용 맵 확대 · 균열 몬스터 보라 점',px1>px0+20 and J("!!__g.MAPS.rift.mini"),[px0,px1])
@@ -57,6 +57,9 @@ with sync_playwright() as p:
     chk('나가면 균열 HUD 숨김 · 지역 이름에 균열 없음',J("document.getElementById('riftHud').hidden") and ('균열' not in J("document.getElementById('zoneT').textContent")))
     J("__g.render&&__g.render()");px2=J(PUR)
     chk('나가면 지역 미니맵에 균열 표시 없음 · 옛 사냥터에 균열 몬스터 없음',px2<=px0+3 and J("!__g.mobs.some(m=>m.rift)"),[px0,px2])
+    J("__g.riftClear&&0;__g.S.riftOpenT=0;__g.S.riftCd=600;__g.step(25,.05)")
+    st=J("(()=>{const b=document.getElementById('bRift');return {dot:b.classList.contains('dot'),t:b.title}})()")
+    chk('닫힌 동안: 메뉴 버튼 점 없음 · 제목에 다음 균열까지',not st['dot'] and '다음 균열까지' in st['t'],st)
     chk('JS 오류 없음',not errs,errs[:3])
     b.close()
 print(f"{sum(res)}/{len(res)}");sys.exit(0 if all(res) else 1)
