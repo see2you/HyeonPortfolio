@@ -1,4 +1,4 @@
-"""v4.52 G1-b2c1 (지시서 §G1) 원거리 원형 — 안개정령 · 불티나무 (동굴버섯 · 이끼돌정령 · 불꽃정령은 G1-b2c2)
+"""v4.52 G1-b2c1 · v4.53 G1-b2c2 (지시서 §G1) 원거리 원형 6종 — 들꽃요정 · 안개정령 · 불티나무 + 동굴버섯 · 이끼돌정령 · 불꽃정령(v4.53)
 1) 배정: MOB_B 원거리 = 들꽃요정 + 안개정령 · 불티나무 · 솜꼬리 들판(z1) 전부 근접 · 관문 정예/보스(동굴버섯 · 불티나무)는 원형 없음 · 원거리 체력 ×0.8(카르도 · 에르나)
 2) 투사체: 피해 = 근접 1타(방어 뒤) × RANGED.mul · 종별 속도(MOB_B.spd, 없으면 RANGED.spd)
 3) 레벨대마다(종의 사냥터 레벨 둘씩 · 불꽃정령은 불새 둥지까지 넷) 서 있기 60초 원거리 ÷ 근접 = 0.90~1.15 · 회피 0
@@ -10,7 +10,7 @@ sys.path.insert(0,os.path.dirname(__file__))
 from rng_probe452 import SP,measure,page,ARGS,HTML,SETUP_JS
 from multiprocessing import Pool
 os.makedirs('shots',exist_ok=True)
-RANGED_SP={'fairy','mist','embertree'}
+RANGED_SP={'fairy','mist','embertree','cavemush','mosswisp','flamewisp'}  # v4.53 G1-b2c2: 동굴버섯 · 이끼돌정령 · 불꽃정령 더함
 def job(sp):
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
@@ -29,11 +29,11 @@ if __name__=='__main__':
         r=pg.evaluate("""()=>{const g=__g;return {rng:Object.keys(g.MOB_B).filter(k=>g.MOB_B[k].b==='ranged'),z1:g.MAPS.rowen.zones.z1.mobs.map(x=>g.mobBeh({sp:x[0]})),
           boss:['cavemush','embertree'].map(sp=>[g.mobB({sp,boss:true}),g.mobB({sp,eliteOf:'q16'})]),mul:g.RANGED.mul,spd:g.RANGED.spd,sp:Object.fromEntries(Object.keys(g.MOB_B).map(k=>[k,g.MOB_B[k].spd||0]))};}""")
         print('  INFO',r)
-        chk(set(r['rng'])==RANGED_SP,'원거리 3종 %s'%sorted(r['rng']))
+        chk(set(r['rng'])==RANGED_SP,'원거리 6종 %s'%sorted(r['rng']))
         chk(all(x=='melee' for x in r['z1']),'솜꼬리 들판은 전부 근접')
         chk(all(a is None and c is None for a,c in r['boss']),'관문 정예 · 보스(동굴버섯 · 불티나무)는 원형 없음')
         pg.close()
-        for mid,sps in (('kardo',('mist',)),('erna',('embertree',))):
+        for mid,sps in (('kardo',('mist','cavemush','mosswisp')),('erna',('embertree','flamewisp'))):
             pg=page(b,errs,mid)
             k=pg.evaluate("(L)=>{const g=__g;return L.map(sp=>g.mobs.filter(m=>m.sp===sp&&!m.boss&&!m.eliteOf&&!m.rift).map(m=>m.max/g.mobStats(m.lv,false).hp));}",list(sps))
             chk(all(v and all(abs(x-.8)<.03 for x in v) for v in k),'%s 원거리 체력 ×0.8 %s'%(mid,[round(v[0],3) if v else None for v in k]))
@@ -46,7 +46,7 @@ if __name__=='__main__':
                 print('  INFO 한 발',d);chk(d['v']==r['sp']['mist'] and d['v']!=r['spd'],'종별 투사체 속도 (안개정령 %d)'%d['v'])
                 chk(d['b']>0 and abs(d['a']/d['b']-r['mul'])<.08,'투사체 피해 = 근접 1타 × %.2f (%.0f / %.0f)'%(r['mul'],d['a'],d['b']))
             pg.close()
-        want=os.environ.get('SP','').split(',') if os.environ.get('SP') else ['mist','embertree','fairy']
+        want=os.environ.get('SP','').split(',') if os.environ.get('SP') else ['mist','embertree','fairy','cavemush','mosswisp','flamewisp']
         with Pool(3) as pool:res=pool.map(job,want)
         table=[]
         for o in res:
@@ -55,7 +55,7 @@ if __name__=='__main__':
                 chk(.90<=rt<=1.15 and ev==0,'%s Lv%d 서 있기 예산 %.3f (0.90~1.15) · 회피 0'%(sp,lv,rt))
             A,B=o['A'],o['B'];ra,rb=A[0]/max(1,A[1]),B[0]/max(1,B[1]);al=(A[0]+B[0])/max(1,A[1]+B[1]);am=o['taken']/max(1,o['takenM'])
             table.append((sp,{k:round(v[0],3) for k,v in o['idle'].items()},round(ra,3),round(rb,3),round(al,3),o['mx'],round(am,2)))
-            chk(o['killed'],'%s 무리 모두 처치'%sp)
+            chk(o['killed'] and o.get('away',0)<=2,'%s 무리 모두 처치 (회피해 떠난 개체 %d ≤ 2)'%(sp,o.get('away',0)))
             chk(.20<=al<=.40,'%s 묶음 피격률 %.3f (A %.3f · B %.3f · 0.20~0.40)'%(sp,al,ra,rb))
             chk(abs(ra-rb)<=.15,'%s A/B 차 %.3f ≤ 0.15'%(sp,abs(ra-rb)))
             chk(am<1,'%s 자동 전투 피해 < 근접형 (%.2f)'%(sp,am))

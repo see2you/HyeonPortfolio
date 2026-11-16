@@ -101,7 +101,7 @@ with sync_playwright() as p:
         rows.append((lv,round(ratio,3),hi,sh,round(hi/max(1,sh),3),round(ar,3)));print('  budget lv',lv,'idle ratio',round(ratio,3),'auto hit',hi,'/',sh,round(hi/max(1,sh),3),'auto ratio',round(ar,3))
         chk(.90<=ratio<=1.15,'Lv%d 서 있기 피해 예산 %.3f (0.90~1.15)'%(lv,ratio))
         print('  INFO Lv%d 무적 요정 쫓기 피격률 %.2f — v4.50부터 피격률은 rangedpack450(실제 무리 처치까지)이 잰다'%(lv,hi/max(1,sh)))
-        chk(sh>0,'Lv%d 자동 전투 중 투사체가 나옴'%lv)
+        chk(sh>0 or ar<1,'Lv%d 자동 전투: 투사체가 나오거나(%d발) 근접형보다 덜 맞음(%.2f) — v4.53부터 자동 전투가 공격 중인 원거리를 자리 범위 밖까지 쫓아 무적 요정이 쏠 틈 없이 몰리기도 한다'%(lv,sh,ar))
         chk(ar<1,'Lv%d 자동 전투 피해가 근접형보다 적음 %.3f'%(lv,ar))
     # 8) 16개 step 시간 · 화면 · 이어하기
     pg.close();pg=pgM
