@@ -6,9 +6,9 @@ sys.path.insert(0,os.path.dirname(__file__))
 from rng_probe452 import page,ARGS,IDLE
 from fx_util import SETUP_JS
 from rng_util import PACK_JS
-SP={'obsidiancrab':('rowen',(14,15)),'obsidiancrab3':('erna',(35,36))}
-ZONE={'obsidiancrab':'z5','obsidiancrab3':'e3'}
-SPN=lambda k:k.rstrip('3')
+SP={'obsidiancrab':('rowen',(14,15)),'obsidiancrab3':('erna',(35,36)),'stonebeetle':('kardo',(21,22)),'rockcrab':('kardo',(22,23)),'snail':('kardo',(23,24)),'clam':('kardo',(24,25))}
+ZONE={'obsidiancrab':'z5','obsidiancrab3':'e3','stonebeetle':'k3','rockcrab':'k3','snail':'k3','clam':'k4'}
+SPN=lambda k:k[:-1] if k.endswith('3') else k
 GOPT=os.environ.get('GOPT')  # 조정용: '{"first":2}'처럼 GUARD에 덧붙여 잰다
 RST="(sp)=>{for(const e of __g.mobs)if(e.sp===sp){e.gdU=0;e.gdN=0;}__g.tele.length=0;}"
 HOOK={'basic':"window.__packHook=(L,g)=>{g.player.cd.fill(1e9);};",

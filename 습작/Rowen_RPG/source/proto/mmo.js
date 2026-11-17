@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.59';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.60';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -1453,7 +1453,7 @@ const BEHAV={
     if(ready&&dp<C.min){m.backT=(m.backT||0)+dt;if(m.backT<C.back){moveTo(m.x+(m.x-player.x),m.y+(m.y-player.y),54);return;}m.backT=0;m.chgCd=t+3;}/* 뒷걸음질로 거리를 벌린다 — 못 벌리면 근접 · 3초 뒤 다시 */
     BEHAV.melee.tick(m,dt,dp,moveTo);}},
   /* v4.58 방어 태세(G1-d): 싸움이 붙고 GUARD.first초 뒤부터 GUARD.cd초마다 GUARD.dur초 웅크림(공격 · 이동 안 함 · 받는 피해는 playerHit에서 평타 ×0.3 · 스킬 ×0.7). 휘두르던 공격(wind)은 끝낸 뒤 웅크린다 */
-  guard:{tick(m,dt,dp,moveTo){const G=GUARD;if(!m.gdN)m.gdN=t+G.first;
+  guard:{tick(m,dt,dp,moveTo){const G=GUARD;if(!m.gdN)m.gdN=t+((mobB(m)||{}).first||G.first);/* v4.60 종별 첫 웅크림 MOB_B[종].first */
     if(m.gdU>t)return;/* 웅크림 */
     if(t>=m.gdN&&m.wind<=0){m.gdU=t+G.dur;m.gdN=t+G.cd;STAT.guardN=(STAT.guardN||0)+1;return;}
     BEHAV.melee.tick(m,dt,dp,moveTo);}},
