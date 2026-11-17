@@ -128,9 +128,15 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .tgt .tn{font-family:var(--disp);font-weight:700}.tgt .tn small{font-family:var(--ui);font-weight:400;color:var(--mut);margin-right:.4em}
 .tgt .tn.boss{color:#ff9a7a}
 .tgt .bar{margin-top:.3em;height:calc(var(--u)*1.1)}
+.tgt .tinfo{margin-top:calc(var(--u)*.4);font-size:calc(var(--u)*1.02);line-height:1.3}
+.tgt .tic{display:flex;justify-content:center;gap:calc(var(--u)*.4);flex-wrap:nowrap}
+.tgt .tch{--c:#ddd;border:1px solid color-mix(in srgb,var(--c) 70%,transparent);color:var(--c);background:rgba(0,0,0,.35);border-radius:calc(var(--u)*.6);padding:0 calc(var(--u)*.5);white-space:nowrap}
+.tgt .tch.on{background:color-mix(in srgb,var(--c) 30%,rgba(0,0,0,.4));color:#fff;font-weight:700}
+.tgt .tdsc{margin-top:calc(var(--u)*.2);color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* 배너·토스트 */
 .banner{position:absolute;left:0;right:0;top:17%;text-align:center;pointer-events:none;opacity:0}
 .banner.show{animation:bin 3s ease forwards}
+/* v4.64 타깃 창(설명 줄 포함)이 떠 있으면 지역 이름 띠를 그 아래로 */body:has(#tgt:not([hidden])) .banner{top:27%}
 .banner .t{font-family:var(--disp);font-weight:700;font-size:calc(var(--u)*4);letter-spacing:.2em;color:#fff6e2;text-shadow:0 2px 0 rgba(20,10,30,.8),0 0 calc(var(--u)*2.4) rgba(255,190,120,.55)}
 .banner .s{display:block;margin-top:.3em;font-size:calc(var(--u)*1.6);letter-spacing:.3em;color:var(--gold2)}
 .banner.lv .t{color:#fff0a8;font-size:calc(var(--u)*5.2)}
@@ -413,7 +419,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
       <div class="chip panel fa" title="신앙"><em>신앙</em><span id="faT">0</span></div>
       <button class="chip panel rc" id="riftChip" type="button" hidden title="시간의 균열"><em>⧗ 균열</em><span id="rcT">15:00</span></button>
     </div>
-    <div class="tgt panel np" id="tgt" hidden><div class="tn" id="tgtN"></div><div class="bar" style="--c:#e0584a"><i id="tgtB"></i><b id="tgtT"></b></div></div>
+    <div class="tgt panel np" id="tgt" hidden><div class="tn" id="tgtN"></div><div class="bar" style="--c:#e0584a"><i id="tgtB"></i><b id="tgtT"></b></div><div class="tinfo" id="tgtI" hidden></div></div>
     <nav class="topmenu" aria-label="메뉴">
       <button class="tmb" id="bMenu" type="button" title="메뉴 (M)" aria-expanded="false" aria-controls="menuPop"><span class="ti">☰</span><span class="tl">메뉴</span><kbd>M</kbd></button>
       <div class="mpop panel" id="menuPop" hidden>
@@ -478,7 +484,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.63</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.64</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>

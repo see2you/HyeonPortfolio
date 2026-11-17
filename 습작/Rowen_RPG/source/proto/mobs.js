@@ -59,3 +59,14 @@ const GUARD={first:1.5,cd:6.5,dur:2.5,pre:.5,baK:.3,skK:.7};
 /* v4.59 자폭 원형(지시서 §G1 · G1-d2): 체력 at 이하에서 inf초 부풀기(원형 예고 반경 r) — 앞 (inf−lock)초는 creep/초로 플레이어 쪽으로 기어가고(예고가 따라감) 마지막 lock초는 멈춰 고정 →
    r 안이면 ×mul(방어 뒤) 후 스스로 쓰러짐(경험치 · 드롭 정상). 부풀기 중 처치하면 폭발 없음. 종마다 MOB_B[종].inf · lock · r로 덮어쓴다(돌진 lock과 같은 방식) */
 const BURST={at:.25,inf:1.5,lock:.77,r:46,mul:1,creep:34,dk:.5};/* v4.59 측정으로: lock .55 → .77(.70 이하는 자동 전투가 늘 맞고 .80 이상은 늘 피함 — 피격률 .37) · mul 1.8 → 1(서 있기 1.29 → 1.11~1.14) *//* dk = 부풀기 중 받는 피해 배율(단단해진 껍질) */
+/* v4.64 G1-e3 타깃 창 표시(지시서 §G1 '타깃 창에 그 몬스터의 원형 · 상태이상 아이콘' + 몬스터 설명 한 줄).
+   BDEF: 원형 → 이름 · 아이콘 · 색 · 동작(desc) · 대응법(how). 근접(melee)은 표시하지 않는다(지금까지와 같음 — 아이콘이 없으면 '평범한 근접형').
+   st = 지금 이 개체가 하고 있는 일(웅크림 · 부풀기 · 휘청 · 조준 · 돌진 예고)을 칩 옆에 잠깐 밝혀 준다. 수치는 위 표(RANGED · CHARGE · GUARD · BURST)에서 읽어 문구와 코드가 어긋나지 않게 한다. */
+const BDEF={
+  ranged:{name:'원거리',ic:'➶',col:'#9fe0ff',desc:'멈춰 조준한 뒤 투사체 · 가까이 오면 물러남',how:'조준선이 보이면 옆으로 비켜서기 · 바짝 붙으면 쏘지 않는다'},
+  charge:{name:'돌진',ic:'➤',col:'#ffb36a',desc:'띠 예고 뒤 일직선 돌진',how:'띠가 밝아지면 옆으로 · 빗나가면 '+CHARGE.stag+'초 휘청(받는 피해 +'+Math.round((CHARGE.stagK-1)*100)+'%)'},
+  guard:{name:'방어 태세',ic:'⛨',col:'#c8d0ff',desc:GUARD.cd+'초마다 '+GUARD.dur+'초 웅크림 · 평타 −'+Math.round((1-GUARD.baK)*100)+'% · 스킬 −'+Math.round((1-GUARD.skK)*100)+'%',how:'방패가 깜빡이면 다른 대상을 치거나 큰 스킬을 아끼기'},
+  burst:{name:'자폭',ic:'✸',col:'#ff8a6a',desc:'체력 '+Math.round(BURST.at*100)+'% 이하에서 부풀어 폭발',how:'부풀면 원 밖으로 · 부풀기 중 처치하면 폭발 없음'},
+};
+/* 상태이상을 거는 공격 이름(MOB_B.fxBy) — 없으면 '공격' */
+const FXBY={melee:'근접',charge:'돌진 명중',shot:'투사체 명중',burst:'폭발 명중'};
