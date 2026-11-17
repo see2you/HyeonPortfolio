@@ -63,6 +63,10 @@ const STK={
   hp:{n:'HP 물약',cat:'use',w:3,ic:'pot',col:'#e8584a',desc:()=>'최대 HP의 35% 회복 (Q) · 소지 한도 '+POT_CAP.hp,f:'hpPot'},
   mp:{n:'MP 물약',cat:'use',w:3,ic:'pot',col:'#5aa0e8',desc:()=>'최대 MP의 40% 회복 (E) · 소지 한도 '+POT_CAP.mp,f:'mpPot'},
   ret:{n:'귀환 주문서',cat:'use',w:1,ic:'scroll',col:'#8ad870',desc:()=>'즉시 마을로 귀환 (B) · 소지 한도 '+POT_CAP.scroll,f:'scroll'},
+  /* v4.66 G12-a 버프 물약(지시서 §G12 · MMORPG 라이크 상점 구매형 시간제 버프): 5분 · 같은 종류는 시간만 갱신 · 사망하면 사라짐 · 전투력(cpOf)에 넣지 않음 */
+  spdp:{n:'가속 물약',cat:'use',w:2,ic:'pot',col:'#5fe0b8',desc:()=>bufDesc('spdp')},
+  atkp:{n:'힘의 물약',cat:'use',w:2,ic:'pot',col:'#ff8a3a',desc:()=>bufDesc('atkp')},
+  defp:{n:'수호 물약',cat:'use',w:2,ic:'pot',col:'#c0a8ff',desc:()=>bufDesc('defp')},
   stone:{n:'강화석',cat:'mat',w:.2,ic:'gem',col:'#7ac8ff',desc:()=>'장비 강화 재료 (강화 창) · 장비 분해 · 몬스터 · 퀘스트 · 대장장이 상점',f:'stone'},
   shard:{n:'권능 파편',cat:'mat',w:0,ic:'gem',col:'#ffd860',desc:()=>'신의 권능 각성 재료 (P)',f:'shard'},
   bls:{n:'축복받은 강화 주문서',cat:'use',w:1,ic:'scroll',col:'#ffd860',desc:()=>'강화 창에서 사용 · 안전 강화 구간에서 +1~3 (강화석 없이 골드만) · 지역 보스 · 퀘스트'},
@@ -75,8 +79,12 @@ const STK={
 };
 for(const r of [1,2,3]){const C=['','#b8a088','#c8d8e8','#8a5ab8'][r];STK['ore'+r]={n:REGN[r]+' '+['','철광석','은광석','흑요석 원석'][r],cat:'mat',w:.2,ic:'gem',col:C,desc:()=>REGN[r]+' 장비('+(r===1?'1·2':r===2?'3·4':'5')+'단계) 제작 재료 · '+REGN[r]+' 몬스터 · 퀘스트 · 토벌 의뢰'};
   for(const p of ['w','a','c'])STK['d'+p+r]={n:REGN[r]+' '+PARTN[p]+' 도면',cat:'mat',w:0,ic:'book',col:{w:'#e08a5a',a:'#6aa0d8',c:'#c8a0e8'}[p],desc:()=>REGN[r]+' '+PARTN[p]+(p==='a'?'(투구·갑옷·망토·장갑·장화)':p==='c'?'(목걸이·반지)':'')+' 제작에 1장 · '+REGN[r]+' 몬스터 낮은 확률 · 지역 보스 · 퀘스트'};}
-const STK_ORDER=['hp','mp','ret','bls','book_dash','book_roar','book_quake','stone','ore1','ore2','ore3','dw1','da1','dc1','dw2','da2','dc2','dw3','da3','dc3','rcp2','rcp3','rcp4','shard'];
+const STK_ORDER=['hp','mp','ret','spdp','atkp','defp','bls','book_dash','book_roar','book_quake','stone','ore1','ore2','ore3','dw1','da1','dc1','dw2','da2','dc2','dw3','da3','dc3','rcp2','rcp3','rcp4','shard'];
 const stonePrice=()=>40+4*S.lv;
+/* v4.66 G12-a 버프 물약 표 — 효과 · 지속(초) · 소지 한도 · 값 */
+const BUFP={spdp:{ic:'»',mv:.15,as:.10,txt:'이동 속도 +15% · 공격 속도 +10%'},atkp:{ic:'⚔',atk:.08,txt:'공격력 +8%'},defp:{ic:'⛊',dr:.08,txt:'받는 피해 −8%'}},BUF_K={dur:300,cap:5,p0:120,pL:8};
+const BUF_IDS=Object.keys(BUFP),bufPrice=()=>BUF_K.p0+BUF_K.pL*S.lv;
+const bufDesc=k=>BUFP[k].txt+' · '+(BUF_K.dur/60)+'분 · 다시 마시면 시간만 처음으로 · 쓰러지면 사라짐 · 소지 한도 '+BUF_K.cap+' · 물약 상인';
 /* 퀘스트 보상 정리: 예전 주문서 보상 → 강화석(장당 3) · 축복 주문서 */
 function normRwStk(o){if(!o)return;const conv={wsc:['stone',3],asc:['stone',3],wscB:['bls',1],ascB:['bls',1]};for(const k in conv)if(o[k]){const [nk,m]=conv[k];o[nk]=(o[nk]||0)+o[k]*m;delete o[k];}}
 const cnt=k=>{const d=STK[k];if(!d)return 0;return d.f?S[d.f]||0:(S.bag[k]||0);};
@@ -253,8 +261,8 @@ function itemIcon(it){if(it.k==='weapon')return weaponIcon(it.bu&&BU[it.bu].g>=4
 function stkIcon(k){const d=STK[k],a=d.col;return paintIcon(d.ic,{a,b:shade(a,1.45),c:shade(a,.62),w:'#d8c8a0',p:'#efe2c0',g:a});}
 
 /* ===== 세이브 이전 (v4.7 → v4.8) ===== */
-const CFG0={scan:'mid',tgt:'quest',order:'slot',counter:true,potAt:.4,autoDis:-1,autoEq:false,autoLock:-1};
-function migrate48(S,fresh){if(typeof migrateQi==='function')migrateQi(S);if(S.grave===undefined)S.grave=null;/* v4.65 G9 무덤(이전 세이브엔 없음) */S.cfg=Object.assign({},CFG0,S.cfg||{});if(S.cfg.potAt==null)S.cfg.potAt=.4;
+const CFG0={scan:'mid',tgt:'quest',order:'slot',counter:true,potAt:.4,autoDis:-1,autoEq:false,autoLock:-1,autoBuf:false};
+function migrate48(S,fresh){if(typeof migrateQi==='function')migrateQi(S);if(S.grave===undefined)S.grave=null;if(!S.buf||typeof S.buf!=='object')S.buf={};/* v4.66 G12 버프 물약 남은 시간(초) *//* v4.65 G9 무덤(이전 세이브엔 없음) */S.cfg=Object.assign({},CFG0,S.cfg||{});if(S.cfg.potAt==null)S.cfg.potAt=.4;
   if(!S.items){S.items=[];S.eq={};S.bag={};S.nu=S.nu||0;
     /* 기존 세이브: 무기·갑옷 강화 단계를 그대로 옮기고, 몬스터 상향에 맞춰 현재 레벨 티어의 일반 장비 6부위를 지급 */
     const T=fresh?1:tierOfLv(S.lv||1),mkI=(k)=>({u:++S.nu,k,t:T,g:0,en:0,ff:0});

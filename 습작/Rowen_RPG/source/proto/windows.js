@@ -145,6 +145,7 @@ function stkTip(tp,k){const d=STK[k];tp.append(el('b','tn',d.n),el('div','tt',(d
   tp.appendChild(el('p',null,d.book?'사용하면 「'+SK[skIdx(d.book)].name+'」을(를) 스킬 창(K)에서 배울 수 있다. 서브 퀘스트에서만 나온다.':d.desc()));
   const a=el('div','tbtn');
   if(k==='hp'||k==='mp')a.appendChild(btn('사용','pri',()=>{usePot(k);hideTip();renderWin();}));
+  else if(BUFP[k])a.appendChild(btn(bufOn(k)?'마시기 · 시간 갱신':'마시기','pri',()=>{useBuf(k);hideTip();renderWin();}));
   else if(k==='ret')a.appendChild(btn('사용 · 마을로 귀환','pri',()=>{closeWin();goTown();}));
   else if(k==='bls'||k==='stone')a.appendChild(btn('강화 창으로','pri',()=>{hideTip();openEnchant();}));
   else if(k.startsWith('rcp')||k.startsWith('ore')||/^d[wac][123]$/.test(k))a.appendChild(btn('제작 창으로','pri',()=>{hideTip();openCraft();}));
@@ -346,8 +347,13 @@ function openShop(id){const body=el('div','shop');
   const row=(k,label,desc,ic)=>{const d=el('div','si'),pr=potPrice(k),nm=el('div','nm'),have=S[key(k)],cap=POT_CAP[k];d.appendChild(icv(stkIcon(ic),'sic'));nm.append(el('b',null,label+'  '+have+'/'+cap),el('small',null,desc));d.append(nm,el('span','pr',fmt(pr)+' G'));
     for(const n of [1,5,'가득']){const want=n==='가득'?cap-have:Math.min(n,cap-have),b=el('button','btn',n==='가득'?'가득':n+'개');b.type='button';b.disabled=want<=0||S.gold<pr*(n==='가득'?1:want);b.onclick=()=>{const got=buyItem(k,want);if(got)toast(label+' '+got+'개 구입 (-'+fmt(got*pr)+' G)');save();openShop(id);};d.appendChild(b);}return d;};
   body.append(row('hp','HP 물약','최대 체력의 35% 회복 · 소지 한도 '+POT_CAP.hp,'hp'),row('mp','MP 물약','최대 기력의 40% 회복 · 소지 한도 '+POT_CAP.mp,'mp'),row('scroll','귀환 주문서','즉시 마을로 귀환 (B) · 소지 한도 '+POT_CAP.scroll,'ret'));
-  body.appendChild(el('p','note2','자동 진행 물약 보충 · 긴급 귀환 · 물약 자동 사용은 설정(⚙)에서 바꾼다 · 강화석은 대장장이 상점에서'));
-  openModal({who:id,npc:id,name:npcName(id),sub:'상점 · 보유 골드 '+fmt(S.gold)+' · 무게 '+Math.round(wPct()*100)+'%',text:'',body,btns:[{t:'가방 (I)',f:()=>{closeModal();openBag();}},{t:'닫기',alt:true,f:closeModal}]});}
+  /* v4.66 G12-a 버프 물약 3종 — 5분 · 소지 한도 5 · 자동 진행은 사지 않는다(플레이어의 선택) */
+  const brow=k=>{const d=el('div','si bfr'),pr=bufPrice(),nm=el('div','nm'),have=cnt(k),cap=BUF_K.cap,on=bufOn(k);d.dataset.buf=k;d.appendChild(icv(stkIcon(k),'sic'));nm.append(el('b',null,STK[k].n+'  '+have+'/'+cap+(on?'  · 효과 중 '+mmss(Math.ceil(S.buf[k])):'')),el('small',null,BUFP[k].txt+' · '+(BUF_K.dur/60)+'분 · 무게 '+STK[k].w));d.append(nm,el('span','pr',fmt(pr)+' G'));
+    for(const n of [1,'가득']){const want=n==='가득'?cap-have:Math.min(1,cap-have),b=el('button','btn',n==='가득'?'가득':n+'개');b.type='button';b.disabled=want<=0||S.gold<pr;b.onclick=()=>{const got=buyBuf(k,want);if(got)toast(STK[k].n+' '+got+'개 구입 (-'+fmt(got*pr)+' G)');else toast('골드나 무게가 부족하다');save();openShop(id);};d.appendChild(b);}
+    const u=el('button','btn pri','마시기');u.type='button';u.disabled=!have;u.onclick=()=>{useBuf(k);openShop(id);};d.appendChild(u);return d;};
+  for(const k of BUF_IDS)body.appendChild(brow(k));
+  body.appendChild(el('p','note2 bfnote','자동 진행 물약 보충 · 긴급 귀환 · 물약 자동 사용은 설정(⚙)에서 · 강화석은 대장장이 상점에서 · 버프 물약은 자동 구매하지 않는다 — 전투 시작 시 자동으로 마시려면 아래 [버프 자동 사용]'));
+  openModal({who:id,npc:id,name:npcName(id),sub:'상점 · 보유 골드 '+fmt(S.gold)+' · 무게 '+Math.round(wPct()*100)+'%',text:'',body,btns:[{t:'버프 자동 사용 · '+(S.cfg.autoBuf?'켬':'끔'),cls:'bftg'+(S.cfg.autoBuf?' on':''),tip:'켜면 전투가 시작될 때(최근 3초 안에 맞거나 때림) 효과가 꺼진 버프 물약을 가진 것만 마신다 · 기본 끔 · 사는 것은 직접',f:()=>{S.cfg.autoBuf=!S.cfg.autoBuf;toast('버프 물약 자동 사용 '+(S.cfg.autoBuf?'켬 — 전투가 시작되면 효과가 꺼진 버프를 가진 것만 마신다':'끔'),true);save();openShop(id);}},{t:'가방 (I)',f:()=>{closeModal();openBag();}},{t:'닫기',alt:true,f:closeModal}]});}
 /* ================= 대장장이: 강화 상점 (마법 주문서 판매) · 제작 · 강화 ================= */
 function openForge(id){const body=el('div','shop');
   {const d=el('div','si'),pr=stonePrice(),nm=el('div','nm');d.appendChild(icv(stkIcon('stone'),'sic'));nm.append(el('b',null,'강화석  '+fmt(S.stone)+'개'),el('small',null,STK.stone.desc()));d.append(nm,el('span','pr',fmt(pr)+' G'));
