@@ -146,6 +146,7 @@ function stkTip(tp,k){const d=STK[k];tp.append(el('b','tn',d.n),el('div','tt',(d
   const a=el('div','tbtn');
   if(k==='hp'||k==='mp')a.appendChild(btn('사용','pri',()=>{usePot(k);hideTip();renderWin();}));
   else if(BUFP[k])a.appendChild(btn(bufOn(k)?'마시기 · 시간 갱신':'마시기','pri',()=>{useBuf(k);hideTip();renderWin();}));
+  else if(k==='cure')a.appendChild(btn(cureNeed()?'마시기 · 상태이상 해제':'마시기','pri',()=>{useCure();hideTip();renderWin();}));
   else if(k==='ret')a.appendChild(btn('사용 · 마을로 귀환','pri',()=>{closeWin();goTown();}));
   else if(k==='bls'||k==='stone')a.appendChild(btn('강화 창으로','pri',()=>{hideTip();openEnchant();}));
   else if(k.startsWith('rcp')||k.startsWith('ore')||/^d[wac][123]$/.test(k))a.appendChild(btn('제작 창으로','pri',()=>{hideTip();openCraft();}));
@@ -352,8 +353,12 @@ function openShop(id){const body=el('div','shop');
     for(const n of [1,'가득']){const want=n==='가득'?cap-have:Math.min(1,cap-have),b=el('button','btn',n==='가득'?'가득':n+'개');b.type='button';b.disabled=want<=0||S.gold<pr;b.onclick=()=>{const got=buyBuf(k,want);if(got)toast(STK[k].n+' '+got+'개 구입 (-'+fmt(got*pr)+' G)');else toast('골드나 무게가 부족하다');save();openShop(id);};d.appendChild(b);}
     const u=el('button','btn pri','마시기');u.type='button';u.disabled=!have;u.onclick=()=>{useBuf(k);openShop(id);};d.appendChild(u);return d;};
   for(const k of BUF_IDS)body.appendChild(brow(k));
-  body.appendChild(el('p','note2 bfnote','자동 진행 물약 보충 · 긴급 귀환 · 물약 자동 사용은 설정(⚙)에서 · 강화석은 대장장이 상점에서 · 버프 물약은 자동 구매하지 않는다 — 전투 시작 시 자동으로 마시려면 아래 [버프 자동 사용]'));
-  openModal({who:id,npc:id,name:npcName(id),sub:'상점 · 보유 골드 '+fmt(S.gold)+' · 무게 '+Math.round(wPct()*100)+'%',text:'',body,btns:[{t:'버프 자동 사용 · '+(S.cfg.autoBuf?'켬':'끔'),cls:'bftg'+(S.cfg.autoBuf?' on':''),tip:'켜면 전투가 시작될 때(최근 3초 안에 맞거나 때림) 효과가 꺼진 버프 물약을 가진 것만 마신다 · 기본 끔 · 사는 것은 직접',f:()=>{S.cfg.autoBuf=!S.cfg.autoBuf;toast('버프 물약 자동 사용 '+(S.cfg.autoBuf?'켬 — 전투가 시작되면 효과가 꺼진 버프를 가진 것만 마신다':'끔'),true);save();openShop(id);}},{t:'가방 (I)',f:()=>{closeModal();openBag();}},{t:'닫기',alt:true,f:closeModal}]});}
+  /* v4.67 G12-b 정화 물약 — 독 · 화상 · 둔화 해제 + 10초 면역 · 한도 5 · 무게 1 */
+  {const d=el('div','si cur'),pr=curePrice(),nm=el('div','nm'),have=cnt('cure'),cap=CURE_K.cap;d.dataset.buf='cure';d.appendChild(icv(stkIcon('cure'),'sic'));nm.append(el('b',null,STK.cure.n+'  '+have+'/'+cap),el('small',null,'독 · 화상 · 둔화 해제 + '+CURE_K.imm+'초 면역 · 기절 제외 · 무게 '+STK.cure.w));d.append(nm,el('span','pr',fmt(pr)+' G'));
+    for(const n of [1,'가득']){const want=n==='가득'?cap-have:Math.min(1,cap-have),b=el('button','btn',n==='가득'?'가득':n+'개');b.type='button';b.disabled=want<=0||S.gold<pr;b.onclick=()=>{const got=buyCure(want);if(got)toast('정화 물약 '+got+'개 구입 (-'+fmt(got*pr)+' G)');else toast('골드나 무게가 부족하다');save();openShop(id);};d.appendChild(b);}
+    const u=el('button','btn pri','마시기');u.type='button';u.disabled=!have;u.onclick=()=>{useCure();openShop(id);};d.appendChild(u);body.appendChild(d);}
+  body.appendChild(el('p','note2 bfnote','물약 보충 · 긴급 귀환은 설정(⚙) · 강화석은 대장장이 · 버프 · 정화 물약은 직접 산다(아래 토글은 마시기만)'));
+  openModal({who:id,npc:id,name:npcName(id),sub:'상점 · 보유 골드 '+fmt(S.gold)+' · 무게 '+Math.round(wPct()*100)+'%',text:'',body,btns:[{t:'버프 자동 사용 · '+(S.cfg.autoBuf?'켬':'끔'),cls:'bftg'+(S.cfg.autoBuf?' on':''),tip:'켜면 전투가 시작될 때(최근 3초 안에 맞거나 때림) 효과가 꺼진 버프 물약을 가진 것만 마신다 · 기본 끔 · 사는 것은 직접',f:()=>{S.cfg.autoBuf=!S.cfg.autoBuf;toast('버프 물약 자동 사용 '+(S.cfg.autoBuf?'켬 — 전투가 시작되면 효과가 꺼진 버프를 가진 것만 마신다':'끔'),true);save();openShop(id);}},{t:'정화 자동 · '+(S.cfg.autoCure?'켬':'끔'),cls:'cutg'+(S.cfg.autoCure?' on':''),tip:'켜면 독 · 화상 · 둔화가 1초 넘게 남았을 때 정화 물약을 가진 것만 마신다 · 기본 끔 · 사는 것은 직접',f:()=>{S.cfg.autoCure=!S.cfg.autoCure;toast('정화 물약 자동 사용 '+(S.cfg.autoCure?'켬 — 독 · 화상 · 둔화에 걸리면 가진 것만 마신다':'끔'),true);save();openShop(id);}},{t:'가방 (I)',f:()=>{closeModal();openBag();}},{t:'닫기',alt:true,f:closeModal}]});}
 /* ================= 대장장이: 강화 상점 (마법 주문서 판매) · 제작 · 강화 ================= */
 function openForge(id){const body=el('div','shop');
   {const d=el('div','si'),pr=stonePrice(),nm=el('div','nm');d.appendChild(icv(stkIcon('stone'),'sic'));nm.append(el('b',null,'강화석  '+fmt(S.stone)+'개'),el('small',null,STK.stone.desc()));d.append(nm,el('span','pr',fmt(pr)+' G'));

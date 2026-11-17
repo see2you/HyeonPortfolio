@@ -29,7 +29,7 @@ with sync_playwright() as p:
     # 1) 데이터
     d=pg.evaluate("(()=>{const g=__g,K=g.BUF_IDS;return {K,w:K.map(k=>g.STK[k].w),use:K.map(k=>g.STK[k].cat),cap:g.BUF_K.cap,dur:g.BUF_K.dur,pr:g.bufPrice(),lv:g.S.lv};})()")
     chk(d['K']==['spdp','atkp','defp'] and d['w']==[2,2,2] and d['use']==['use']*3,'3종 · 무게 2 · 소모품')
-    chk(d['cap']==5 and d['dur']==300 and d['pr']==120+8*d['lv'],'한도 5 · 5분 · 값 120+8×Lv = %d'%d['pr'])
+    chk(d['cap']==5 and d['dur']==300 and d['pr']==150+18*d['lv'],'한도 5 · 5분 · 값 150+18×Lv = %d (v4.67 값 조정)'%d['pr'])
     # 2) 상점
     sid=pg.evaluate("__g.shopId()");chk(bool(sid),'물약 상인 '+str(sid))
     pg.evaluate("(id)=>__g.openShop(id)",sid)

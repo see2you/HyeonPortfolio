@@ -71,7 +71,7 @@ with sync_playwright() as p:
         if stall==40: print('STALL');
         if s['qi']>=NQ: print('ALL DONE',i*3,s);break
         if i%20==0 and os.environ.get('TRACE'):
-            tr=pg.evaluate("(()=>{const g=__g,S=g.S,q=g.curQ();return {t:Math.round(g.t),lv:S.lv,qi:S.qi,qs:S.qs,faith:g.pStats().faith,br:g.faithBreak(),zone:g.curZoneId||null,bossFa:q.elite?q.elite.fa:null,rep:S.repN||0,coll:g.collDoneN(),bcoll:g.bcollDoneN(),pots:g.STAT.hpUse,deaths:g.STAT.deaths,cp:g.cpOf()}})()")
+            tr=pg.evaluate("(()=>{const g=__g,S=g.S,q=g.curQ();return {t:Math.round(g.t),lv:S.lv,qi:S.qi,qs:S.qs,faith:g.pStats().faith,br:g.faithBreak(),zone:g.curZoneId||null,bossFa:q.elite?q.elite.fa:null,rep:S.repN||0,coll:g.collDoneN(),bcoll:g.bcollDoneN(),pots:g.STAT.hpUse,deaths:g.STAT.deaths,cp:g.cpOf(),gold:S.gold,inc:(g.STAT.killG||0)+(g.STAT.rwG||0),buyG:g.STAT.buyG||0}})()")
             open(os.environ['TRACE'],'a').write(json.dumps(tr)+'\n')
         if i%100==0: print('  faith',pg.evaluate('__g.pStats().faith'),'coll',pg.evaluate('__g.collDoneN()'),'bcoll',pg.evaluate('__g.bcollDoneN()'),'bu',pg.evaluate('JSON.stringify(__g.S.items.filter(x=>x.bu).map(x=>x.bu+"+"+x.en))'),'stone',pg.evaluate('__g.S.stone'),'open',pg.evaluate('__g.COLL.filter(c=>!__g.collDone(c)).map(c=>c.id+":"+c.req.filter((r,i)=>__g.collReg(c,i)).length+"/"+c.req.length).join(" ")'),'resup',pg.evaluate('__g.STAT.resup||0'))
     pg.evaluate("__g.snap();__g.render()");pg.screenshot(path='flow_end.png')
