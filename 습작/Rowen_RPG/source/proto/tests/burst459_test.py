@@ -37,7 +37,7 @@ if __name__=='__main__':
         r=pg.evaluate("()=>{const g=__g;const z=g.mobs.filter(e=>e.sp==='emberslime'&&!e.boss&&!e.eliteOf);return {b:g.mobBeh({sp:'emberslime'}),z5:g.mobBeh({sp:'emberslime',zone:'z5'}),e2:g.mobBeh({sp:'emberslime',zone:'e2'}),here:z.length&&z.every(e=>g.mobBeh(e)==='burst'),boss:g.mobB({sp:'emberslime',boss:true}),el:g.mobB({sp:'emberslime',eliteOf:{}}),fx:g.MOB_B.emberslime.fx||null,B:g.BURST,others:['acornboar','fairy','obsidiancrab','lakesnake','waterslime','puffer'].map(k=>g.mobBeh({sp:k}))};}")
         print('  INFO',r)
         chk(r['z5']=='burst' and r['here'] and r['e2']=='burst','불씨슬라임 = 자폭(v4.61부터 에르나 개체도 — 사냥터별 수치는 burst461)')
-        chk(r['boss'] is None and r['el'] is None and r['fx'] is None,'보스 · 관문 정예 원형 없음 · 상태이상 없음(화상은 G1-e)')
+        chk(r['boss'] is None and r['el'] is None and r['fx']=='burn','보스 · 관문 정예 원형 없음 · 폭발 화상(v4.63 G1-e2)')
         chk(r['others']==['charge','ranged','guard','melee','burst','burst'],'다른 종 배정 그대로(v4.61 물방울슬라임 · 거품복어 = 자폭)')
         B=r['B'];chk(B['at']==.25 and B['inf']==1.5 and B['r']==46 and B['lock']==.77 and B['mul']==1 and B['dk']==.5,'BURST 표 %s'%B)
         pg.evaluate(SETUP_JS,12)
@@ -67,7 +67,7 @@ if __name__=='__main__':
         for lv in lvs:
             R={}
             for mode in ('stand','auto','smart'):
-                pg=page(b,errs,mid);R[mode]=run(pg,'emberslime',lv,range(1,13),mode);pg.close()
+                pg=page(b,errs,mid);R[mode]=run(pg,'emberslime',lv,range(1,49),mode);pg.close()
             rs,ra,rm=(R[k]['taken']/max(1,R[k]['takenM']) for k in ('stand','auto','smart'));hr=R['auto']['bstHit']/max(1,R['auto']['bstN'])
             print('  INFO Lv%d 대응 없음 피해비 %.2f · 자동 %.2f(피격률 %.2f · 부풀기 %d · 폭발 %d · 막음 %d) · 잘 대응 %.2f(피격률 %.2f)'%(lv,rs,ra,hr,R['auto']['bstN'],R['auto']['bstBoom'],R['auto']['bstKill'],rm,R['smart']['bstHit']/max(1,R['smart']['bstN'])),flush=True)
             tab.append((lv,round(rs,2),round(ra,2),round(hr,2),round(rm,2)))

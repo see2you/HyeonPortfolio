@@ -33,11 +33,11 @@ if __name__=='__main__':
         pg=page(b,errs,'erna');chk(pg.evaluate("document.getElementById('verTag').textContent").startswith('v4.'),'버전 표시')
         r=pg.evaluate("()=>{const g=__g;const L=['waterslime','puffer','emberslime'];const e2=g.mobs.filter(e=>e.sp==='emberslime'&&!e.boss&&!e.eliteOf);return {b:L.map(k=>g.mobBeh({sp:k})),fx:L.map(k=>g.MOB_B[k].fx||null),boss:L.map(k=>g.mobB({sp:k,boss:true})),el:L.map(k=>g.mobB({sp:k,eliteOf:{}})),z5:g.mobB({sp:'emberslime',zone:'z5'}),e2:g.mobB({sp:'emberslime',zone:'e2'}),e2live:e2.length&&e2.every(e=>e.zone==='e2'&&g.mobB(e)===g.MOB_BZ['emberslime@e2']),ws:g.MOB_B.waterslime,pf:g.MOB_B.puffer,others:['acornboar','fairy','obsidiancrab','lakesnake','stonebeetle','otter','squirrel'].map(k=>g.mobBeh({sp:k}))};}")
         print('  INFO',{k:r[k] for k in ('b','z5','e2','ws','pf','others')})
-        chk(r['b']==['burst']*3 and r['fx']==[None]*3,'3종 = 자폭 · 상태이상 없음(화상 · 둔화는 G1-e)')
+        chk(r['b']==['burst']*3 and r['fx']==['slow',None,'burn'],'3종 = 자폭 · 물방울슬라임 둔화 · 불씨슬라임 화상(v4.63 G1-e2) · 거품복어 없음')
         chk(r['boss']==[None]*3 and r['el']==[None]*3,'보스 · 관문 정예 원형 없음')
         chk(r['others']==['charge','ranged','guard','melee','guard','melee','melee'],'다른 종 배정 그대로')
         z5,e2=r['z5'],r['e2']
-        chk(not z5.get('lock') and not z5.get('mul') and e2['lock']==.9 and e2['mul']==.6 and e2['b']=='burst' and r['e2live'],'사냥터별 덮어쓰기: e2 불씨슬라임 고정 0.9 · ×0.6 (살아 있는 e2 개체 전부) · z5는 공통 값')
+        chk(not z5.get('lock') and z5.get('mul')==.8 and e2['lock']==.9 and e2['mul']==.6 and e2['b']=='burst' and r['e2live'],'사냥터별 덮어쓰기: e2 불씨슬라임 고정 0.9 · ×0.6 (살아 있는 e2 개체 전부) · z5는 공통 값')
         chk(r['ws'].get('dk')==.4 and r['ws'].get('mul')==.8 and r['pf'].get('lj')==.04,'물방울슬라임 껍질 ×0.4 · 폭발 ×0.8 · 거품복어 고정 무작위 폭 0.04')
         pg.evaluate(SETUP_JS,33)
         a=pg.evaluate(LK,[ONE('emberslime'),.5]);print('  INFO e2',a)
