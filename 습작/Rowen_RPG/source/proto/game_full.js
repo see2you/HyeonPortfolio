@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.61';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.62';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -1473,8 +1473,10 @@ function craftItem(k,t,g){const c=craftCheck(k,t,g);if(!c.ok)return null;const R
    지역 보스 · 관문 정예(boss · eliteOf)에는 아직 붙이지 않는다(보스 패턴은 G1-f~g). */
 const MOB_B={
   lakesnake:{b:'melee',fx:'poison'},
+  /* v4.62 G1-e1: 상태이상 3종 첫 배정(각 1종) — fxBy = 그 공격으로만 건다(melee · charge · shot · burst · 없으면 모두) */
+  lavalizard:{b:'melee',fx:'burn'},/* 용암도마뱀 — 로웬 잿빛 고원 Lv13~14 · 에르나 용암 호수 Lv34~35 (근접 타격 25%) */
   acornboar:{b:'charge'},/* v4.54 G1-c1: 돌진 첫 종(로웬 도토리 숲 Lv3~5 · 상태이상 없음 — 입문 구간 보호). 관문 정예 '왕멧돼지'(q5 · q6)는 제외(G1-f 보스 패턴) */
-  bull:{b:'charge',lock:.27},/* v4.56 G1-c2a: 로웬 바람 평원 Lv8~9 · 고정 0.35 → 0.27초(트인 평원이라 0.35면 자동 전투 피격률 0.02~0.16) · 기절(돌진 명중)은 G1-e */
+  bull:{b:'charge',lock:.27,lj:.025,fx:'stun',fxBy:'charge'},/* v4.62 G1-e1: 돌진 명중 = 기절 0.8초(100% · 같은 개체 6초 면역) · 고정 0.27~0.295초 무작위(lj) — 기절이 무리 돌진을 잇게 해 Lv9 피격률 0.46~0.60 → 기절 중 고정 보류(stunHold) 0.32~0.42 → lj 0.025로 0.21~0.34 *//* v4.56 G1-c2a: 로웬 바람 평원 Lv8~9 · 고정 0.35 → 0.27초(트인 평원이라 0.35면 자동 전투 피격률 0.02~0.16) · 기절(돌진 명중)은 G1-e */
   goat:{b:'charge'},/* v4.56 G1-c2a: 카르도 자갈 언덕 Lv17~18 */
   /* v4.57 G1-c2b: 돌진 날짐승 — 날짐승도 지형에 막힌다(모든 몬스터 stepMove · 막히면 빗나감 경직). 침공 '불새 새끼'(isBoss)는 원형 없음(G1-g) */
   crystalbat:{b:'charge'},/* 카르도 버섯 동굴숲 Lv20~21 */
@@ -1494,13 +1496,17 @@ const MOB_B={
   /* v4.52 G1-b2c: 원거리 나머지 5종 — 둔화 · 화상 투사체는 G1-e에서(지금은 피해만). spd = 그 종의 투사체 속도(없으면 RANGED.spd) — 사냥터 지형이 트여 자동 전투가 잘 피하는 종은 빠르게 해 피격률 20~40%에 맞춘다 */
   cavemush:{b:'ranged',spd:190},/* v4.53 G1-b2c2 카르도 버섯 동굴 Lv18~19 (관문 정예 '동굴버섯'(q16)은 제외) */
   mosswisp:{b:'ranged',spd:215},/* v4.53 카르도 Lv19~20 */
-  mist:{b:'ranged',spd:225},/* v4.53: 250 → 225 (무리 체력 그대로 측정에서 250은 피격 0.49~0.54) *//* 카르도 수정 호숫가 Lv26~27 */
+  mist:{b:'ranged',spd:225,fx:'slow',fxBy:'shot'},/* v4.62 G1-e1: 투사체 명중 25% = 둔화 3초 *//* v4.53: 250 → 225 (무리 체력 그대로 측정에서 250은 피격 0.49~0.54) *//* 카르도 수정 호숫가 Lv26~27 */
   flamewisp:{b:'ranged'},/* v4.53 에르나 Lv31~32 · 불새 둥지 Lv38~39 */
   embertree:{b:'ranged'},/* 에르나 불티 숲 Lv32~33 (관문 정예 '불티나무'(q27)는 제외) */
 };
 /* 상태이상 정의: dur=기본 지속(초) · 갱신만 하고 중첩 없음. 지속은 반드시 fxDur()를 거친다(§G2 저항 · §G3 장비 · §G12 정화가 붙을 자리). */
 const FXDEF={
   poison:{name:'독',ic:'☠',col:'#8ae04a',dur:5,dps:.004,potK:.7,desc:'초당 최대 HP의 0.4% · HP 물약 회복 −30%'},
+  /* v4.62 G1-e1: k = 초당 (건 몬스터 공격력 × k) 고정 피해(방어 무시) · mv/as = 이동 · 공격 속도 배율 · p = 부여 확률 덮어쓰기 · imm = 같은 개체 재부여 면역(초) */
+  burn:{name:'화상',ic:'♨',col:'#ff9a3a',dur:4,k:.05,desc:'초당 건 몬스터 공격력의 5% 고정 피해(방어 무시)'},
+  slow:{name:'둔화',ic:'≈',col:'#8fc8ff',dur:3,mv:.6,as:.8,desc:'이동 속도 −40% · 공격 속도 −20%'},
+  stun:{name:'기절',ic:'✶',col:'#ffe27a',dur:.8,p:1,imm:6,desc:'0.8초 행동 불가(물약 자동 사용은 됨) · 같은 몬스터에게 6초 면역'},
 };
 /* 부여 확률: 일반 25% · 정예/보스 100% · 입문 · 물약 민감 구간(Lv1~6 · Lv9~11) 15% */
 /* v4.49 원거리 원형(지시서 §G1 · G1-b): 거리 range 안이면 멈춰 aim초 조준(가는 예고선 · 플레이어를 따라감) → 조준 끝 시점의 플레이어 위치로 투사체.
@@ -2104,10 +2110,10 @@ function usePot(k,silent){const st=pStats();if(player.dead||t<player.potT)return
   player.potT=t+2.2;burst(player.x,player.y,14,k==='hp'?'#ff8a7a':'#8ac8ff',10,30,3);return true;}
 function faceTo(x,y){const dx=x-player.x,dy=y-player.y;if(Math.abs(dx)>Math.abs(dy)*.8){player.dir=dx<0?'left':'right';}else player.dir=dy<0?'up':'down';if(Math.abs(dx)>2)player.face=dx<0?-1:1;}
 function inRange(m,r){return dist(player,m)<=r+6*m.sc;}
-function basicAttack(m){if(!alive(m)||player.atkT>0||player.dash)return false;if(heavyBlock())return false;if(!inRange(m,basicRange()))return false;faceTo(m.x,m.y);player.atkT=.62/pStats().aspd;player.swing=.001;player.swingTgt=m;
+function basicAttack(m){if(!alive(m)||player.atkT>0||player.dash||fxOn('stun'))return false;if(heavyBlock())return false;if(!inRange(m,basicRange()))return false;faceTo(m.x,m.y);player.atkT=.62/pStats().aspd;player.swing=.001;player.swingTgt=m;
   if(godOn('artemis')){streak(player.x,player.y,m.x,m.y,'#d8ffc8');return true;}
   fxMesh(FX_SLASH,'#fff0c0',{max:.22,up:(mm,k)=>{mm.scale.set(36*player.face*(1+k*.3),24*(1+k*.2),1);mm.position.set(player.x+player.face*10,elevAt(player.x,player.y)+16,player.y+2);mm.material.opacity=1-k;}});return true;}
-function castSkill(i,silent){const s=SK[i];if(!s||player.dead||player.dash)return false;
+function castSkill(i,silent){const s=SK[i];if(!s||player.dead||player.dash)return false;if(fxOn('stun')){if(!silent)toast('기절 중');return false;}
   if(!skLv(i)){if(!silent)toast(s.book&&!S.books[s.id]?s.name+' · 스킬서가 필요하다 (서브 퀘스트)':S.lv<s.req?s.name+' · Lv '+s.req+'부터 배울 수 있다':s.name+' · 스킬 창(K)에서 배우자');return false;}
   if(player.cd[i]>t){if(!silent)toast('재사용 대기 중');return false;}if(player.mp<s.mp){if(!silent)toast('MP가 부족하다');return false;}if(heavyBlock(silent))return false;const mul=skMul(i),id=s.id;
   if(id==='whirl'||id==='flame'){player.mp-=s.mp;player.cd[i]=t+s.cd;player.atkT=Math.max(player.atkT,.35);player.swing=.001;player.spin=.4;const ath=id==='whirl'&&godOn('athena'),rr=s.r+(ath?10:0),fl=id==='flame';if(ath){player.shield=Math.max(player.shield,pStats().hp*(.10+.015*gLv()));player.shT=8;floatTxt(player.x,player.y,'보호막','#a8d4ff');}
@@ -2140,7 +2146,7 @@ function castSkill(i,silent){const s=SK[i];if(!s||player.dead||player.dash)retur
 function nearestMob(r,sp,zone){let best=null,bd=r;for(const m of mobs){if(!alive(m)||m.inv||m.evU>t)continue;if(sp&&m.sp!==sp)continue;if(m.eliteOf&&sp)continue;if(m.field&&!(hunt&&hunt.mob===m))continue;if(zone&&!inR(ZONES[zone].r,m.x,m.y,60))continue;const d=dist(player,m);if(d<bd){bd=d;best=m;}}return best;}
 
 /* ================= 이동 ================= */
-const SPD=82;
+const SPD=82;const pSPD=()=>SPD*(fxOn('slow')?FXDEF.slow.mv:1);/* v4.62 둔화: 이동 −40% */
 function stepMove(o,dx,dy,spd,dt){const d=Math.hypot(dx,dy);if(d<.001)return false;const vx=dx/d*spd*dt,vy=dy/d*spd*dt;
   if(!blockedAt(o.x+vx,o.y+vy)){o.x+=vx;o.y+=vy;return true;}if(!blockedAt(o.x+vx,o.y)&&Math.abs(vx)>.01){o.x+=vx;return true;}if(!blockedAt(o.x,o.y+vy)&&Math.abs(vy)>.01){o.y+=vy;return true;}return false;}
 function followPath(o,path,spd,dt){while(path.length&&Math.hypot(path[0].x-o.x,path[0].y-o.y)<4)path.shift();if(!path.length)return true;const p=path[0],dx=p.x-o.x,dy=p.y-o.y,d=Math.hypot(dx,dy);
@@ -2952,7 +2958,7 @@ function renderLog(B,F){const L=S.acq||[],f=LOGF.some(x=>x[0]===S.logF)?S.logF:'
 
 /* ================= 갱신 ================= */
 function manualVec(){let x=0,y=0;if(keys.has('a')||keys.has('arrowleft'))x--;if(keys.has('d')||keys.has('arrowright'))x++;if(keys.has('w')||keys.has('arrowup'))y--;if(keys.has('s')||keys.has('arrowdown'))y++;if(joy.on&&Math.hypot(joy.dx,joy.dy)>.2){x=joy.dx;y=joy.dy;}return [x,y];}
-function updatePlayer(dt){if(t<cineT){player.moving=false;return;}/* 포탈 연출 중에는 움직이지 않는다 */const st=pStats();player.atkT-=dt;player.hurt=Math.max(0,player.hurt-dt);
+function updatePlayer(dt){if(t<cineT){player.moving=false;return;}/* 포탈 연출 중에는 움직이지 않는다 */const st=pStats();player.atkT-=dt*(fxOn('slow')?FXDEF.slow.as:1)/* v4.62 둔화: 공격 속도 −20% */;player.hurt=Math.max(0,player.hurt-dt);
   if(player.swing>0){player.swing+=dt;const sm=player.swingTgt;if(sm&&!player.swingHit&&player.swing>.1){player.swingHit=true;if(alive(sm)&&inRange(sm,basicRange()+8)){playerHit(sm,basicMul());if(godOn('zeus')&&++player.hitN%3===0)chainBolt(sm);}}if(player.swing>.28){player.swing=0;player.swingHit=false;player.swingTgt=null;}}
   if(player.spin>0)player.spin-=dt;
   if(player.dash){const D=player.dash;D.t+=dt;const k=Math.min(1,D.t/D.dur);player.x=D.x0+(D.x1-D.x0)*k;player.y=D.y0+(D.y1-D.y0)*k;if(Math.random()<.9)spawnP(player.x,player.y,14,{col:'#a8e0ff',life:.25,size:6,size1:0});
@@ -2962,10 +2968,11 @@ function updatePlayer(dt){if(t<cineT){player.moving=false;return;}/* 포탈 연�
   if(godOn('athena')){player.shT-=dt;if(player.shT<=0){player.shT=8;player.shield=Math.max(player.shield,st.hp*(.10+.015*gLv()));}}else player.shield=0;
   {const R=inR(ZONES.village.r,player.x,player.y,0)?REGEN.village:REGEN.field;if(wPct()<.5){if(t-player.lastHit>R.delay)player.hp=Math.min(st.hp,player.hp+st.hp*R.hp*dt);player.mp=Math.min(st.mp,player.mp+(R.mp0+st.mp*R.mp)*dt);}}
   if(S.autoPot&&player.hp<st.hp*(S.cfg.potAt||.4)&&t-player.lastHit<6)usePot('hp',true);if(auto&&player.mp<st.mp*.2)usePot('mp',true);
+  if(fxOn('stun')){player.moving=false;return;}/* v4.62 기절: 0.8초 행동 불가(자동 · 수동 모두 · 물약 자동 사용은 위에서 이미 함) */
   const [mx,my]=modal&&!modal.live?[0,0]:manualVec();player.moving=false;
-  if(mx||my){manualT=.5;stopAutoQ();if(nav||hunt||chase){nav=null;hunt=null;chase=null;moveRing.visible=false;}const moved=stepMove(player,mx,my,SPD,dt);player.moving=moved;faceTo(player.x+mx*10,player.y+my*10);anchor=null;return;}
+  if(mx||my){manualT=.5;stopAutoQ();if(nav||hunt||chase){nav=null;hunt=null;chase=null;moveRing.visible=false;}const moved=stepMove(player,mx,my,pSPD(),dt);player.moving=moved;faceTo(player.x+mx*10,player.y+my*10);anchor=null;return;}
   manualT-=dt;if(modal&&!modal.live)return;/* live 팝업(균열 안내)은 떠 있어도 전투가 이어진다 */
-  if(nav){const done=followPath(player,nav.path,SPD,dt);player.moving=!done;if(nav.path.length)faceTo(nav.path[0].x,nav.path[0].y);
+  if(nav){const done=followPath(player,nav.path,pSPD(),dt);player.moving=!done;if(nav.path.length)faceTo(nav.path[0].x,nav.path[0].y);
     nav.stuck+=dt;if(nav.stuck>.8){if(Math.hypot(player.x-nav.lx,player.y-nav.ly)<4){const p=findPath(player.x,player.y,nav.goal.x,nav.goal.y);if(p)nav.path=p;}nav.stuck=0;nav.lx=player.x;nav.ly=player.y;}
     if(nav.hunt&&inR(ZONES[nav.hunt.zone].r,player.x,player.y,-10)){const h=nav.hunt;startHunt(h.zone,h.sp,h.mob,h.sub);return;}
     if(nav.kind==='npc'){const n=npcList.find(n=>n.id===nav.id);if(dist(n,player)<30||done){const id=nav.id,th=nav.then;nav=null;if(th)th();else openNpc(id);}return;}
@@ -2983,7 +2990,7 @@ function apWatch(m){const d=dist(m,player);if(!apProg||apProg.m!==m){apProg={m,b
 function mobEvade(m){m.aggro=false;m.ret=true;m.evd=true;m.wind=0;if(m.aim){const i=tele.indexOf(m.aim.e);if(i>=0)tele.splice(i,1);m.aim=null;}m.evU=t+EVADE.skip;
   if(target===m)target=null;if(apFor===m){apFor=null;apPath=null;}floatTxt(m.x,m.y,'회피','#bfe0ff');STAT.evade=(STAT.evade||0)+1;}
 function approach(m,dt){apT-=dt;if(apFor!==m||apT<=0||!apPath){apFor=m;apT=.6;apPath=los(player.x,player.y,m.x,m.y)?[{x:m.x,y:m.y}]:findPath(player.x,player.y,m.x,m.y);}
-  if(apPath&&apPath.length){const last=apPath[apPath.length-1];last.x=m.x;last.y=m.y;followPath(player,apPath,SPD,dt);player.moving=true;if(apPath.length)faceTo(apPath[0].x,apPath[0].y);}}
+  if(apPath&&apPath.length){const last=apPath[apPath.length-1];last.x=m.x;last.y=m.y;followPath(player,apPath,pSPD(),dt);player.moving=true;if(apPath.length)faceTo(apPath[0].x,apPath[0].y);}}
 const sReady=i=>skLv(i)>0&&player.cd[i]<=t&&player.mp>=SK[i].mp;
 /* v4.8 자동 전투 스킬: 슬롯에 넣은 스킬만, 설정 순서(슬롯 1→8 / 강한 순)로 */
 function autoOrder(){const L=S.slots.map(id=>id&&skIdx(id)).filter(i=>i!=null&&i>=0);if(S.cfg.order==='strong')L.sort((a,b)=>(SK[b].kind==='buff')-(SK[a].kind==='buff')||(SK[b].mul||0)*(SK[b].hits||1)-(SK[a].mul||0)*(SK[a].hits||1));return L;}
@@ -2994,10 +3001,10 @@ function skillFits(i,m,dm,near){const s=SK[i],st=pStats();switch(s.kind){
   default:return dm<s.range;}}
 let dodgeT=0,dodgeOff=0;const DODGE={max:2,rest:1};
 function autoTick(dt){
-  {const dz=t<dodgeOff?null:dangerAt(player.x,player.y,8,true);if(dz){const a=dz.a,x0=player.x,y0=player.y;stepMove(player,Math.cos(a),Math.sin(a),SPD,dt);const mv=Math.hypot(player.x-x0,player.y-y0);
+  {const dz=t<dodgeOff?null:dangerAt(player.x,player.y,8,true);if(dz){const a=dz.a,x0=player.x,y0=player.y;stepMove(player,Math.cos(a),Math.sin(a),pSPD(),dt);const mv=Math.hypot(player.x-x0,player.y-y0);
     /* v4.52 피하는 걸음이 막히거나(벽 · 물가) 2초 넘게 계속 피하기만 하면 1초 동안 피하기를 쉬고 싸움 · 다가가기로 — 원거리 둘이 번갈아 쏘면 막힌 쪽으로 '피하다' 한 걸음도 못 가고 다 맞던 것(180초 133발 중 133발) */
     if(alive(target)&&!inRange(target,basicRange()-2)&&apWatch(target)){dodgeT=0;return;}/* v4.52 피하는 동안에도 다가가기 진척을 센다 */
-    if(mv<SPD*dt*.25||(dodgeT+=dt)>DODGE.max){dodgeT=0;dodgeOff=t+DODGE.rest;STAT.dodgeRest=(STAT.dodgeRest||0)+1;}else{player.moving=true;faceTo(player.x+Math.cos(a),player.y+Math.sin(a));return;}}else if(t>=dodgeOff)dodgeT=0;}/* v4.47 모든 예고(원형 · 직선 · 부채꼴)를 피한다 */
+    if(mv<pSPD()*dt*.25||(dodgeT+=dt)>DODGE.max){dodgeT=0;dodgeOff=t+DODGE.rest;STAT.dodgeRest=(STAT.dodgeRest||0)+1;}else{player.moving=true;faceTo(player.x+Math.cos(a),player.y+Math.sin(a));return;}}else if(t>=dodgeOff)dodgeT=0;}/* v4.47 모든 예고(원형 · 직선 · 부채꼴)를 피한다 */
   if(!hunt&&inR(ZONES.village.r,player.x,player.y,10)){anchor=null;return;}
   if(!anchor)anchor={x:player.x,y:player.y};
   let m=null;if(hunt&&hunt.mob&&alive(hunt.mob))m=hunt.mob;
@@ -3008,8 +3015,8 @@ function autoTick(dt){
   if(!m)m=hunt?nearestMob(900,S.cfg.tgt==='near'&&!hunt.mob&&!hunt.sub?null:hunt.sp,hunt.zone):nearestMob(SCAN);
   if(m&&!hunt&&dist(m,anchor)>SCAN+50&&!(m.aggro&&!m.ret&&dist(m,player)<140))m=null;/* v4.53 G1-b2c2: 나를 공격 중인 몬스터(140 안)는 자리 범위 밖이어도 버리지 않는다 — 원거리가 물러나 범위(SCAN+50) 밖에서 쏘면 자리로 돌아가다 지형에 막혀 180초 동안 133발을 다 맞던 꼬리 판 */
   if(!m){if(hunt){const Z=ZONES[hunt.zone];if(!hunt.roam||!hunt.roam.length){const homes=mobs.filter(e=>e.zone===hunt.zone&&!e.eliteOf&&(!hunt.sp||e.sp===hunt.sp));const h=homes.length?homes[Math.floor(Math.random()*homes.length)].home:{x:Z.c[0],y:Z.c[1]};hunt.roam=findPath(player.x,player.y,h.x,h.y)||[];}
-      followPath(player,hunt.roam,SPD,dt);player.moving=!!hunt.roam.length;if(hunt.roam.length)faceTo(hunt.roam[0].x,hunt.roam[0].y);}
-    else if(dist(player,anchor)>12){const x0=player.x,y0=player.y;stepMove(player,anchor.x-player.x,anchor.y-player.y,SPD,dt);if(Math.hypot(player.x-x0,player.y-y0)<SPD*dt*.25)anchor={x:player.x,y:player.y};/* v4.53: 자리로 가는 길이 막히면(직선 걸음) 지금 자리를 새 자리로 */else{player.moving=true;faceTo(anchor.x,anchor.y);}}return;}
+      followPath(player,hunt.roam,pSPD(),dt);player.moving=!!hunt.roam.length;if(hunt.roam.length)faceTo(hunt.roam[0].x,hunt.roam[0].y);}
+    else if(dist(player,anchor)>12){const x0=player.x,y0=player.y;stepMove(player,anchor.x-player.x,anchor.y-player.y,pSPD(),dt);if(Math.hypot(player.x-x0,player.y-y0)<SPD*dt*.25)anchor={x:player.x,y:player.y};/* v4.53: 자리로 가는 길이 막히면(직선 걸음) 지금 자리를 새 자리로 */else{player.moving=true;faceTo(anchor.x,anchor.y);}}return;}
   target=m;if(hunt)hunt.roam=null;
   if(player.atkT<=.2&&!player.dash&&!tooHeavy()){const dm=dist(m,player),near=mobs.filter(e=>alive(e)&&dist(e,player)<SK[0].r+8).length,big=m.boss||m.hp>m.max*.5||near>=2;
     if(big)for(const i of autoOrder())if(sReady(i)&&skillFits(i,m,dm,near)&&castSkill(i,true)){return;}}/* v4.52: 스킬을 써도 다가가기 진척(apProg)은 이어 본다 — 스킬마다 지워 회피 판정이 영영 안 되던 것 */
@@ -3022,7 +3029,7 @@ const MOB_BZ={};for(const k in MOB_B){const b=MOB_B[k];if(b.zo)for(const z in b.
 const mobBeh=m=>{const b=mobB(m);return b&&b.b||'melee';};
 const BEHAV={
   melee:{tick(m,dt,dp,moveTo){const reach2=(m.boss?18+12*m.sc:22)+4;
-    if(m.wind>0){m.wind+=dt;if(m.wind>=.45){m.wind=0;if(dist(m,player)<reach2+8){hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv),m);if(player.lastHit===t)mobFx(m);}}return;}
+    if(m.wind>0){m.wind+=dt;if(m.wind>=.45){m.wind=0;if(dist(m,player)<reach2+8){hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv),m);if(player.lastHit===t)mobFx(m,'melee');}}return;}
     if(dp>reach2){moveTo(player.x,player.y,m.boss?46:54);}else if(m.atkT<=0){m.wind=.001;m.atkT=m.boss?2.2:1.8;m.face=player.x<m.x?-1:1;}}},
   /* v4.49 원거리(G1-b): 조준(예고선) → 투사체. 가까이 오면 물러나지만 집에서 leash 밖으로는 안 간다(몰리면 그 자리에서 쏜다) */
   ranged:{tick(m,dt,dp,moveTo){const R=RANGED;
@@ -3033,17 +3040,17 @@ const BEHAV={
     if(dp>R.range){moveTo(player.x,player.y,54);if(!m.stk||Math.hypot(m.x-m.stk.x,m.y-m.stk.y)>EVADE.prog)m.stk={x:m.x,y:m.y,t:0};else if((m.stk.t+=dt)>=EVADE.t){m.stk=null;STAT.evadeMob=(STAT.evadeMob||0)+1;mobEvade(m);}return;}/* v4.53 G1-b2c2: 사거리 밖에서 다가오다 지형에 막혀 EVADE.t초 동안 EVADE.prog도 못 움직이면 몬스터 쪽도 회피(집으로) — 막힌 채 어그로만 남아 자동 전투(범위 밖)와 서로 기다리던 판 */
     if(m.atkT<=0){m.atkT=R.cd;m.face=player.x<m.x?-1:1;m.aim={t:0,e:teleAdd({kind:'line',x:m.x,y:m.y,a:Math.atan2(player.y-m.y,player.x-m.x),len:Math.max(12,dp),w:4,dur:R.aim,aim:true,own:m})};}}},
   /* v4.54 돌진(G1-c): 예고(따라감 → 고정) → 직선 돌진 → 맞힘 ×1.6 / 빗나감 경직. 그 밖은 근접 */
-  charge:{tick(m,dt,dp,moveTo){const C=CHARGE,ob=mobB(m)||{},LK=ob.lock||C.lock,SPD=ob.dspd||C.spd;/* v4.56 종마다 고정 시간(lock) · 돌진 속도(dspd) — 트인 사냥터에서 자동 전투가 늘 피하는 종을 피격률 20~40%에 맞춘다(원거리 MOB_B.spd와 같은 방식) */
+  charge:{tick(m,dt,dp,moveTo){const C=CHARGE,ob=mobB(m)||{},LK0=ob.lock||C.lock,LK=m.chg?(m.chg.L!=null?m.chg.L:(m.chg.L=LK0+(ob.lj?Math.random()*ob.lj:0))):LK0/* v4.62 돌진도 lj: 고정 시간을 lock~lock+lj에서 돌진마다 무작위(자폭 v4.61과 같은 방식 · 걸음 경계 계단) */,SPD=ob.dspd||C.spd;/* v4.56 종마다 고정 시간(lock) · 돌진 속도(dspd) — 트인 사냥터에서 자동 전투가 늘 피하는 종을 피격률 20~40%에 맞춘다(원거리 MOB_B.spd와 같은 방식) */
     if(m.stag>t)return;/* 경직: 움직이지도 때리지도 않는다 */
     const c=m.chg;
     if(c){c.t+=dt;const e=c.e;
-      if(c.ph==='aim'){m.face=player.x<m.x?-1:1;
+      if(c.ph==='aim'){m.face=player.x<m.x?-1:1;if(!c.lk&&c.t>=C.aim-LK&&fxOn('stun')){c.t=C.aim-LK-.001;e.t=c.t;STAT.chgHold=(STAT.chgHold||0)+1;}/* v4.62 G1-e1: 플레이어가 기절 중이면 방향을 고정하지 않고 계속 따라간다 — 기절이 풀린 뒤 고정 시간만큼 반응할 틈(예고 → 반응 원칙 · 무리 돌진이 기절에 이어 맞던 것: 초원황소 Lv9 피격률 0.46~0.60) */
         if(c.t<C.aim-LK){e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);}
         else if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=LK;e.keep=true;e.x=m.x;e.y=m.y;e.a=Math.atan2(player.y-m.y,player.x-m.x);e.len=Math.min(C.dist,dp+C.over);c.a=e.a;c.rem=e.len;{const ca=Math.cos(c.a),sa=Math.sin(c.a);while(c.rem>20&&Math.hypot(m.x+ca*c.rem-m.home.x,m.y+sa*c.rem-m.home.y)>C.leash){c.rem-=5;}if(c.rem<e.len)STAT.chgClamp=(STAT.chgClamp||0)+1;e.len=c.rem;}}/* v4.57: 돌진 끝이 집에서 C.leash 밖이면 그만큼 짧게 — 지나쳐 달린 돌진이 추격 한계(210)를 넘겨 몬스터가 체력 가득으로 집에 돌아가던 것(불새 둥지 측정에서 찾음) *//* 고정: 새 예고처럼 t=0 — 자동 전투는 여기서 0.3초 뒤 반응 */
         if(c.t>=C.aim){c.ph='dash';STAT.chgN=(STAT.chgN||0)+1;}return;}
       /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,SPD*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
       if(!c.hit&&!player.dead){const px=player.x-x0,py=player.y-y0,u=Math.max(0,Math.min(v,px*ca+py*sa)),qx=x0+ca*u-player.x,qy=y0+sa*u-player.y;
-        if(Math.hypot(qx,qy)<C.w/2+6){c.hit=true;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*C.mul,m);if(player.lastHit===t){STAT.chgHit=(STAT.chgHit||0)+1;mobFx(m);burst(player.x,player.y,10,'#e0b080',10,80,4);}else c.hit=false;}}
+        if(Math.hypot(qx,qy)<C.w/2+6){c.hit=true;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*C.mul,m);if(player.lastHit===t){STAT.chgHit=(STAT.chgHit||0)+1;mobFx(m,'charge');burst(player.x,player.y,10,'#e0b080',10,80,4);}else c.hit=false;}}
       if(Math.random()<dt*20)burst(m.x,m.y,1,'#b89a70',3,30,2);
       if(c.rem<=.01||!mv){const i=tele.indexOf(e);if(i>=0)tele.splice(i,1);m.chg=null;
         if(!c.hit){m.stag=t+C.stag;STAT.chgMiss=(STAT.chgMiss||0)+1;floatTxt(m.x,m.y,'휘청','#ffd070');}else m.atkT=Math.max(m.atkT,CHARGE.rest);}/* 맞힌 뒤 숨 고르기 — 돌진이 거리를 단숨에 좁혀 짧은 싸움에서 근접형보다 먼저 때리기 시작하던 몫을 덜어 낸다 */
@@ -3067,7 +3074,7 @@ const BEHAV={
     if(c.t<INF-LK){if(dp>14)moveTo(player.x,player.y,B.creep);e.x=m.x;e.y=m.y;e.t=c.t;return;}
     if(!c.lk){c.lk=true;e.aim=false;e.t=0;e.dur=LK;e.x=m.x;e.y=m.y;}/* 고정: 자동 전투는 여기서 0.3초 뒤 반응 */
     if(c.t>=INF){const i=tele.indexOf(e);if(i>=0)tele.splice(i,1);m.bst=null;STAT.bstBoom=(STAT.bstBoom||0)+1;
-      if(!player.dead&&Math.hypot(player.x-m.x,player.y-m.y)<R+6){const h0=player.hp;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*(ob.mul||B.mul),m);if(player.lastHit===t){STAT.bstHit=(STAT.bstHit||0)+1;STAT.bstDmg=(STAT.bstDmg||0)+Math.max(0,h0-player.hp);mobFx(m);}}
+      if(!player.dead&&Math.hypot(player.x-m.x,player.y-m.y)<R+6){const h0=player.hp;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*(ob.mul||B.mul),m);if(player.lastHit===t){STAT.bstHit=(STAT.bstHit||0)+1;STAT.bstDmg=(STAT.bstDmg||0)+Math.max(0,h0-player.hp);mobFx(m,'burst');}}
       burst(m.x,m.y,6,(SPECIES[m.sp].c||[])[0]||'#ff8a3a',30,140,6);floatTxt(m.x,m.y-10,'펑!','#ffb070',true);killMob(m);}}},
 };
 const guardOn=m=>!!(m&&m.gdU>t);/* v4.58 방어 태세 중인가 */
@@ -3077,19 +3084,23 @@ function mobShoot(m,tx,ty){const R=RANGED,a=Math.atan2(ty-m.y,tx-m.x);if(shots.l
   shots.push({x:m.x,y:m.y,a,c:Math.cos(a),s:Math.sin(a),v:(mobB(m)||{}).spd||R.spd/* v4.52 종마다 투사체 속도(MOB_B.spd) — 없으면 RANGED.spd */,d:0,max:R.range*R.fly,r:R.pr,t:0,m,col:(SPECIES[m.sp].c||[])[1]||'#ffd0f0'});STAT.shotN=(STAT.shotN||0)+1;}
 function shotTick(dt){const R=RANGED;for(let i=shots.length-1;i>=0;i--){const s=shots[i],x0=s.x,y0=s.y,v=(s.v||R.spd)*dt;s.x+=s.c*v;s.y+=s.s*v;s.d+=v;s.t+=dt;
   let hit=false;if(!player.dead){const px=player.x-x0,py=player.y-y0,u=Math.max(0,Math.min(v,px*s.c+py*s.s)),qx=x0+s.c*u-player.x,qy=y0+s.s*u-player.y;hit=Math.hypot(qx,qy)<s.r+6;}
-  if(hit){shots.splice(i,1);STAT.shotHit=(STAT.shotHit||0)+1;const hp0=player.hp;hurtPlayer(calcDmg(s.m.atk,1,pStats().def,s.m.lv,S.lv)*R.mul,s.m)/* v4.52 G1-b2c: 배율을 방어 뒤에 곱한다 — 방어 앞에 곱하면 레벨대마다 방어 비중이 달라 서 있기 비율이 0.78~0.93으로 갈렸다 */;if(player.lastHit===t)mobFx(s.m);burst(player.x,player.y,12,s.col,8,60,3);continue;}
+  if(hit){shots.splice(i,1);STAT.shotHit=(STAT.shotHit||0)+1;const hp0=player.hp;hurtPlayer(calcDmg(s.m.atk,1,pStats().def,s.m.lv,S.lv)*R.mul,s.m)/* v4.52 G1-b2c: 배율을 방어 뒤에 곱한다 — 방어 앞에 곱하면 레벨대마다 방어 비중이 달라 서 있기 비율이 0.78~0.93으로 갈렸다 */;if(player.lastHit===t)mobFx(s.m,'shot');burst(player.x,player.y,12,s.col,8,60,3);continue;}
   if(s.d>=s.max||Math.hypot(s.x-player.x,s.y-player.y)>760){shots.splice(i,1);burst(s.x,s.y,6,s.col,4,40,2);}}}
 /* ================= v4.47 상태이상 (플레이어가 걸림 · player.fx) ================= */
 function fxDur(k){return FXDEF[k].dur*1;}/* 저항(§G2) · 장비(§G3) · 정화(§G12)가 붙을 자리 */
 function fxP(m){return m.boss||m.eliteOf?FX_P.elite:(m.lv<=6||m.lv>=9&&m.lv<=11)?FX_P.early:FX_P.base;}
-function mobFx(m){const b=mobB(m);if(!b||!b.fx||player.dead)return false;if(Math.random()>=fxP(m))return false;return addFx(b.fx,m);}
+function mobFx(m,by){const b=mobB(m);if(!b||!b.fx||player.dead||!FXDEF[b.fx])return false;if(b.fxBy&&by&&b.fxBy!==by)return false;const D=FXDEF[b.fx];/* v4.62 fxBy: 그 공격으로만 · D.p: 확률 덮어쓰기(기절 100%) · D.imm: 같은 개체 면역 */
+  if(D.imm&&m.fxImm>t)return false;const p=D.p!=null?D.p:fxP(m);if(p<1&&Math.random()>=p)return false;if(D.imm)m.fxImm=t+D.imm;return addFx(b.fx,m);}
 const fxOn=k=>!!(player.fx[k]&&player.fx[k].until>t);
 function addFx(k,src){if(player.dead||!FXDEF[k])return false;const D=FXDEF[k],f=player.fx[k],on=f&&f.until>t;
   player.fx[k]={until:t+fxDur(k),dur:fxDur(k),src:src&&src.name||D.name,atk:src&&src.atk||0,tk:on?f.tk:t+1};/* 갱신 · 중첩 없음(초당 틱 박자는 유지) */
+  if(k==='stun')stunHold();
   if(!on){floatTxt(player.x,player.y-6,D.name+'!',D.col);STAT.fxN=(STAT.fxN||0)+1;}return true;}
+/* v4.62 G1-e1: 기절이 걸리는 순간 다른 몬스터가 이미 고정한 돌진 예고(아직 달리기 전)를 '따라가기'로 되돌린다 — 기절 동안 고정하지 않고(charge tick) 풀린 뒤 고정 시간만큼 반응할 틈을 준다(예고 → 반응 원칙) */
+function stunHold(){for(const m of mobs){const c=m.chg;if(!c||c.ph!=='aim'||!c.lk)continue;const LK=c.L!=null?c.L:(mobB(m)||{}).lock||CHARGE.lock;c.lk=false;c.t=CHARGE.aim-LK-.001;const e=c.e;e.aim=true;e.keep=false;e.dur=CHARGE.aim;e.t=c.t;STAT.chgHold=(STAT.chgHold||0)+1;}}
 function clearStatus(){for(const k in player.fx)delete player.fx[k];}
 function tickStatus(dt){if(player.dead){clearStatus();return;}for(const k in player.fx){const f=player.fx[k],D=FXDEF[k];
-  while(f.tk<=Math.min(t,f.until)+1e-6&&!player.dead){f.tk+=1;if(k==='poison'){const v=pStats().hp*D.dps;player.hp-=v;STAT.fxDmg=(STAT.fxDmg||0)+v;player.lastFx=t;floatTxt(player.x,player.y,'-'+Math.max(1,Math.round(v)),D.col);if(player.hp<=0){player.hp=0;delete player.fx[k];die({name:f.src});return;}}}
+  while(f.tk<=Math.min(t,f.until)+1e-6&&!player.dead){f.tk+=1;if(D.dps||D.k){const v=D.dps?pStats().hp*D.dps:Math.max(1,f.atk*D.k);/* v4.62 화상: 건 몬스터 공격력 × k · 방어 무시 */player.hp-=v;STAT.fxDmg=(STAT.fxDmg||0)+v;player.lastFx=t;floatTxt(player.x,player.y,'-'+Math.max(1,Math.round(v)),D.col);if(player.hp<=0){player.hp=0;delete player.fx[k];die({name:f.src});return;}}}
   if(f.until<=t)delete player.fx[k];}}
 let fxHudK='';function fxHud(){const e=$('fxRow');if(!e)return;let h='',key='';for(const k in player.fx){const f=player.fx[k],D=FXDEF[k],rem=Math.max(0,Math.ceil(f.until-t));if(f.until<=t)continue;key+=k+rem;h+='<i class="fxi" style="--c:'+D.col+'" title="'+D.name+' · '+D.desc+'">'+D.ic+'<b>'+rem+'</b></i>';}
   if(key!==fxHudK){fxHudK=key;e.innerHTML=h;e.hidden=!h;}}
@@ -3494,7 +3505,7 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={MOB_BZ,BURST,GUARD,guardOn,playerHit,get npcList(){return npcList;},get anchor(){return anchor;},CHARGE,DODGE,reachOk:(x,y)=>{if(x<8||y<8||x>=WW-8||y>=WH-8)return false;const c=ci(x,y);return !blk[c]&&!!reach[c];},EVADE,mobEvade,apWatch,get apProg(){return apProg;},get target(){return target;},blockedAt:(x,y)=>blockedAt(x,y),los:(a,b,c,d)=>los(a,b,c,d),resetAuto(){dodgeT=0;dodgeOff=0;anchor=null;apPath=null;apFor=null;target=null;apProg=null;},get PLAZA(){return PLAZA;},RANGED,shots,mobShoot,shotTick,usePot,gainXp,mobStats,setAuto(v){auto=!!v;},MOB_B,FXDEF,FX_P,BEHAV,mobB,mobBeh,fxDur,fxP,mobFx,addFx,fxOn,clearStatus,tele,teleAdd,dangerAt,dangerList,TELE_POOL,STAT,enchAid,enchRate,riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftKey,riftKeyIdx,riftLockMsg,riftUnlocked,QORDER_445,die,growthGoal,cancelNav,riftPrepGo,riftResupply,riftSpawn,riftLeave,riftName,riftOf,get riftRet(){return riftRet;},get riftCarry(){return riftCarry;},get graceT(){return graceT;},get MAPID(){return MAPID;},get traveling(){return traveling;},riftHud,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftUp,riftCd,riftStay,riftPend,riftLv,riftFa,riftBaseMap,riftClear,riftExpire,riftAppear,riftChip,riftResp,portalFx,riftAsk,riftNote,riftNeed,riftNeedOf,riftMapNow,riftLeft,closeModal,pScale,get cineT(){return cineT;},get pCine(){return pCine;},winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={pSPD,SPD,basicAttack,castSkill,MOB_BZ,BURST,GUARD,guardOn,playerHit,get npcList(){return npcList;},get anchor(){return anchor;},CHARGE,DODGE,reachOk:(x,y)=>{if(x<8||y<8||x>=WW-8||y>=WH-8)return false;const c=ci(x,y);return !blk[c]&&!!reach[c];},EVADE,mobEvade,apWatch,get apProg(){return apProg;},get target(){return target;},blockedAt:(x,y)=>blockedAt(x,y),los:(a,b,c,d)=>los(a,b,c,d),resetAuto(){dodgeT=0;dodgeOff=0;anchor=null;apPath=null;apFor=null;target=null;apProg=null;},get PLAZA(){return PLAZA;},RANGED,shots,mobShoot,shotTick,usePot,gainXp,mobStats,setAuto(v){auto=!!v;},MOB_B,FXDEF,FX_P,BEHAV,mobB,mobBeh,fxDur,fxP,mobFx,addFx,fxOn,clearStatus,tele,teleAdd,dangerAt,dangerList,TELE_POOL,STAT,enchAid,enchRate,riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftKey,riftKeyIdx,riftLockMsg,riftUnlocked,QORDER_445,die,growthGoal,cancelNav,riftPrepGo,riftResupply,riftSpawn,riftLeave,riftName,riftOf,get riftRet(){return riftRet;},get riftCarry(){return riftCarry;},get graceT(){return graceT;},get MAPID(){return MAPID;},get traveling(){return traveling;},riftHud,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftUp,riftCd,riftStay,riftPend,riftLv,riftFa,riftBaseMap,riftClear,riftExpire,riftAppear,riftChip,riftResp,portalFx,riftAsk,riftNote,riftNeed,riftNeedOf,riftMapNow,riftLeft,closeModal,pScale,get cineT(){return cineT;},get pCine(){return pCine;},winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,MON_ORIG,MONSPR,setVolume},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 

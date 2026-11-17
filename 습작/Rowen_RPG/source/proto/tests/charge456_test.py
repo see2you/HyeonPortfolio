@@ -30,7 +30,7 @@ if __name__=='__main__':
         print('  INFO 배정',r)
         chk(r['bull']=='charge' and r['goat']=='charge' and r['acornboar']=='charge','초원황소 · 절벽산양 · 도토리멧돼지 = 돌진')
         chk(r['crystalbat']=='charge' and r['ashbat']=='charge' and r['phoenix']=='charge','박쥐 2종 · 불새 새끼도 돌진(v4.57 G1-c2b — 측정은 charge457)')
-        chk(r['bossBull'] is None and r['fx']==[None,None],'보스 · 정예는 원형 없음 · 상태이상 없음(기절은 G1-e)')
+        chk(r['bossBull'] is None and r['fx']==['stun',None],'보스 · 정예는 원형 없음 · 초원황소 기절(v4.62 G1-e1) · 절벽산양 상태이상 없음')
         pg.close()
         for sp,mid,lk in CASES:
             pg=page(b,errs,mid);lv=SP[sp][1][0];pg.evaluate(SETUP_JS,lv)
