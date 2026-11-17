@@ -35,7 +35,7 @@ if __name__=='__main__':
         print('  INFO',r)
         chk(r['b']==['guard']*4 and r['fx']==[None]*4,'4종 = 방어 태세 · 상태이상 없음')
         chk(r['boss']==[None]*4 and r['el']==[None]*4 and all(x=='melee' for x in r['elLive']),'보스 · 관문 정예(등잔달팽이 q19)는 원형 없음 (정예 개체 %d)'%len(r['elLive']))
-        chk(r['others']==['guard','burst','charge','ranged','melee','melee','melee','melee'],'앞 종 배정 그대로')
+        chk(r['others']==['guard','burst','charge','ranged','melee','melee','melee','burst'],'앞 종 배정 그대로(v4.61 거품복어 = 자폭)')
         chk(r['first']==[FIRST[k] for k in NEW],'종별 첫 웅크림 %s'%r['first'])
         pg.close()
         for k in NEW:

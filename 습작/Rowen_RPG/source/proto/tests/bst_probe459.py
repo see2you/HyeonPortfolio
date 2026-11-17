@@ -7,18 +7,18 @@ sys.path.insert(0,os.path.dirname(__file__))
 from rng_probe452 import page,ARGS
 from fx_util import SETUP_JS
 from rng_util import PACK_JS
-SP={'emberslime':('rowen',(12,13)),'emberslime3':('erna',(33,34))}
-ZONE={'emberslime':'z5','emberslime3':'e2'}
+SP={'emberslime':('rowen',(12,13)),'emberslime3':('erna',(33,34)),'waterslime':('rowen',(9,10)),'puffer':('kardo',(25,26))}
+ZONE={'emberslime':'z5','emberslime3':'e2','waterslime':'z4','puffer':'k4'}
 SPN=lambda k:k.rstrip('3')
 BOPT=os.environ.get('BOPT')
 RST="(sp)=>{for(const e of __g.mobs)if(e.sp===sp){e.bst=null;}__g.tele.length=0;}"
 HOOK={'stand':"window.__packHook=(L,g)=>{const P=g.player,on=L.some(m=>!m.dead&&m.bst&&m.bst.lk);if(on&&window.__pin){P.x=window.__pin.x;P.y=window.__pin.y;}else window.__pin={x:P.x,y:P.y};};",  # 대응 없음: 고정된 폭발 예고가 있는 동안엔 움직이지 않는다(피하지 않음) — 그 밖엔 자동 전투 그대로
  'smart':"window.__packHook=(L,g)=>{const P=g.player,B=g.BURST;for(const m of L)if(!m.dead&&m.bst&&m.bst.lk){const d=Math.hypot(P.x-m.x,P.y-m.y);if(d<B.r+12){const k=82/32/Math.max(1,d);P.x+=(P.x-m.x)*k;P.y+=(P.y-m.y)*k;}}};",  # 직접 잘 대응: 예고가 고정되는 즉시(반응 0초) 바깥으로 걷는다
  'auto':"window.__packHook=null;"}
-ST=['bstN','bstHit','bstBoom','bstKill']
+ST=['bstN','bstHit','bstBoom','bstKill','bstDmg']
 def run(pg,sp,lv,seeds,mode,n=4):
     z=ZONE.get(sp);sp=SPN(sp)
-    if BOPT:pg.evaluate('([sp,o])=>Object.assign(__g.MOB_B[sp],JSON.parse(o))',[sp,BOPT])
+    if BOPT:pg.evaluate('([sp,o,z])=>{const g=__g,O=JSON.parse(o);Object.assign(g.MOB_B[sp],O);if(g.MOB_BZ[sp+"@"+z])Object.assign(g.MOB_BZ[sp+"@"+z],O);}',[sp,BOPT,z])
     pg.evaluate("([z,h])=>{window.__packSec=150;window.__packHpK=1;window.__packZone=z;window.__packAnc=null;(new Function(h))();}",[z,HOOK[mode]]);pg.evaluate(SETUP_JS,lv)
     B=[];M=[];st={k:0 for k in ST}
     for s in seeds:
@@ -30,7 +30,7 @@ def run(pg,sp,lv,seeds,mode,n=4):
     pg.evaluate("window.__packHook=null")
     B=[x for x in B if x];M=[x for x in M if x]
     return dict(st,taken=sum(x['taken'] for x in B),takenM=sum(x['taken'] for x in M),sec=sum(x['sec'] for x in B)/max(1,len(B)),secM=sum(x['sec'] for x in M)/max(1,len(M)),
-      killed=all(x['killed']==n for x in B+M),n=len(B))
+      killed=all(x['killed']==n for x in B+M),nk=sum(1 for x in B if x['killed']==n),n=len(B))
 if __name__=='__main__':
     from playwright.sync_api import sync_playwright
     want=sys.argv[1:] or list(SP);errs=[]
@@ -43,7 +43,7 @@ if __name__=='__main__':
                 out=[]
                 for mode in os.environ.get('MODES','stand,auto,smart').split(','):
                     pg=page(b,errs,mid);r=run(pg,sp,lv,range(1,NS+1),mode);pg.close()
-                    out.append('%s 피해비 %.2f · 부풀기 %d 폭발 %d 맞음 %d 막음 %d (피격률 %.2f) · 처치 %.1f/%.1f초%s'%(mode,r['taken']/max(1,r['takenM']),r['bstN'],r['bstBoom'],r['bstHit'],r['bstKill'],r['bstHit']/max(1,r['bstN']),r['sec'],r['secM'],'' if r['killed'] else ' 미처치'))
+                    out.append('[%d/%d 폭발 %d] '%(r['taken'],r['takenM'],r['bstDmg'])+'%s 피해비 %.2f · 부풀기 %d 폭발 %d 맞음 %d 막음 %d (피격률 %.2f) · 처치 %.1f/%.1f초%s'%(mode,r['taken']/max(1,r['takenM']),r['bstN'],r['bstBoom'],r['bstHit'],r['bstKill'],r['bstHit']/max(1,r['bstN']),r['sec'],r['secM'],'' if r['killed'] else ' 미처치'))
                 print('%s Lv%d | %s'%(sp,lv,' | '.join(out)),flush=True)
         b.close()
     print('errs',errs[:3])
