@@ -83,10 +83,17 @@ const BPAT={cd:7,gap:2.5,
   fan:{name:'휩쓸기',r:80,half:Math.PI/3,dur:1,mul:1.8},
   dash:{name:'돌진',dur:1,lock:.5,w:30,dist:220,over:30,mul:2,spd:300,leash:220},
   tri:{name:'3연속 장판',n:3,gap:.5,r:40,dur:1,mul:1.4},
-  rage:{name:'광폭',at:.3,cd:1.6}};
+  rage:{name:'광폭',at:.3,cd:1.6},
+  /* v4.69 G1-g1 카르도 3보스 */
+  volley:{name:'3갈래 투사체',n:3,gap:40,aim:1.1,lock:.5,w:14,pr:7,spd:210,dist:230,mul:1.6},/* 나란한 3줄 예고(옆으로 gap 40 · 앞 0.6초 따라감 · 마지막 0.5초 고정) → 세 줄을 따라 투사체(한 번에 한 발만 맞음) · 각 ×mul(방어 앞) · 그동안 보스는 멈춤 */
+  summon:{name:'졸개 소환',at:.5,n:3,r:46,hpK:.5,atkK:.5},/* 체력 50%에 한 번 · 그 사냥터 일반 몬스터 3마리(체력 · 공격 ×0.5 — 약한 졸개)(보스가 집에 돌아가거나 쓰러지면 사라짐) */
+  guard:{name:'방어 태세',pre:.5,dur:2.5}};/* 0.5초 방패 깜빡임 → 2.5초 웅크림(평타 −70% · 스킬 −30% — 일반 방어 태세 GUARD와 같은 배율) · 그동안 공격 · 이동 안 함 */
 /* 퀘스트 id → 패턴 순서(번갈아) · fx = 그 패턴이 맞히면 거는 상태이상(보스 100%) · rage = 광폭 있음 */
 const BOSS_PAT={
   q6:{p:['aoe','dash']},/* 숲의 주인 · 왕멧돼지 Lv8 (fb1 지역 보스판 포함) */
   q10:{p:['aoe','fan'],fx:{fan:'poison'}},/* 호수의 주인 · 큰물뱀 Lv13 (fb2) — 휩쓸기 명중 = 독 */
   q12:{p:['aoe','tri'],rage:true,fx:{tri:'burn'}},/* 마그마골렘 군주 Lv16 — 3연속 장판 명중 = 화상 · 광폭 */
+  q16:{p:['volley'],sum:'cavemush',fx:{volley:'slow'}},/* v4.69 동굴의 파수꾼 · 거대 동굴버섯 Lv21 (fb4) — 3갈래 투사체(명중 = 둔화) + 50% 졸개 소환(동굴버섯 3) */
+  q19:{p:['guard','tri'],fx:{tri:'burn'}},/* v4.69 협곡의 여왕 · 등잔달팽이 Lv25 (fb5) — 방어 태세 + 3연속 장판(명중 = 화상) */
+  q21:{p:['aoe','fan'],rage:true,fx:{fan:'stun'}},/* v4.69 광석골렘 왕 Lv28 (fb6) — 장판 + 휩쓸기(명중 = 기절) + 광폭 */
 };
