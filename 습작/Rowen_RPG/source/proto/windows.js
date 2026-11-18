@@ -296,7 +296,9 @@ function renderSkills(B,F){const o=win;
       else if(id){skSel=id;skTier=SK[k].tier;renderWin();}else toast('먼저 스킬을 배운 뒤 슬롯을 누르자');};bar.appendChild(c);}
   B.appendChild(bar);
   F.append(el('p','note2','레벨업마다 스킬 포인트 1 · 배우기/강화 1P · 최대 Lv '+SK_MAX+' · 자동 전투는 슬롯에 넣은 스킬만 슬롯 순서대로 사용 (설정에서 변경) · 빨간 점 = 지금 배우기 · 강화 · 스킬서 사용 가능'));
-  const bt=el('div','btns');bt.append(btn('자동 성장 '+(S.autoGrow?'켬':'끔'),S.autoGrow?'tg on':'tg',()=>{S.autoGrow=!S.autoGrow;if(S.autoGrow)autoGrowNow();save();renderWin();}));F.appendChild(bt);}
+  const bt=el('div','btns');bt.append(btn('자동 성장 '+(S.autoGrow?'켬':'끔'),S.autoGrow?'tg on':'tg',()=>{S.autoGrow=!S.autoGrow;if(S.autoGrow)autoGrowNow();save();renderWin();}));
+  {const n=skBatchN(),b=btn(n?'일괄 강화 · '+n:'일괄 강화',n?'pri':'',()=>{skBatch();renderWin();},!n);b.title=n?'스킬 포인트로 강화할 수 있는 스킬을 한 번에 강화한다(낮은 레벨부터 · 같으면 슬롯에 낀 스킬 먼저) · 쓸 수 있는 스킬서도 함께 사용':'지금 강화할 수 있는 스킬이 없다';if(n)b.classList.add('dot');bt.appendChild(b);}
+  F.appendChild(bt);}
 function skWhy(i){const s=SK[i],k=skLv(i)+1;if(!tierOpen(s.tier))return SK_TIER[s.tier].n+' 미개방 · '+SK_TIER[s.tier].how;if(s.book&&!S.books[s.id]){const sb=Object.values(SUBQ).find(q=>q.rw.book===s.id);return '스킬서 필요 — 서브 「'+(sb?sb.title:'?')+'」';}
   if(S.lv<skNeedLv(i,k))return '캐릭터 Lv '+skNeedLv(i,k)+' 필요';if(!S.kp)return '스킬 포인트 부족';return '';}
 
