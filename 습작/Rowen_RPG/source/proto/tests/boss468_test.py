@@ -46,13 +46,13 @@ with sync_playwright() as p:
     # 1) 배정
     r=pg.evaluate("""(()=>{const g=__g,B=g.BOSS_PAT;const el=id=>g.spawnElite(g.QUESTS.find(q=>q.id===id));const a=el('q6'),b=el('q10'),c=el('q12');
       const f=['q6','q10'].map(id=>[id,!!g.bossPat({boss:true,eliteOf:id,field:true})]);/* 지역 보스판 = 같은 q의 elite를 eliteOf로 만든 개체(ensureFieldBosses) */
-      const other={boss:true,eliteOf:'q27'};return {q6:B.q6.p.join('+'),q10:B.q10.p.join('+')+'/'+B.q10.fx.fan,q12:B.q12.p.join('+')+'/'+B.q12.fx.tri+'/'+B.q12.rage,
+      const other={boss:true,eliteOf:'q99'};return {q6:B.q6.p.join('+'),q10:B.q10.p.join('+')+'/'+B.q10.fx.fan,q12:B.q12.p.join('+')+'/'+B.q12.fx.tri+'/'+B.q12.rage,
         pa:!!g.bossPat(a)&&!!g.bossPat(b)&&!!g.bossPat(c),f,other:g.bossPat(other),norm:g.bossPat({boss:false,eliteOf:null}),mobB:g.mobB(a)};})()""")
     print(' 배정',r)
     chk(r['q6']=='aoe+dash' and r['q10']=='aoe+fan/poison' and r['q12']=='aoe+tri/burn/true','패턴 표: 왕멧돼지 ①+③ · 큰물뱀 ①+②(독) · 마그마골렘 군주 ①+④+⑥(화상)')
     chk(r['pa'],'관문 정예 3종에 패턴')
     chk(all(v for k,v in r['f'] if k in ('q6','q10','q12')) and any(k=='q6' for k,v in r['f']),'지역 보스판(fb1 · fb2)도 같은 패턴 '+str(r['f']))
-    chk(r['other'] is None and r['norm'] is None and r['mobB'] is None,'다른 보스(q27 · G1-g2)는 옛 장판 · 일반 몬스터 없음 · mobB는 그대로 null')
+    chk(r['other'] is None and r['norm'] is None and r['mobB'] is None,'패턴 표에 없는 보스(q99)는 옛 장판 · 일반 몬스터 없음 · mobB는 그대로 null')
     # 2) 패턴별 판정
     pg.evaluate(SETUP_JS,13)
     for qid,k,kind in (('q6','aoe',['circle']),('q6','dash',['line*']),('q10','fan',['fan']),('q12','tri',['circle'])):

@@ -49,11 +49,11 @@ with sync_playwright() as p:
     r=pg.evaluate("""(()=>{const g=__g,B=g.BOSS_PAT;const el=id=>g.spawnElite(g.QUESTS.find(q=>q.id===id));const a=el('q16'),b=el('q19'),c=el('q21');
       const f=['q16','q19','q21'].map(id=>!!g.bossPat({boss:true,eliteOf:id,field:true}));
       return {q16:B.q16.p.join('+')+'/'+B.q16.fx.volley+'/'+B.q16.sum,q19:B.q19.p.join('+')+'/'+B.q19.fx.tri,q21:B.q21.p.join('+')+'/'+B.q21.fx.fan+'/'+B.q21.rage,
-        pa:!!g.bossPat(a)&&!!g.bossPat(b)&&!!g.bossPat(c),f,other:['q27','q30','q32'].map(id=>g.bossPat({boss:true,eliteOf:id})),mobB:[a,b,c].map(x=>g.mobB(x))};})()""")
+        pa:!!g.bossPat(a)&&!!g.bossPat(b)&&!!g.bossPat(c),f,other:['q99','q26'].map(id=>g.bossPat({boss:true,eliteOf:id})),mobB:[a,b,c].map(x=>g.mobB(x))};})()""")
     print(' 배정',r)
     chk(r['q16']=='volley/slow/cavemush' and r['q19']=='guard+tri/burn' and r['q21']=='aoe+fan/stun/true','패턴 표: 동굴버섯 3갈래(둔화)+소환 · 등잔달팽이 방어 태세+3연속(화상) · 광석골렘 왕 ①+②(기절)+⑥')
     chk(r['pa'] and all(r['f']),'관문 정예 3종 · 지역 보스판(fb4~6)에 패턴')
-    chk(all(x is None for x in r['other']) and all(x is None for x in r['mobB']),'에르나 보스(q27 · q30 · q32 — G1-g2)는 옛 장판 · 보스 mobB는 null')
+    chk(all(x is None for x in r['other']) and all(x is None for x in r['mobB']),'패턴 표에 없는 id(q99 · q26)는 옛 장판 · 보스 mobB는 null')
     pg.evaluate(SETUP_JS,25)
     for qid,k,kind in (('q16','volley',['line*']*3),('q19','tri',['circle']),('q21','aoe',['circle']),('q21','fan',['fan'])):
         pg.evaluate(SEED,7);a=pg.evaluate(ISO_JS,[qid,k,'in']);pg.evaluate(SEED,7);o=pg.evaluate(ISO_JS,[qid,k,'out']);print(' ',qid,k,'안',a,'밖',o)
