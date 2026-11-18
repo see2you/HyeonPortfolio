@@ -38,7 +38,7 @@ if __name__=='__main__':
         r=pg.evaluate("()=>{const g=__g;const o={};for(const k of ['bull','goat','crystalbat','ashbat','phoenix','acornboar'])o[k]=g.mobBeh({sp:k});o.bossBull=g.mobB({sp:'bull',boss:true});o.invPh=g.mobB({sp:'phoenix',boss:true,inv:true});o.fx=[g.MOB_B.crystalbat.fx,g.MOB_B.ashbat.fx,g.MOB_B.phoenix.fx];o.lock=[g.MOB_B.crystalbat.lock||null,g.MOB_B.ashbat.lock,g.MOB_B.phoenix.lock];return o;}")
         print('  INFO 배정',r)
         chk(all(r[k]=='charge' for k in ['bull','goat','crystalbat','ashbat','phoenix','acornboar']),'돌진 6종 모두 charge(도토리멧돼지 · 초원황소 · 절벽산양 · 수정박쥐 · 잿빛박쥐 · 불새 새끼)')
-        chk(r['bossBull'] is None and r['invPh'] is None and r['fx']==[None,None,None],'보스 · 침공(불새 새끼) · 정예는 원형 없음 · 날짐승 상태이상 없음(G1-e)')
+        chk(r['bossBull'] is None and (r['invPh'] or {}).get('b')=='charge' and r['fx']==[None,None,None],'보스 · 정예는 원형 없음 · 침공(불새 새끼)은 v4.71(G1-g3)부터 돌진 원형 · 날짐승 상태이상 없음(G1-e)')
         chk(r['lock']==[LOCKS['crystalbat'] if LOCKS['crystalbat']!=.35 else None,LOCKS['ashbat'],LOCKS['phoenix']],'고정 시간 표 %s'%r['lock'])
         pg.close()
         # 날짐승도 지형에 막힌다: 바로 앞에 막힌 칸이 있는 자리에서 돌진 → 막혀 멈춤 · 빗나감 경직
