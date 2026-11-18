@@ -67,12 +67,12 @@ with sync_playwright() as p:
         if want=='phoenix':
             r=pg.evaluate("""(()=>{const g=__g,P=g.player,m=window.__bm;m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+60;P.y=m.y+10;P.hp=1e8;g.setTarget(m);m.spE=-99;g.bpStart(m,'aoe',60);for(let i=0;i<6;i++){m.atkT=99;m.aoeT=99;P.lastHit=1e12;g.step(1,.05);}
               g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();const e=document.getElementById('tgtI'),rc=e.getBoundingClientRect();return {st:g.mobState(m),tx:e.textContent,tip:e.title,in:rc.top>=0&&rc.bottom<=720&&rc.right<=1280};})()""")
-            print('  tgt',r);chk('돌진' in r['tx'] and '♛장판' in r['tx'] and r['st']=='장판' and r['in'],'타깃 창: 돌진 · ♛장판 칩 · 상태 "장판" · 화면 안')
+            print('  tgt',r);chk(r['tx']=='' and r['st']=='장판','타깃 창: 돌진 · ♛장판 칩 · 상태 "장판" · 화면 안')
             pg.screenshot(path='shots/v471_침공불새_장판.png')
             vt=pg.evaluate("(()=>{const r=document.getElementById('verTag').getBoundingClientRect();return [r.left,r.bottom];})()");chk(vt[0]<200 and vt[1]>600,'왼쪽 아래 버전 표시')
         if want=='magmagolem':
             r=pg.evaluate("(()=>{const g=__g,m=window.__bm;g.setTarget(m);g.tgtInfo(m);return document.getElementById('tgtI').textContent})()");print('  tgt',r)
-            chk(r.startswith('♛') and '장판' in r,'근접 침공 보스 타깃 창: ♛ 장판')
+            chk(r=='','v4.79 근접 침공 보스 타깃 창: 패턴 숨김')
         pg.close()
     # --- 균열의 주인 ---
     for mid,lv,sp,beh in (('rowen',13,'lakesnake','melee'),('kardo',24,'snail','guard'),('erna',36,'ashbat','charge')):
@@ -84,12 +84,12 @@ with sync_playwright() as p:
         if sp=='snail':
             r=pg.evaluate("""(()=>{const g=__g,P=g.player,m=window.__bm;m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+50;P.y=m.y+10;P.hp=1e8;g.setTarget(m);m.gdU=g.t+2;m.gdN=g.t+8;g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();
               const e=document.getElementById('tgtI');return {st:g.mobState(m),tx:e.textContent};})()""");print('  tgt',r)
-            chk('방어 태세' in r['tx'] and '♛장판' in r['tx'] and r['st']=='웅크림','균열의 주인 타깃 창: 방어 태세 · ♛장판 · "웅크림"')
+            chk(r['tx']=='' and r['st']=='웅크림','균열의 주인 타깃 창: 방어 태세 · ♛장판 · "웅크림"')
             pg.screenshot(path='shots/v471_균열주인_웅크림.png')
             pg.evaluate("(()=>{__g.rift.clear=0;})()")
         if sp=='lakesnake':
             r=pg.evaluate("(()=>{const g=__g,m=window.__bm;g.setTarget(m);g.tgtInfo(m);return document.getElementById('tgtI').textContent})()");print('  tgt',r)
-            chk('♛' in r and '장판' in r and '독' in r,'균열의 주인(호수뱀) 타깃 창: ♛ 장판 + 독')
+            chk(r=='','v4.79 균열의 주인 타깃 창: 패턴 숨김')
         pg.close()
     # --- 이전 세이브 ---
     pg=page(b,errs,'rowen');pg.evaluate("(()=>{__g.closeModal();__g.save();})()");sv=pg.evaluate("localStorage.getItem('rowen-mmo-v4')");pg.close()

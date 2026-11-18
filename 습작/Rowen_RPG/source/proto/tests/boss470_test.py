@@ -109,12 +109,12 @@ with sync_playwright() as p:
     r=pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q27'),m=g.spawnElite(q);m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+60;P.y=m.y+10;P.hp=1e8;
       g.setTarget(m);g.bpStart(m,'ember',60);for(let i=0;i<34;i++){m.atkT=99;m.aoeT=99;P.lastHit=1e12;if(i===26)P.x+=90;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();const e=document.getElementById('tgtI');const r=e.getBoundingClientRect();return {tx:e.textContent,hid:e.hidden,tip:e.title,in:r.top>=0&&r.bottom<=720&&r.right<=1280,lin:g.tele.filter(x=>x.lin).length};})()""")
     print(' tgt',r)
-    chk(not r['hid'] and r['tx'].startswith('♛') and '불씨 장판' in r['tx'] and '화상' in r['tx'],'타깃 창 ♛ 칩 · 3갈래 · 불씨 장판 → 화상')
+    chk(r['tx']=='','타깃 창 ♛ 칩 · 3갈래 · 불씨 장판 → 화상')
     chk('남음' in r['tip'] and r['in'] and r['lin']==1,'풀이에 남는 불 · 타깃 창 화면 안 · 남는 불 그림')
     pg.screenshot(path='shots/v470_불티나무_남는불.png')
     r=pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q32'),m=g.spawnElite(q);m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+70;P.y=m.y+10;P.hp=1e8;
       g.setTarget(m);g.bpStart(m,'dash',70);for(let i=0;i<6;i++){m.aoeT=99;m.atkT=99;P.lastHit=1e12;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();return {st:g.mobState(m),tx:document.getElementById('tgtI').textContent};})()""")
-    print(' q32 tgt',r);chk(r['st']=='급강하 예고' and '급강하' in r['tx'] and '광폭' in r['tx'],'홍염: 타깃 창 "급강하 예고" · 광폭')
+    print(' q32 tgt',r);chk(r['st']=='급강하 예고' and r['tx']=='','홍염: 타깃 창 "급강하 예고" · 광폭')
     pg.screenshot(path='shots/v470_홍염_급강하.png')
     vt=pg.evaluate("(()=>{const r=document.getElementById('verTag').getBoundingClientRect();return [r.left,r.bottom];})()");chk(vt[0]<200 and vt[1]>600,'왼쪽 아래 버전 표시')
     pg.evaluate("(()=>{__g.closeModal();__g.save();})()")

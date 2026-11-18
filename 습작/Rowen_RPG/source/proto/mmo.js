@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.78';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.79';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -1633,8 +1633,8 @@ function mobInfo0(m){const b=m&&mobB(m);if(!b)return bossInfo(m);const B=b.b&&b.
   const line=B?B.how:F.name+' — '+F.desc;return {b:b.b,B,fx:b.fx,F,fxTxt,line,tip:(B?B.name+': '+B.desc+' · 대응: '+B.how:'')+(F?(B?'\n':'')+F.name+': '+fxTxt+' · '+F.desc:'')};}
 /* 지금 그 개체가 하는 일 — 칩 옆에 밝힌다 */
 function mobState(m){if(!m)return '';if(bossPat(m)&&bossPat(m).gen&&m.bp)return bpName(bossPat(m),m.bp.k);if(bossPat(m)&&!bossPat(m).gen){const c=m.bp;if(c&&c.k==='guard')return c.on?'웅크림':'웅크리기 직전';if(c)return bpName(bossPat(m),c.k)+(c.k==='dash'&&c.ph==='aim'||c.k==='fan'||c.k==='volley'&&!c.lk?' 예고':'');return m.rage?'광폭':'';}if(m.gdU>t)return '웅크림';if(m.bst)return '부풀기';if(m.stag>t)return '휘청';if(m.chg)return '돌진 예고';if(m.aim)return '조준';if(mobBeh(m)==='guard'&&m.aggro&&m.gdN>t&&m.gdN-t<=GUARD.pre)return '웅크리기 직전';return '';}
-let tgtIK='';function tgtInfo(m){const e=$('tgtI');if(!e)return;const I=mobInfo(m),stt=I?mobState(m):'',key=I?(m.id||m.sp)+'|'+m.lv+'|'+stt:'';if(key===tgtIK)return;tgtIK=key;
-  if(!I){e.hidden=true;e.replaceChildren();return;}e.hidden=false;const row=el('div','tic');
+let tgtIK='';function tgtInfo(m){const e=$('tgtI');if(!e)return;/* v4.79 보스(지역 보스·침공·균열의 주인)는 패턴을 미리 알려주지 않는다 — 직접 겪으며 익힌다 */const I=m&&bossPat(m)?null:mobInfo(m),stt=I?mobState(m):'',key=I?(m.id||m.sp)+'|'+m.lv+'|'+stt:'';if(key===tgtIK)return;tgtIK=key;
+  if(!I){e.hidden=true;e.replaceChildren();e.title='';return;}e.hidden=false;const row=el('div','tic');
   if(I.B){const c=el('span','tch b'+(stt?' on':''),I.B.ic+' '+I.B.name+(stt?' · '+stt:''));c.style.setProperty('--c',I.B.col);c.dataset.b=I.b;row.appendChild(c);}
   if(I.F){const c=el('span','tch f',I.F.ic+' '+I.fxTxt);c.style.setProperty('--c',I.F.col);c.dataset.fx=I.fx;row.appendChild(c);}
   const d=el('div','tdsc',I.line);e.title=I.tip;e.replaceChildren(row,d);}

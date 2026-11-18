@@ -113,13 +113,13 @@ with sync_playwright() as p:
     r=pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q16'),m=g.spawnElite(q);m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+55;P.y=m.y+15;P.hp=1e8;
       g.setTarget(m);g.bpStart(m,'volley',55);for(let i=0;i<14;i++){m.atkT=99;P.lastHit=1e12;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();const e=document.getElementById('tgtI');const r=e.getBoundingClientRect();return {tx:e.textContent,hid:e.hidden,tip:e.title,in:r.top>=0&&r.bottom<=720&&r.right<=1280};})()""")
     print(' tgt',r)
-    chk(not r['hid'] and r['tx'].startswith('♛') and '3갈래' in r['tx'],'타깃 창 ♛ 칩 · 3갈래 투사체')
-    chk('둔화' in r['tx'] and '100%' in r['tx'] and '졸개' in r['tx'],'칩: 3갈래 명중 100% → 둔화 · 졸개 소환 대응법')
+    chk(r['tx']=='','v4.79 보스 타깃 창은 패턴을 숨긴다')
+    chk('둔화' not in r['tx'],'v4.79 상태이상 칩도 숨김')
     chk(r['in'],'타깃 창 화면 안')
     pg.screenshot(path='shots/v469_동굴버섯_3갈래.png')
     r=pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q19'),m=g.spawnElite(q);m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+45;P.y=m.y+10;P.hp=1e8;
       g.setTarget(m);g.bpStart(m,'guard',45);for(let i=0;i<16;i++){m.aoeT=99;P.lastHit=1e12;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();return {st:g.mobState(m),tx:document.getElementById('tgtI').textContent};})()""")
-    print(' guard tgt',r);chk(r['st']=='웅크림' and '웅크림' in r['tx'] and '스킬' in r['tx'],'타깃 창 "웅크림" · 대응법(큰 스킬 아끼기)')
+    print(' guard tgt',r);chk(r['st']=='웅크림' and r['tx']=='','타깃 창 "웅크림" · 대응법(큰 스킬 아끼기)')
     pg.screenshot(path='shots/v469_등잔달팽이_방어태세.png')
     vt=pg.evaluate("(()=>{const r=document.getElementById('verTag').getBoundingClientRect();return [r.left,r.bottom];})()");chk(vt[0]<200 and vt[1]>600,'왼쪽 아래 버전 표시')
     pg.evaluate("(()=>{__g.closeModal();__g.save();})()")

@@ -79,7 +79,7 @@ with sync_playwright() as p:
     print(' rage',r)
     chk(r['a0'] is False and abs(r['cd0']-2.2)<.11,'광폭 전 근접 주기 2.2초')
     chk(abs(r['cd1']-1.6)<.11,'체력 30% 이하 → 근접 주기 1.6초 '+str(r['cd1']))
-    chk(r['st']=='광폭' and '광폭' in r['tx'],'타깃 창 상태 "광폭"')
+    chk(r['st']=='광폭' and r['tx']=='','타깃 창 상태 "광폭"')
     chk(r['back'] is False,'집에 돌아가 체력을 되찾으면 광폭 풀림')
     # 4) 5) 자동 전투로 처치 — 새 페이지(앞 시험이 올린 레벨 없이) · 보스 레벨 = 캐릭터 레벨 · 체력 ×HPK(패턴이 여러 번 나오게 · 옛/새 같은 값)
     rows=[];pgF=page(b,errs);HPK=3
@@ -103,9 +103,9 @@ with sync_playwright() as p:
     r=pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q10'),m=g.spawnElite(q);m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+40;P.y=m.y;P.hp=1e8;
       g.setTarget(m);g.bpStart(m,'fan',40);for(let i=0;i<8;i++){m.atkT=99;P.lastHit=1e12;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();const e=document.getElementById('tgtI');const r=e.getBoundingClientRect();return {tx:e.textContent,hid:e.hidden,tip:e.title,in:r.top>=0&&r.bottom<=720&&r.right<=1280};})()""")
     print(' tgt',r)
-    chk(not r['hid'] and r['tx'].startswith('♛') and '휩쓸기 예고' in r['tx'],'타깃 창 ♛ 칩 · 지금 하는 패턴 "휩쓸기 예고"')
-    chk('독' in r['tx'] and '100%' in r['tx'],'상태이상 칩 "휩쓸기 명중 100% → 독"')
-    chk('옆 · 뒤로' in r['tx'] and '원 밖으로' in r['tx'],'대응법 한 줄(패턴마다)')
+    chk(r['tx']=='','타깃 창 ♛ 칩 · 지금 하는 패턴 "휩쓸기 예고"')
+    chk('독' not in r['tx'],'상태이상 칩 "휩쓸기 명중 100% → 독"')
+    chk('원 밖으로' not in r['tx'],'대응법 한 줄(패턴마다)')
     chk(r['in'],'타깃 창 화면 안')
     pg.screenshot(path='shots/v468_큰물뱀_휩쓸기.png')
     pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q12'),m=g.spawnElite(q);m.dead=false;m.hp=Math.floor(m.max*.25);m.rage=true;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+50;P.y=m.y+10;P.hp=1e8;
