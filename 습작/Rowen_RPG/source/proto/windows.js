@@ -129,7 +129,7 @@ function renderBag(B,F){const o=win,enc=o.enc;
 function statLines(it,cmp){const s=itemStats(it),c=cmp?itemStats(cmp):{},box=el('div','tst');const ks=new Set([...Object.keys(s),...Object.keys(c)]);
   for(const k of ks){const v=s[k]||0,d=v-(c[k]||0),row=el('div',null);row.append(el('span',null,STATN[k]),el('b',null,statFmt(k,v)));if(cmp&&Math.abs(d)>1e-6)row.appendChild(el('em',d>0?'up':'dn',(d>0?'▲ ':'▼ ')+statFmt(k,Math.abs(d)).slice(1)));box.appendChild(row);}return box;}
 function itemTip(tp,it){const G=GRADES[it.g],eq=isEq(it),T=TIERS[it.t];
-  const nm=el('b','tn',itemName(it));nm.style.color=G.c;tp.append(nm,el('div','tt',G.n+' · '+SLOTN[it.k]+' · '+T.area+' '+it.t+'단계 (Lv '+T.iL+'~) · 무게 '+itemW(it)+(eq?' · 장착 중':'')));if(it.bu){const B=BU[it.bu];tp.appendChild(el('div','tcmp up','★ 지역 보스 전용 · '+QUESTS.find(q=>q.id===B.q).elite.name+' · 제작 불가 · 보스 컬렉션 재료'));}
+  const nm=el('b','tn',itemName(it));nm.style.color=G.c;tp.append(nm,el('div','tt',G.n+' · '+SLOTN[it.k]+' · '+T.area+' '+it.t+'단계 (Lv '+T.iL+'~) · 무게 '+itemW(it)+(eq?' · 장착 중':'')));if(it.bu){const B=BU[it.bu];tp.appendChild(el('div','tcmp up','★ 지역 보스 전용 · '+QUESTS.find(q=>q.id===B.q).elite.name+' · 제작 불가 · 보스 컬렉션 재료'));if(B.fx){const f=el('div','tgfx','◆ 고유 효과 · '+B.fx.txt+(eq?' · 켜짐':' · 착용 중에만'));f.style.color='#ffa04a';f.style.fontWeight='600';tp.appendChild(f);}/* v4.73 G3-a */}
   const s=targetSlot(it),cur=!eq&&S.eq[s]&&itemById(S.eq[s]);tp.appendChild(statLines(it,cur||null));
   if(cur){const d=cpWith(s,it.u)-cpOf();tp.appendChild(el('div','tcmp'+(d>0?' up':d<0?' dn':''),'장착 중 '+itemName(cur)+'과(와) 비교 · 전투력 '+(d>=0?'▲ ':'▼ ')+fmt(Math.abs(d))));}
   else if(!eq){const d=cpWith(s,it.u)-cpOf();tp.appendChild(el('div','tcmp up','빈 부위 · 장착하면 전투력 ▲ '+fmt(d)));}

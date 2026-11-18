@@ -144,6 +144,22 @@ const BU={
   b32b:{q:'q32',n:'홍염의 깃 반지',k:'ring',t:5,g:4,fa:12,x:{crit:.02}}};
 for(const id in BU)BU[id].id=id;
 const buOfQ=qid=>Object.values(BU).filter(b=>b.q===qid);
+/* v4.73 G3-a 보스 전용 장비 고유 효과 (MMORPG 라이크의 보스 드롭 장비 고유 옵션) — 착용 중에만 · 한 줄.
+   효과 코드는 playerHit · killMob · usePot · pStats에 흩지 않고 gearFx()(착용 중 효과 목록 · gearSum처럼 캐시)를 거친다.
+   훅: 평타(n · k · burn) · 처치(kill — G3-b) · 물약(pot) · 능력치(mv · fxK · low) */
+const GFX={
+  b6a:{txt:'평타 3번째마다 피해 +40%',n:3,k:.40},
+  b6b:{txt:'이동 속도 +6%',mv:.06},
+  b10a:{txt:'독 지속 시간 −50%',fxK:{poison:.5}},
+  b10b:{txt:'MP 물약 회복량 +25%',pot:{mp:.25}},
+  b12a:{txt:'평타가 대상에 화상 3초(초당 공격력 ×0.10 · 방어 무시)',burn:{dur:3,k:.10}},
+  b12b:{txt:'HP 30% 이하일 때 공격력 +12%',low:{hp:.30,atk:.12}}};
+for(const id in GFX)if(BU[id])BU[id].fx=Object.assign({id},GFX[id]);
+let gfxV=-1,gfxC=null;
+function gearFx(){const v=S.nu*1000+(S.gv||0);if(gfxV===v&&gfxC)return gfxC;const o={};
+  for(const s of SLOTS){const it=S.eq[s]&&itemById(S.eq[s]);if(it&&it.bu&&BU[it.bu]&&BU[it.bu].fx)o[it.bu]=BU[it.bu].fx;}gfxC=o;gfxV=v;return o;}
+const gfx=id=>gearFx()[id]||null;
+const gfxSum=(key,sub)=>{let n=0;const F=gearFx();for(const id in F){const v=F[id][key];if(v==null)continue;n+=sub?(v[sub]||0):v;}return n;};
 const BU_FIRST_B=.35,BU_FIELD=.40,BU_PITY=3,BU_INV=.10,FIELD_RESP=150;
 /* ===== 장비 인스턴스 ===== */
 function newItem(k,t,g){return{u:++S.nu,k,t:clamp(t,1,TIER_MAX),g:clamp(g,0,4),en:0,ff:0};}
@@ -158,7 +174,7 @@ const equippedU=()=>new Set(Object.values(S.eq).filter(Boolean));
 const isEq=it=>equippedU().has(it.u);
 const slotOf=it=>{for(const s of SLOTS)if(S.eq[s]===it.u)return s;return null;};
 /* 장착 합계 (pStats에서 매 프레임 쓰므로 버전 캐시) */
-let gearV=-1,gearC=null;const gearDirty=()=>{gearV=-1;lastQKey='';};
+let gearV=-1,gearC=null;const gearDirty=()=>{gearV=-1;gfxV=-1;lastQKey='';};
 function gearSum(){if(gearV===S.nu*1000+(S.gv||0)&&gearC)return gearC;const o={atk:0,def:0,hp:0,mp:0,crit:0,skm:0,faith:0};
   for(const s of SLOTS){const it=S.eq[s]&&itemById(S.eq[s]);if(!it)continue;const st=itemStats(it);for(const k in st)o[k]+=st[k];}
   const cb=collSum();for(const k in cb)o[k]+=cb[k];
