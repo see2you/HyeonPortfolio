@@ -153,7 +153,20 @@ const GFX={
   b10a:{txt:'독 지속 시간 −50%',fxK:{poison:.5}},
   b10b:{txt:'MP 물약 회복량 +25%',pot:{mp:.25}},
   b12a:{txt:'평타가 대상에 화상 3초(초당 공격력 ×0.10 · 방어 무시)',burn:{dur:3,k:.10}},
-  b12b:{txt:'HP 30% 이하일 때 공격력 +12%',low:{hp:.30,atk:.12}}};
+  b12b:{txt:'HP 30% 이하일 때 공격력 +12%',low:{hp:.30,atk:.12}},
+  /* v4.74 G3-b 카르도 · 에르나 12종 */
+  b16a:{txt:'회오리 베기 범위 +20%',skR:{whirl:.20}},
+  b16b:{txt:'비전투 HP 회복 2배',rg:1},
+  b19a:{txt:'장판 · 폭발 피해 −25%',zoneK:.25},
+  b19b:{txt:'별똥별 재사용 대기 −2초',cdS:{star:2}},
+  b21a:{txt:'치명 피해 +20%p',critM:.20},
+  b21b:{txt:'처치할 때 MP 4 회복',kill:m=>gfxMp(4)},
+  b27a:{txt:'HP 물약 대기 2.2 → 1.7초',potCd:.5},
+  b27b:{txt:'둔화 · 기절 지속 시간 −50%',fxK:{slow:.5,stun:.5}},
+  b30a:{txt:'평타 15% 확률로 한 번 더',xhit:.15},
+  b30b:{txt:'HP 50% 이상일 때 받는 피해 −8%',hiDr:{hp:.50,dr:.08}},
+  b32a:{txt:'처치 시 주변 40에 공격력 ×0.5 불꽃(방어 무시)',kill:m=>gfxFlame(m,40,.5)},
+  b32b:{txt:'쓰러질 때 한 번 HP 30%로 버팀(300초마다 · 경험치 손실 없음)',save:{hp:.30,cd:300}}};
 for(const id in GFX)if(BU[id])BU[id].fx=Object.assign({id},GFX[id]);
 let gfxV=-1,gfxC=null;
 function gearFx(){const v=S.nu*1000+(S.gv||0);if(gfxV===v&&gfxC)return gfxC;const o={};

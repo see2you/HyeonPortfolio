@@ -27,7 +27,7 @@ with sync_playwright() as p:
     pg.evaluate("(()=>{const g=__g;for(const m of g.mobs){m.aggro=false;m.dead=true;m.respawn=1e9;m.deadT=-1e9;}g.S.lv=12;g.S.autoQ=false;g.setAuto(false);g.autoGrowNow();})()")
     # 1) 데이터
     d=pg.evaluate("(()=>{const g=__g;return {k:Object.keys(g.GFX),fx:Object.keys(g.BU).filter(i=>g.BU[i].fx),n:Object.keys(g.BU).length};})()")
-    chk(d['k']==['b6a','b6b','b10a','b10b','b12a','b12b'] and d['fx']==d['k'] and d['n']==18,'로웬 6종에 고유 효과 · 나머지 12종은 G3-b')
+    chk(d['k'][:6]==['b6a','b6b','b10a','b10b','b12a','b12b'] and d['fx']==d['k'] and d['n']==18,'로웬 6종에 고유 효과(v4.74부터 18종 모두)');d['k']=d['k'][:6]
     # 2) 착용 · 해제 · 등록
     u={k:pg.evaluate(GIVE,k) for k in d['k']}
     r=pg.evaluate(EQ,u['b12a']);chk(r==['b12a'],'용암 장갑 착용 → 켜짐 '+str(r))
@@ -78,7 +78,7 @@ with sync_playwright() as p:
     # 9) 툴팁 + 11) 화면
     pg.evaluate("(()=>{const g=__g;g.unequip('ring1',true);g.unequip('ring2',true);g.S.eq.gloves=null;g.bumpGear();})()")
     pg.evaluate(EQ,u['b12a']);pg.evaluate(EQ,u['b12b'])
-    t=pg.evaluate("(u)=>{const g=__g;const a=document.createElement('div'),b=document.createElement('div');g.itemTip(a,g.itemById(u));const n=g.newBU('b21a');g.S.items.push(n);g.itemTip(b,n);g.S.items.pop();const f=a.querySelector('.tgfx');return [f&&f.textContent,f&&f.style.color,!!b.querySelector('.tgfx')];}",u['b12a'])
+    t=pg.evaluate("(u)=>{const g=__g;const a=document.createElement('div'),b=document.createElement('div');g.itemTip(a,g.itemById(u));const n=g.newItem('gloves',2,1);g.S.items.push(n);g.itemTip(b,n);g.S.items.pop();const f=a.querySelector('.tgfx');return [f&&f.textContent,f&&f.style.color,!!b.querySelector('.tgfx')];}",u['b12a'])
     chk(t[0] and '고유 효과' in t[0] and '켜짐' in t[0] and t[1]=='rgb(255, 160, 74)' and not t[2],'툴팁 주황 한 줄 '+str(t[0])+' · 효과 없는 장비엔 줄 없음')
     t=pg.evaluate("(u)=>{const a=document.createElement('div');__g.itemTip(a,__g.itemById(u));return a.querySelector('.tgfx').textContent;}",pg.evaluate(GIVE,'b6b'))
     chk('착용 중에만' in t,'착용 안 한 장비: '+t)
