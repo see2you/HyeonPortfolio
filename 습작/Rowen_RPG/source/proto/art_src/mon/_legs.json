@@ -1,0 +1,12 @@
+{
+ "_설명": "다리를 번갈아 내딛는 종(art.js MON_MOVE가 trot · crawl · scuttle · stomp인 종). \"auto\" = 굽는 도구가 바닥 쪽 덩어리에서 다리를 찾는다 · 목록 = 직접 지정 [왼쪽 열, 오른쪽 열, 다리가 시작되는 줄(, 묶음 0/1)] (오른쪽을 보는 원본 그림 기준)",
+ "squirrel": [[21,24,31],[25,27,31],[28,31,31],[32,37,31]],
+ "acornboar": "auto", "windfox": "auto", "bull": "auto", "sheep": "auto", "rat": "auto", "goat": "auto", "otter": "auto", "volsheep": "auto", "g_plains": "auto",
+ "turtle": "auto", "locust": "auto", "mole": "auto", "stonebeetle": "auto", "sulfurbeetle": "auto",
+ "sandlizard": [[6,11,20],[12,14,20],[15,20,20],[23,28,20]],
+ "lavalizard": [[3,10,23],[11,19,24],[20,26,22]],
+ "rockcrab": [[2,5,27],[8,10,27],[13,17,28],[28,32,28],[33,36,28],[39,43,27]],
+ "clam": "auto",
+ "obsidiancrab": [[2,8,30],[10,18,32],[29,34,32],[37,41,31],[43,46,30]],
+ "earthgolem": "auto", "oregolem": "auto", "watergolem": "auto", "magmagolem": "auto", "g_rock": "auto"
+}

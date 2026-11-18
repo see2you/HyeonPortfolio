@@ -161,7 +161,34 @@ function buildChar(s,dir,walk,f){
   return finalize(c);}
 const sprites=new Map();
 function flipX(r){const c=mk(r.width,r.height),g=c.getContext('2d');g.translate(c.width,0);g.scale(-1,1);g.drawImage(r,0,0);return hkOf(c,r);}
+/* ================= 캐릭터 새 도트 (v4.76) — 현의 그림에서 그대로 오린 주인공(가죽갑옷 기사 · 네 방향) · NPC =================
+   CHARART[id]={방향:[가로, 세로, hk, 팔레트, 부호(몬스터와 같은 형식), 0, 다리가 시작되는 줄]} — 굽는 도구 tools/charart_bake.py · 원본 art_src/char
+   CHARART에 있는 캐릭터는 getSprite가 이 그림을 돌려준다(없는 캐릭터는 예전 절차 생성). 방향 그림이 없으면: 왼쪽 = 오른쪽 그림을 뒤집음 · 그것도 없으면 앞모습.
+   그림은 방향마다 한 자세 → charFrame()이 서 있기 2장(윗몸이 1칸 내려앉는 숨쉬기) · 걷기 4장을 만든다.
+     앞 · 뒤: 왼발 들기 → 내려앉기 → 오른발 들기 → 내려앉기 / 옆: 다리 벌림(내려앉음) → 모으고 뒷발 들기 → 벌림 → 모으고 앞발 들기
+   발 칸 = 맨 아래 3줄에 닿는 열(장화). 그 바깥(망토 자락 · 손)은 몸과 같이 움직인다. 양감은 몬스터와 같은 volHD(ART_VOL). */
+/*CHARART*/
+const CHARPIX={},CHARSPR=new Map();
+function charFrame(A,legTop,dir,walk,f){
+  const {w,h,px,rgb}=A,PL=3,PT=2,W=w+PL*2,H=h+PT,c=mk(W,H),g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;
+  let bx0=w,bx1=-1;for(let y=h-3;y<h;y++)for(let x=0;x<w;x++)if(px[y*w+x]){if(x<bx0)bx0=x;if(x>bx1)bx1=x;}
+  const mid=(bx0+bx1+1)/2,side=dir==='left'||dir==='right',fs=dir==='left'?-1:1;let bob=0,lL=0,lR=0,sp=0,lF=0,lB=0;
+  if(!walk)bob=f?1:0;
+  else if(side){if(f%2===0){sp=2;bob=1;}else{sp=-1;if(f===1)lB=1;else lF=1;}}
+  else{if(f===0)lL=2;else if(f===2)lR=2;else bob=1;}
+  for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++){const x=X-PL,y=Y-PT;let xs=x,ys=y-bob,ok=true;
+    if(y>=legTop+bob&&x>=bx0-3&&x<=bx1+3){ok=false;
+      if(side){const s=sp*(y-legTop)/(h-1-legTop),a=Math.round(x-fs*s),b=Math.round(x+fs*s);
+        if((a+.5-mid)*fs>=0&&a>=bx0&&a<=bx1){xs=a;ys=y+lF;ok=true;}else if((b+.5-mid)*fs<0&&b>=bx0&&b<=bx1){xs=b;ys=y+lB;ok=true;}}
+      else if(x>=bx0&&x<=bx1){xs=x;ys=y+(x+.5<mid?lL:lR);ok=true;}}
+    if(!ok||xs<0||ys<0||xs>=w||ys>=h)continue;const i=ys*w+xs;if(!px[i])continue;const o=(Y*W+X)*4;d[o]=rgb[i*3];d[o+1]=rgb[i*3+1];d[o+2]=rgb[i*3+2];d[o+3]=255;}
+  g.putImageData(im,0,0);c.hk=A.hk;c.lh=h*A.hk;c.lw=w*A.hk;return c;}
+function charArt(id,dir,walk,f){const k=ART_VOL+id+dir+(walk?'w':'i')+f;let c=CHARSPR.get(k);if(c)return c;
+  const A0=CHARART[id],flip=dir==='left'&&!A0.left&&!!A0.right,d=A0[dir]?dir:flip?'right':'down',pk=ART_VOL+id+d+(flip?'F':'');let A=CHARPIX[pk];
+  if(!A){A=monPix(A0[d]);if(flip)A=flipPix(A);if(ART_VOL)A=volHD(A,ART_VOL);CHARPIX[pk]=A;}                     /* 뒤집은 뒤에 양감 — 빛은 늘 왼쪽 위 */
+  c=charFrame(A,A0[d][6],A0[dir]||flip?dir:'down',walk,f);CHARSPR.set(k,c);return c;}
 function getSprite(id,dir,walk,f,noArm){
+  if(CHARART[id])return charArt(id,dir,walk,f);                                          /* v4.76 구운 그림이 있는 캐릭터 */
   const k=id+dir+(walk?'w':'i')+f+(noArm?'n':'');let c=sprites.get(k);if(c)return c;
   const s=CHARS[id];if(!s.C)s.C=charColors(s);
   if(dir==='left')c=flipX(getSprite(id,'right',walk,f,noArm));else{NOARM=noArm?(dir==='down'?15:dir==='up'?3:'side'):null;c=buildChar(s,dir,walk,f);NOARM=null;}
@@ -448,44 +475,97 @@ function genMon(def,f){
   if(def.acc==='crest'){for(let i=0;i<3;i++)p(hx2-1+i*2,hy2-3-i,1,3+i,i===2?'#ffd060':'#f06a2a');}
   const out=finalize(c);out.anc=anc;return out;}
 
-/* ================= v4.75 몬스터 새 도트 — 현이 그린 그림(55종)을 한 마리씩 오려 넣은 스프라이트 =================
-   MONART[종]=[가로, 세로, hk(그림 1칸 = 월드 몇 칸 — 도트 밀도가 예전의 약 2배라 줄여 그린다), 팔레트(6자리 hex를 이어 붙임), 줄길이 부호(색 번호 · 길이 쌍)의 base64]
-   그림은 한 자세뿐이다 → 걷는 4프레임은 monFrame()이 그 한 장을 밀고(dy) · 늘리고(sx · sy) · 앞뒤로 기울이고(sh) · 위쪽을 흔들고(sw) · 다리 줄만 밀고(lg) · 물결치게(wv) 해서 만든다.
-   MON_GAIT = 움직임 종류별 4프레임(0 · 1은 서 있을 때도 쓰이므로 얌전하게) · MON_MOVE = 종마다 [움직임, 띄우는 높이(나는 종)]. 표에 없는 종은 통통 뛰기(hop).
-   새 종을 더하려면: 그림을 오려 monart.js에 넣고(도구는 README v4.75) MON_MOVE에 한 줄. MONART에 없는 종은 예전 절차 생성(genMon · makeMon)으로 그린다. */
+/* ================= 몬스터 새 도트 (v4.75 · v4.76) — 현이 그린 그림(55종)을 한 마리씩 오려 넣은 스프라이트 =================
+   MONART[종]=[가로, 세로, hk(그림 1칸 = 월드 몇 칸 — 도트 밀도가 예전의 약 2배라 줄여 그린다), 팔레트(6자리 hex를 이어 붙임), 줄길이 부호(색 번호 · 길이 쌍)의 base64, (다리 칸)]
+   그림은 한 자세뿐이다 → 프레임은 monFrame()이 그 한 장을 변형해서 만든다. MONSPR[종] = [서 있기 2장, 걷기 4장] (v4.76 — 걷기와 서 있기를 나눴다. 고르는 곳은 mmo.js의 monFr)
+   · MON_GAIT = 몸 전체를 변형하는 움직임(밀기 dy · 늘이기 sx sy · 위쪽 흔들기 sw · 물결 wv) — 0 · 1번이 서 있기로도 쓰인다
+   · MON_LEGGAIT = 다리를 따로 떼어 번갈아 내딛는 움직임(v4.76) — 다리 칸은 굽는 도구가 그림에서 찾아 MONART에 넣는다(art_src/mon/_legs.json)
+   · MON_MOVE = 종마다 [움직임, 띄우는 높이(나는 종)]. 표에 없는 종은 통통 뛰기(hop)
+   · 양감(v4.76): volHD()가 실루엣을 둥글게 부풀린 높이에서 빛(왼쪽 위)과 그늘을 계산해 원래 색에 입힌다. 세기 ART_VOL(0 = 끔)은 mmo.js setVolume이 정한다.
+     왼쪽을 보는 그림은 '뒤집은 뒤에' 양감을 입힌다 — 뒤집힌 그림에서도 빛이 왼쪽 위에서 온다.
+   새 종을 더하려면: 그림을 art_src/mon에 넣고 굽고(tools/monart_bake.py) MON_MOVE에 한 줄. MONART에 없는 종은 예전 절차 생성(genMon · makeMon)으로 그린다. */
 /*MONART*/
+let ART_VOL=0;
 const MON_GAIT={
   hop:[{},{dy:1,sy:1.04},{dy:4,sy:1.07,sx:.96},{sy:.9,sx:1.07}],                       /* 통통 뛰기: 살짝 들썩 → 길게 뛰어오름 → 납작하게 착지 */
-  trot:[{},{dy:1},{dy:2,sh:1.2,lg:1},{sh:-1.2,lg:-1}],                                  /* 네발 걸음: 앞이 들렸다 내려가며 다리 줄이 앞뒤로 */
   fly:[{},{dy:1},{dy:3,sx:1.06,sy:.95},{dy:1,sx:.95,sy:1.04}],                          /* 날기: 오르내리며 날개를 폈다 접는 느낌(가로로 늘었다 줄었다) */
   float:[{},{dy:1},{dy:2,sw:.8},{dy:1,sw:-.8}],                                         /* 떠다니기: 둥실 + 위쪽이 하늘하늘 */
-  slither:[{wv:1.3,ph:0},{wv:1.3,ph:1.57},{wv:1.3,ph:3.14},{wv:1.3,ph:4.71}],           /* 뱀: 몸이 물결친다 */
-  crawl:[{},{dy:1},{dy:1,lg:1},{lg:-1}],                                                /* 기어가기: 낮게 들썩 + 다리 줄 */
-  scuttle:[{},{dy:1},{lg:1,sw:.6},{lg:-1,sw:-.6}],                                      /* 게걸음 */
-  stomp:[{},{dy:1},{sw:1.4,sy:.97},{sw:-1.4,sy:.97}],                                   /* 골렘: 좌우로 기우뚱 · 묵직하게 */
-  waddle:[{},{dy:1},{dy:2,sw:1.2},{dy:1,sw:-1.2}],                                      /* 뒤뚱뒤뚱(두 발 · 식물) */
+  slither:[{wv:1.3,ph:0},{wv:1.3,ph:1.57},{wv:1.3,ph:3.14},{wv:1.3,ph:4.71}],           /* 물결: 몸이 물결친다 */
+  waddle:[{},{dy:1},{dy:2,sw:1.2},{dy:1,sw:-1.2}],                                      /* 뒤뚱뒤뚱: 들썩 + 좌우 흔들림 */
   swim:[{wv:.9,ph:0},{wv:.9,ph:1.57,dy:1},{wv:.9,ph:3.14,dy:2},{wv:.9,ph:4.71,dy:1}],   /* 헤엄: 물결 + 둥실 */
   glide:[{},{sx:1.03,sy:.98},{sx:1.06,sy:.96},{sx:1.02}]};                              /* 달팽이: 몸을 늘였다 당긴다 */
+/* 다리 걷기: a = 발이 앞뒤로 나가는 칸 수 · l = 발을 드는 칸 수 · bob = 두 묶음이 다 땅을 디딘 프레임에 몸이 내려앉는 칸 수 · sw = 발을 들 때 몸이 디딘 쪽으로 기우는 정도
+   한 다리의 한 바퀴(4프레임): 앞에 디딤 → 몸 밑 → 뒤로 밀림 → 들어서 앞으로. 묶음 1은 두 프레임 늦다 = 번갈아 나간다 */
+const MON_LEGGAIT={
+  trot:{a:2,l:2,bob:1},                 /* 네발 걸음: 대각선 다리끼리 한 묶음 */
+  crawl:{a:2,l:1,bob:1,sw:.6},          /* 기어가기: 낮게, 발을 조금만 들고 몸이 디딘 쪽으로 살짝 쏠린다 */
+  scuttle:{a:1,l:2,bob:1,sw:.5},        /* 게걸음: 여러 다리가 하나 건너 하나씩 */
+  stomp:{a:0,l:3,bob:1,sw:1.3}};        /* 기우뚱: 두 발을 번갈아 들고 몸이 디딘 쪽으로 기운다(정면 그림이라 앞뒤로는 안 나간다) */
 const MON_MOVE={squirrel:['trot'],turtle:['crawl'],acornboar:['trot'],sparrow:['waddle'],fairy:['float',2],honeybug:['fly',4],firefly:['float',3],g_rowen:['waddle'],
   windfox:['trot'],bull:['trot'],sheep:['trot'],rat:['trot'],lark:['fly',4],grasssnake:['slither'],locust:['crawl'],sunflower:['waddle'],earthgolem:['stomp'],jelly:['float',4],g_plains:['trot'],
   mole:['crawl'],snail:['glide'],rockcrab:['scuttle'],crystalbat:['fly',5],stonebeetle:['crawl'],oregolem:['stomp'],goat:['trot'],sandlizard:['crawl'],cavemush:['waddle'],g_rock:['stomp'],
   clam:['scuttle'],carp:['swim',4],lotus:['waddle'],kingfisher:['fly',4],mist:['float',3],lakesnake:['slither'],puffer:['swim',4],otter:['trot'],watergolem:['stomp'],g_lake:['slither'],
   lavalizard:['crawl'],ashbat:['fly',5],obsidiancrab:['scuttle'],volsheep:['trot'],flamewisp:['float',3],magmagolem:['stomp'],sulfurbeetle:['crawl'],embertree:['waddle'],g_volcano:['fly',4]};
-function monPix(a){const [w,h,hk,ps,b64]=a,pal=[];for(let i=0;i<ps.length;i+=6)pal.push([parseInt(ps.substr(i,2),16),parseInt(ps.substr(i+2,2),16),parseInt(ps.substr(i+4,2),16)]);
-  const s=atob(b64),px=new Uint8Array(w*h);let p=0;for(let i=0;i<s.length;i+=2){const n=s.charCodeAt(i+1);px.fill(s.charCodeAt(i),p,p+n);p+=n;}return {w,h,hk,pal,px};}
-function monFrame(A,T,lift){const {w,h,pal,px}=A,PL=3,PT=7,PB=2+(lift||0),W=w+PL*2,H=h+PT+PB,c=mk(W,H),g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;
-  const cx=w/2,dy=T.dy||0,sx=T.sx||1,sy=T.sy||1,sh=T.sh||0,sw=T.sw||0,lg=T.lg||0,wv=T.wv||0,ph=T.ph||0,legY=h*.74;
-  for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++){let x=(X-PL+.5-cx)/sx+cx,y=Y-PT+.5+dy;
-    if(sh)y+=sh*(x-cx)/(w/2);if(wv)y+=wv*Math.sin(x/w*7.2+ph);y=h-(h-y)/sy;if(sw)x-=sw*(h-y)/h;if(lg&&y>legY)x-=lg;
-    const xi=Math.floor(x),yi=Math.floor(y);if(xi<0||yi<0||xi>=w||yi>=h)continue;const v=px[yi*w+xi];if(!v)continue;const q=pal[v-1],o=(Y*W+X)*4;d[o]=q[0];d[o+1]=q[1];d[o+2]=q[2];d[o+3]=255;}
+const monLegged=k=>!!MON_LEGGAIT[(MON_MOVE[k]||'')[0]];                                 /* 다리로 걷는 종인가(서서 싸울 때는 걷기 대신 서 있기 프레임을 쓴다) */
+/* 구운 그림 해독 → {w, h, hk, px(0 = 투명), rgb, legs} */
+function monPix(a){const [w,h,hk,ps,b64,lg]=a,pal=[];for(let i=0;i<ps.length;i+=6)pal.push([parseInt(ps.substr(i,2),16),parseInt(ps.substr(i+2,2),16),parseInt(ps.substr(i+4,2),16)]);
+  const s=atob(b64),px=new Uint8Array(w*h),rgb=new Uint8ClampedArray(w*h*3);let p=0;for(let i=0;i<s.length;i+=2){const n=s.charCodeAt(i+1);px.fill(s.charCodeAt(i),p,p+n);p+=n;}
+  for(let i=0;i<w*h;i++){const v=px[i];if(v){const q=pal[v-1];rgb[i*3]=q[0];rgb[i*3+1]=q[1];rgb[i*3+2]=q[2];}}
+  return {w,h,hk,px,rgb,flip:false,legs:(lg||[]).map(q=>({x0:q[0],x1:q[1],top:q[2],g:q[3]}))};}
+function flipPix(A){const {w,h}=A,px=new Uint8Array(w*h),rgb=new Uint8ClampedArray(w*h*3);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x,j=y*w+w-1-x;px[j]=A.px[i];rgb[j*3]=A.rgb[i*3];rgb[j*3+1]=A.rgb[i*3+1];rgb[j*3+2]=A.rgb[i*3+2];}
+  return {w,h,hk:A.hk,px,rgb,flip:!A.flip,legs:A.legs.map(L=>({x0:w-1-L.x1,x1:w-1-L.x0,top:L.top,g:L.g}))};}
+/* 양감: 실루엣 안쪽 거리 → 둥근 높이 → 법선 → 왼쪽 위 빛. 밝은 쪽은 따뜻하게, 그늘은 어둡고 푸르게(5단계로 끊어 도트 느낌을 지킨다). 어두운 외곽선은 밝히지 않는다 */
+function volHD(A,k){const {w,h,px}=A,N=w*h,d=new Float32Array(N),H=new Float32Array(N),rgb=new Uint8ClampedArray(A.rgb);
+  for(let i=0;i<N;i++)d[i]=px[i]?99:0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(!px[i])continue;d[i]=Math.min(d[i],(x>0?d[i-1]:0)+1,(y>0?d[i-w]:0)+1,(x>0&&y>0?d[i-w-1]:0)+1.41,(x<w-1&&y>0?d[i-w+1]:0)+1.41);}
+  for(let y=h-1;y>=0;y--)for(let x=w-1;x>=0;x--){const i=y*w+x;if(!px[i])continue;d[i]=Math.min(d[i],(x<w-1?d[i+1]:0)+1,(y<h-1?d[i+w]:0)+1,(x<w-1&&y<h-1?d[i+w+1]:0)+1.41,(x>0&&y<h-1?d[i+w-1]:0)+1.41);}
+  let dm=1,ymax=0;for(let i=0;i<N;i++)if(px[i]){if(d[i]>dm)dm=d[i];ymax=(i/w)|0;}
+  const R=Math.max(3,Math.min(dm*.62,8));                                              /* 가장자리에서 이만큼 안쪽까지만 둥글린다 — 얼굴 · 무늬가 있는 가운데는 원래 그림 그대로 */
+  for(let i=0;i<N;i++)if(px[i]){const t=Math.min(d[i],R)/R;H[i]=Math.sqrt(1-(1-t)*(1-t))*R;}
+  for(let it=0;it<2;it++){const T=new Float32Array(H);for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(!px[i])continue;let s=0;
+    for(let b=-1;b<=1;b++)for(let a=-1;a<=1;a++){const xx=x+a,yy=y+b;if(xx>=0&&yy>=0&&xx<w&&yy<h)s+=T[yy*w+xx];}H[i]=s/9;}}
+  const Lx=-.52,Ly=-.62,Lz=.59,Ln=Math.hypot(Lx,Ly,Lz),f0=Lz/Ln,S=.9;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(!px[i])continue;
+    const hx=((x<w-1?H[i+1]:0)-(x>0?H[i-1]:0))*.5,hy=((y<h-1?H[i+w]:0)-(y>0?H[i-w]:0))*.5,nx=-hx*S,ny=-hy*S,t=(nx*Lx+ny*Ly+Lz)/(Math.hypot(nx,ny,1)*Ln)-f0;
+    let u=t>0?Math.min(1,t/.3):Math.max(-1,t/.5);u=u>.62?1:u>.22?.5:u<-.62?-1:u<-.22?-.5:0;
+    if(y>=ymax-1&&u>-.5)u=-.5;                                                           /* 땅에 닿는 맨 아래 두 줄은 그늘 */
+    if(!u)continue;let r=rgb[i*3],g=rgb[i*3+1],b=rgb[i*3+2];const L=.3*r+.59*g+.11*b;
+    if(u>0){const e=Math.min(1,Math.max(0,(L-40)/50)),a=u*k*.5*e;r+=(255-r)*a;g+=(240-g)*a;b+=(204-b)*a*.8;}
+    else{const a=-u*k,m=1-.4*a,c=.12*a;r=r*m;g=g*m*.985;b=b*Math.min(1,m*1.06);r+=(52-r)*c;g+=(44-g)*c;b+=(112-b)*c;}
+    rgb[i*3]=r;rgb[i*3+1]=g;rgb[i*3+2]=b;}
+  return {w,h,hk:A.hk,px,rgb,flip:A.flip,legs:A.legs};}
+/* 한 장 → 프레임 한 장. T = 변형(MON_GAIT 한 칸) 또는 다리 걷기 {f: 0~3, leg: MON_LEGGAIT 한 칸, bob, sw} */
+function monFrame(A,T,lift){const {w,h,px,rgb}=A,PL=4,PT=7,PB=2+(lift||0),W=w+PL*2,H=h+PT+PB,c=mk(W,H),g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;
+  const put=(X,Y,i)=>{const o=(Y*W+X)*4;d[o]=rgb[i*3];d[o+1]=rgb[i*3+1];d[o+2]=rgb[i*3+2];d[o+3]=255;};
+  if(T.leg||T.bob!=null){                                                                /* 다리 걷기 · 숨쉬기: 몸은 bob만큼 내려앉고(다리 윗줄을 덮는다) 다리는 칸마다 따로 움직인다 */
+    const G=T.leg,legs=G?A.legs:[],bob=T.bob||0,sw=T.sw||0,face=A.flip?-1:1,lt=new Int16Array(w).fill(h);
+    for(const L of A.legs)for(let x=L.x0;x<=L.x1;x++)if(L.top<lt[x])lt[x]=L.top;
+    for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++){const x=X-PL,y=Y-PT;let src=-1;
+      for(const L of legs){if(y<L.top+bob)continue;const p=(T.f+2*L.g)%4,ys=y+(p===3?G.l:0);if(ys>=h)continue;
+        const xs=Math.round(x-(p===0?G.a:p===2?-G.a:0)*face*(ys-L.top)/Math.max(1,h-1-L.top));if(xs<L.x0||xs>L.x1)continue;const i=ys*w+xs;if(px[i])src=i;}
+      if(src<0&&!G&&x>=0&&x<w&&y<h&&y>=lt[x]+bob){const i=y*w+x;if(px[i])src=i;}          /* 서 있기: 다리는 제자리 */
+      if(src<0){const yb=y-bob;if(yb>=0&&yb<h){const xb=Math.round(x-sw*(h-yb)/h);if(xb>=0&&xb<w&&yb<lt[xb]){const i=yb*w+xb;if(px[i])src=i;}}}   /* 몸(다리 칸이 아닌 곳) */
+      if(src>=0)put(X,Y,src);}}
+  else{const cx=w/2,dy=T.dy||0,sx=T.sx||1,sy=T.sy||1,sw=T.sw||0,wv=T.wv||0,ph=T.ph||0;
+    for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++){let x=(X-PL+.5-cx)/sx+cx,y=Y-PT+.5+dy;
+      if(wv)y+=wv*Math.sin(x/w*7.2+ph);y=h-(h-y)/sy;if(sw)x-=sw*(h-y)/h;
+      const xi=Math.floor(x),yi=Math.floor(y);if(xi<0||yi<0||xi>=w||yi>=h)continue;const i=yi*w+xi;if(px[i])put(X,Y,i);}}
   g.putImageData(im,0,0);c.hk=A.hk;c.lh=(h+(lift||0))*A.hk;c.lw=w*A.hk;return c;}
+/* 한 종의 6장: [서 있기 2, 걷기 4] */
+function monFrames(A,mv){const lift=mv[1]||0,G=MON_LEGGAIT[mv[0]];
+  if(G)return [{bob:0},{bob:1},...[0,1,2,3].map(f=>({f,leg:G,bob:f%2?0:G.bob,sw:f===1?G.sw||0:f===3?-(G.sw||0):0}))].map(T=>monFrame(A,T,lift));
+  const fs=(MON_GAIT[mv[0]]||MON_GAIT.hop).map(T=>monFrame(A,T,lift));return [fs[0],fs[1],fs[0],fs[1],fs[2],fs[3]];}
 const hkOf=(c,r)=>{if(r.hk){c.hk=r.hk;c.lh=r.lh;c.lw=r.lw;}return c;};                 /* 뒤집기 · 흰/검은 실루엣에 배율을 물려준다 */
 const monH=k=>{const c=MONSPR[k][0];return c.lh||c.height;},monW=k=>{const c=MONSPR[k][0];return c.lw||c.width;};   /* 월드 칸 단위 크기(이름표 · 대상 고리 · 누르기 판정) */
-function buildMonSprites(){
-  for(const k of Object.keys(SPECIES)){const d=SPECIES[k];let fs;
-    if(MONART[k]){const A=monPix(MONART[k]),mv=MON_MOVE[k]||['hop'];fs=MON_GAIT[mv[0]].map(T=>monFrame(A,T,mv[1]||0));}
-    else fs=[0,1,2,3].map(f=>d.form?genMon(d,f):makeMon(k,f%2));
-    const a=fs[0];MONSPR[k]=fs;MONSPRL[k]=fs.map(flipX);MONW[k]=whiteOf(a);MONWL[k]=flipX(MONW[k]);MONSIL[k]=silOf(a);}}
+const MONPIX={};
+function buildMonSprites(){const kv=ART_VOL;
+  for(const k of Object.keys(SPECIES)){const d=SPECIES[k];let fs,fl;
+    if(MONART[k]){const mv=MON_MOVE[k]||['hop'],A=MONPIX[k]||(MONPIX[k]=monPix(MONART[k]));
+      if(kv){fs=monFrames(volHD(A,kv),mv);fl=monFrames(volHD(flipPix(A),kv),mv);}else{fs=monFrames(A,mv);fl=fs.map(flipX);}}
+    else{let f4=[0,1,2,3].map(f=>d.form?genMon(d,f):makeMon(k,f%2));if(kv)f4=f4.map(c=>{const v=volumize(c,{pad:0,stripOutline:true,k:kv});v.anc=c.anc;return v;});
+      fs=[f4[0],f4[1],f4[0],f4[1],f4[2],f4[3]];fl=fs.map(c=>{const v=flipX(c);v.anc=c.anc;return v;});}
+    MONSPR[k]=fs;MONSPRL[k]=fl;MONW[k]=whiteOf(fs[0]);MONWL[k]=flipX(MONW[k]);MONSIL[k]=silOf(fs[0]);}}
 /* ================= world sprites ================= */
 function sprStump(){const c=mk(18,12),p=painter(c.getContext('2d'),1,1);p(2,3,12,6,'#6e4a32');p(2,3,12,1,'#a07850');ell(p,8,3,6,1.6,'#c8a070');p(6,3,4,1,'#a07850');p(12,4,2,5,'#4e3322');return finalize(c,{rim:false});}
 function sprRock(seed,big){const w=big?30:22,h=big?22:16,c=mk(w+2,h+2),g=c.getContext('2d'),p=painter(g,1,1),r=rng(seed);

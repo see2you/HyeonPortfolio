@@ -94,7 +94,7 @@ with sync_playwright() as p:
         chk(r['m1']<1 and r['m2']>5 and r['out'],'자동 전투 %s 예고: 0.3초 전엔 그대로 · 뒤엔 바깥으로'%kind)
         chk(r['man']<1,'수동 조작 중엔 %s 예고에 자동 회피가 끼어들지 않음'%kind)
     # ---------- 5) 표시 · 성능 ----------
-    r=pg.evaluate("""()=>{const g=__g,P=g.player;g.tele.length=0;P.x=g.ZONES.z1.c[0];P.y=g.ZONES.z1.c[1];for(let i=0;i<6;i++)g.teleAdd({kind:'circle',x:P.x-150+i*60,y:P.y-60,r:26,dur:30,t:i*2});
+    r=pg.evaluate("""()=>{const g=__g,P=g.player;g.tele.length=0;P.x=g.ZONES.z1.c[0];P.y=g.ZONES.z1.c[1];for(let i=0;i<30;i++){g.step(1,.05);g.render();}/* v4.76: 재기 전에 이 자리의 스프라이트를 한 번씩 그려 둔다 — 처음 보이는 프레임의 텍스처를 만드는 시간이 '예고 있음' 쪽에만 얹혀 흔들렸다(걷기 프레임이 서 있기와 나뉘면서 늘었다) */for(let i=0;i<6;i++)g.teleAdd({kind:'circle',x:P.x-150+i*60,y:P.y-60,r:26,dur:30,t:i*2});
       for(let i=0;i<4;i++)g.teleAdd({kind:'line',x:P.x-160,y:P.y+10+i*28,a:.15*i,len:140+20*i,w:20,dur:30,t:5+i*5});for(let i=0;i<2;i++)g.teleAdd({kind:'fan',x:P.x+90+i*0,y:P.y+70+i*0,a:i?2.6:.5,r:70,dur:30,t:8+i*10});
       g.teleAdd({kind:'circle',x:P.x,y:P.y+900,r:30,dur:30});const t0=performance.now();for(let i=0;i<20;i++){g.step(1,.05);g.render();}const ms=(performance.now()-t0)/20;g.snap();g.render();
       const vis=k=>g.TELE_POOL[k].filter(q=>q.o.visible).length;return {ms,c:vis('circle'),l:vis('line'),f:vis('fan')};}""")
