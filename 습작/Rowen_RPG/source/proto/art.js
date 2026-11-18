@@ -160,7 +160,7 @@ function buildChar(s,dir,walk,f){
   if(dir==='down')front(p,s,s.C,dy,lL,lR,sw);else if(dir==='up')back(p,s,s.C,dy,lL,lR,sw);else side(p,s,s.C,dy,walk?f:-1);
   return finalize(c);}
 const sprites=new Map();
-function flipX(r){const c=mk(r.width,r.height),g=c.getContext('2d');g.translate(c.width,0);g.scale(-1,1);g.drawImage(r,0,0);return c;}
+function flipX(r){const c=mk(r.width,r.height),g=c.getContext('2d');g.translate(c.width,0);g.scale(-1,1);g.drawImage(r,0,0);return hkOf(c,r);}
 function getSprite(id,dir,walk,f,noArm){
   const k=id+dir+(walk?'w':'i')+f+(noArm?'n':'');let c=sprites.get(k);if(c)return c;
   const s=CHARS[id];if(!s.C)s.C=charColors(s);
@@ -275,8 +275,8 @@ function makeMon(sp,f){
     for(const [x,col,len] of [[4,'#c0392b',9],[9,'#e6b84a',12],[13,'#c0392b',10],[18,'#e6b84a',8]])for(let i=0;i<len;i++)p(x+((Math.floor(i/3)+w)%2),17+i,2,1,col);}
   return finalize(c);}
 const MONSPR={},MONSPRL={},MONW={},MONWL={},MONSIL={};
-function whiteOf(c){const w=mk(c.width,c.height),g=w.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle='#ffffff';g.fillRect(0,0,w.width,w.height);return w;}
-function silOf(c){const w=mk(c.width,c.height),g=w.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle='#1a1630';g.fillRect(0,0,w.width,w.height);return w;}
+function whiteOf(c){const w=mk(c.width,c.height),g=w.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle='#ffffff';g.fillRect(0,0,w.width,w.height);return hkOf(w,c);}
+function silOf(c){const w=mk(c.width,c.height),g=w.getContext('2d');g.drawImage(c,0,0);g.globalCompositeOperation='source-in';g.fillStyle='#1a1630';g.fillRect(0,0,w.width,w.height);return hkOf(w,c);}
 
 /* ================= monster data (50) ================= */
 // form: blob quad bird fish bug golem serpent sprite plant crab | size 1..3 | c:[body, accent, detail]
@@ -448,9 +448,44 @@ function genMon(def,f){
   if(def.acc==='crest'){for(let i=0;i<3;i++)p(hx2-1+i*2,hy2-3-i,1,3+i,i===2?'#ffd060':'#f06a2a');}
   const out=finalize(c);out.anc=anc;return out;}
 
+/* ================= v4.75 몬스터 새 도트 — 현이 그린 그림(55종)을 한 마리씩 오려 넣은 스프라이트 =================
+   MONART[종]=[가로, 세로, hk(그림 1칸 = 월드 몇 칸 — 도트 밀도가 예전의 약 2배라 줄여 그린다), 팔레트(6자리 hex를 이어 붙임), 줄길이 부호(색 번호 · 길이 쌍)의 base64]
+   그림은 한 자세뿐이다 → 걷는 4프레임은 monFrame()이 그 한 장을 밀고(dy) · 늘리고(sx · sy) · 앞뒤로 기울이고(sh) · 위쪽을 흔들고(sw) · 다리 줄만 밀고(lg) · 물결치게(wv) 해서 만든다.
+   MON_GAIT = 움직임 종류별 4프레임(0 · 1은 서 있을 때도 쓰이므로 얌전하게) · MON_MOVE = 종마다 [움직임, 띄우는 높이(나는 종)]. 표에 없는 종은 통통 뛰기(hop).
+   새 종을 더하려면: 그림을 오려 monart.js에 넣고(도구는 README v4.75) MON_MOVE에 한 줄. MONART에 없는 종은 예전 절차 생성(genMon · makeMon)으로 그린다. */
+/*MONART*/
+const MON_GAIT={
+  hop:[{},{dy:1,sy:1.04},{dy:4,sy:1.07,sx:.96},{sy:.9,sx:1.07}],                       /* 통통 뛰기: 살짝 들썩 → 길게 뛰어오름 → 납작하게 착지 */
+  trot:[{},{dy:1},{dy:2,sh:1.2,lg:1},{sh:-1.2,lg:-1}],                                  /* 네발 걸음: 앞이 들렸다 내려가며 다리 줄이 앞뒤로 */
+  fly:[{},{dy:1},{dy:3,sx:1.06,sy:.95},{dy:1,sx:.95,sy:1.04}],                          /* 날기: 오르내리며 날개를 폈다 접는 느낌(가로로 늘었다 줄었다) */
+  float:[{},{dy:1},{dy:2,sw:.8},{dy:1,sw:-.8}],                                         /* 떠다니기: 둥실 + 위쪽이 하늘하늘 */
+  slither:[{wv:1.3,ph:0},{wv:1.3,ph:1.57},{wv:1.3,ph:3.14},{wv:1.3,ph:4.71}],           /* 뱀: 몸이 물결친다 */
+  crawl:[{},{dy:1},{dy:1,lg:1},{lg:-1}],                                                /* 기어가기: 낮게 들썩 + 다리 줄 */
+  scuttle:[{},{dy:1},{lg:1,sw:.6},{lg:-1,sw:-.6}],                                      /* 게걸음 */
+  stomp:[{},{dy:1},{sw:1.4,sy:.97},{sw:-1.4,sy:.97}],                                   /* 골렘: 좌우로 기우뚱 · 묵직하게 */
+  waddle:[{},{dy:1},{dy:2,sw:1.2},{dy:1,sw:-1.2}],                                      /* 뒤뚱뒤뚱(두 발 · 식물) */
+  swim:[{wv:.9,ph:0},{wv:.9,ph:1.57,dy:1},{wv:.9,ph:3.14,dy:2},{wv:.9,ph:4.71,dy:1}],   /* 헤엄: 물결 + 둥실 */
+  glide:[{},{sx:1.03,sy:.98},{sx:1.06,sy:.96},{sx:1.02}]};                              /* 달팽이: 몸을 늘였다 당긴다 */
+const MON_MOVE={squirrel:['trot'],turtle:['crawl'],acornboar:['trot'],sparrow:['waddle'],fairy:['float',2],honeybug:['fly',4],firefly:['float',3],g_rowen:['waddle'],
+  windfox:['trot'],bull:['trot'],sheep:['trot'],rat:['trot'],lark:['fly',4],grasssnake:['slither'],locust:['crawl'],sunflower:['waddle'],earthgolem:['stomp'],jelly:['float',4],g_plains:['trot'],
+  mole:['crawl'],snail:['glide'],rockcrab:['scuttle'],crystalbat:['fly',5],stonebeetle:['crawl'],oregolem:['stomp'],goat:['trot'],sandlizard:['crawl'],cavemush:['waddle'],g_rock:['stomp'],
+  clam:['scuttle'],carp:['swim',4],lotus:['waddle'],kingfisher:['fly',4],mist:['float',3],lakesnake:['slither'],puffer:['swim',4],otter:['trot'],watergolem:['stomp'],g_lake:['slither'],
+  lavalizard:['crawl'],ashbat:['fly',5],obsidiancrab:['scuttle'],volsheep:['trot'],flamewisp:['float',3],magmagolem:['stomp'],sulfurbeetle:['crawl'],embertree:['waddle'],g_volcano:['fly',4]};
+function monPix(a){const [w,h,hk,ps,b64]=a,pal=[];for(let i=0;i<ps.length;i+=6)pal.push([parseInt(ps.substr(i,2),16),parseInt(ps.substr(i+2,2),16),parseInt(ps.substr(i+4,2),16)]);
+  const s=atob(b64),px=new Uint8Array(w*h);let p=0;for(let i=0;i<s.length;i+=2){const n=s.charCodeAt(i+1);px.fill(s.charCodeAt(i),p,p+n);p+=n;}return {w,h,hk,pal,px};}
+function monFrame(A,T,lift){const {w,h,pal,px}=A,PL=3,PT=7,PB=2+(lift||0),W=w+PL*2,H=h+PT+PB,c=mk(W,H),g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;
+  const cx=w/2,dy=T.dy||0,sx=T.sx||1,sy=T.sy||1,sh=T.sh||0,sw=T.sw||0,lg=T.lg||0,wv=T.wv||0,ph=T.ph||0,legY=h*.74;
+  for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++){let x=(X-PL+.5-cx)/sx+cx,y=Y-PT+.5+dy;
+    if(sh)y+=sh*(x-cx)/(w/2);if(wv)y+=wv*Math.sin(x/w*7.2+ph);y=h-(h-y)/sy;if(sw)x-=sw*(h-y)/h;if(lg&&y>legY)x-=lg;
+    const xi=Math.floor(x),yi=Math.floor(y);if(xi<0||yi<0||xi>=w||yi>=h)continue;const v=px[yi*w+xi];if(!v)continue;const q=pal[v-1],o=(Y*W+X)*4;d[o]=q[0];d[o+1]=q[1];d[o+2]=q[2];d[o+3]=255;}
+  g.putImageData(im,0,0);c.hk=A.hk;c.lh=(h+(lift||0))*A.hk;c.lw=w*A.hk;return c;}
+const hkOf=(c,r)=>{if(r.hk){c.hk=r.hk;c.lh=r.lh;c.lw=r.lw;}return c;};                 /* 뒤집기 · 흰/검은 실루엣에 배율을 물려준다 */
+const monH=k=>{const c=MONSPR[k][0];return c.lh||c.height;},monW=k=>{const c=MONSPR[k][0];return c.lw||c.width;};   /* 월드 칸 단위 크기(이름표 · 대상 고리 · 누르기 판정) */
 function buildMonSprites(){
-  for(const k of Object.keys(SPECIES)){const d=SPECIES[k];const fs=[0,1,2,3].map(f=>d.form?genMon(d,f):makeMon(k,f%2)),a=fs[0];
-    MONSPR[k]=fs;MONSPRL[k]=fs.map(flipX);MONW[k]=whiteOf(a);MONWL[k]=flipX(MONW[k]);MONSIL[k]=silOf(a);}}
+  for(const k of Object.keys(SPECIES)){const d=SPECIES[k];let fs;
+    if(MONART[k]){const A=monPix(MONART[k]),mv=MON_MOVE[k]||['hop'];fs=MON_GAIT[mv[0]].map(T=>monFrame(A,T,mv[1]||0));}
+    else fs=[0,1,2,3].map(f=>d.form?genMon(d,f):makeMon(k,f%2));
+    const a=fs[0];MONSPR[k]=fs;MONSPRL[k]=fs.map(flipX);MONW[k]=whiteOf(a);MONWL[k]=flipX(MONW[k]);MONSIL[k]=silOf(a);}}
 /* ================= world sprites ================= */
 function sprStump(){const c=mk(18,12),p=painter(c.getContext('2d'),1,1);p(2,3,12,6,'#6e4a32');p(2,3,12,1,'#a07850');ell(p,8,3,6,1.6,'#c8a070');p(6,3,4,1,'#a07850');p(12,4,2,5,'#4e3322');return finalize(c,{rim:false});}
 function sprRock(seed,big){const w=big?30:22,h=big?22:16,c=mk(w+2,h+2),g=c.getContext('2d'),p=painter(g,1,1),r=rng(seed);

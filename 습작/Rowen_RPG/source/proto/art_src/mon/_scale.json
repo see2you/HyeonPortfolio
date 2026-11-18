@@ -1,0 +1,281 @@
+{
+"order": [
+"squirrel",
+"frog",
+"turtle",
+"leafdrop",
+"acornboar",
+"sparrow",
+"fairy",
+"honeybug",
+"mudpuff",
+"firefly",
+"g_rowen",
+"windfox",
+"bull",
+"sheep",
+"rat",
+"lark",
+"grasssnake",
+"locust",
+"sunflower",
+"earthgolem",
+"jelly",
+"g_plains",
+"mole",
+"snail",
+"rockcrab",
+"crystalbat",
+"stonebeetle",
+"oregolem",
+"goat",
+"sandlizard",
+"mosswisp",
+"cavemush",
+"g_rock",
+"waterslime",
+"clam",
+"carp",
+"lotus",
+"kingfisher",
+"mist",
+"lakesnake",
+"puffer",
+"otter",
+"watergolem",
+"g_lake",
+"emberslime",
+"lavalizard",
+"ashbat",
+"obsidiancrab",
+"volsheep",
+"flamewisp",
+"magmagolem",
+"sulfurbeetle",
+"embertree",
+"phoenix",
+"g_volcano"
+],
+"size": {
+"squirrel": [
+25,
+19
+],
+"frog": [
+20,
+17
+],
+"turtle": [
+27,
+18
+],
+"leafdrop": [
+15,
+18
+],
+"acornboar": [
+27,
+24
+],
+"sparrow": [
+19,
+13
+],
+"fairy": [
+13,
+17
+],
+"honeybug": [
+19,
+17
+],
+"mudpuff": [
+15,
+12
+],
+"firefly": [
+13,
+18
+],
+"g_rowen": [
+29,
+40
+],
+"windfox": [
+28,
+22
+],
+"bull": [
+34,
+29
+],
+"sheep": [
+28,
+22
+],
+"rat": [
+23,
+18
+],
+"lark": [
+19,
+13
+],
+"grasssnake": [
+25,
+13
+],
+"locust": [
+23,
+17
+],
+"sunflower": [
+17,
+23
+],
+"earthgolem": [
+26,
+26
+],
+"jelly": [
+23,
+31
+],
+"g_plains": [
+51,
+38
+],
+"mole": [
+23,
+16
+],
+"snail": [
+26,
+19
+],
+"rockcrab": [
+31,
+17
+],
+"crystalbat": [
+19,
+19
+],
+"stonebeetle": [
+23,
+18
+],
+"oregolem": [
+33,
+34
+],
+"goat": [
+27,
+23
+],
+"sandlizard": [
+21,
+11
+],
+"mosswisp": [
+16,
+18
+],
+"cavemush": [
+13,
+14
+],
+"g_rock": [
+49,
+49
+],
+"waterslime": [
+15,
+18
+],
+"clam": [
+25,
+14
+],
+"carp": [
+23,
+15
+],
+"lotus": [
+15,
+15
+],
+"kingfisher": [
+19,
+13
+],
+"mist": [
+15,
+22
+],
+"lakesnake": [
+25,
+13
+],
+"puffer": [
+19,
+14
+],
+"otter": [
+27,
+22
+],
+"watergolem": [
+33,
+34
+],
+"g_lake": [
+46,
+21
+],
+"emberslime": [
+15,
+19
+],
+"lavalizard": [
+25,
+13
+],
+"ashbat": [
+19,
+13
+],
+"obsidiancrab": [
+31,
+20
+],
+"volsheep": [
+27,
+25
+],
+"flamewisp": [
+13,
+21
+],
+"magmagolem": [
+33,
+34
+],
+"sulfurbeetle": [
+23,
+17
+],
+"embertree": [
+15,
+25
+],
+"phoenix": [
+22,
+20
+],
+"g_volcano": [
+36,
+32
+]
+}
+}

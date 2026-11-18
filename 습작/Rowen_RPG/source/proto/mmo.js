@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.74';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.75';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -91,7 +91,7 @@ getSprite=function(id,dir,walk,f,noArm){if(!VOL_ON)return _getSprite0(id,dir,wal
   VSPR.set(k,c);return c;};
 function setVolume(on,k){VOL_ON=!!on;if(k!=null&&k!==VOL_K){VOL_K=k;for(const q in MON_VOL)delete MON_VOL[q];}
   for(const k of Object.keys(MONSPR)){if(!MON_ORIG[k]){MON_ORIG[k]=MONSPR[k];MON_ORIGL[k]=MONSPRL[k];}
-    if(on&&!MON_VOL[k]){MON_VOL[k]=MON_ORIG[k].map(c=>{const v=volumize(c,{pad:0,stripOutline:true,k:VOL_K});v.anc=c.anc;return v;});MON_VOLL[k]=MON_VOL[k].map(c=>{const v=flipX(c);v.anc=c.anc;return v;});}
+    if(on&&!MON_VOL[k]){MON_VOL[k]=MON_ORIG[k].map(c=>{if(c.hk)return c;/* v4.75: 새 몬스터 그림에는 양감을 입히지 않는다 */const v=volumize(c,{pad:0,stripOutline:true,k:VOL_K});v.anc=c.anc;return v;});MON_VOLL[k]=MON_VOL[k].map(c=>{const v=flipX(c);v.anc=c.anc;return v;});}
     MONSPR[k]=on?MON_VOL[k]:MON_ORIG[k];MONSPRL[k]=on?MON_VOLL[k]:MON_ORIGL[k];}}
 setVolume(false); /* v4.8.3: 원본 도트가 기본 (설정에서 켤 수 있음) */
 
@@ -696,7 +696,7 @@ const CGEO=new T3.PlaneGeometry(1,1);
 const WGEO=(()=>{const g=new T3.PlaneGeometry(1,1);g.translate(.5,0,0);const n=g.attributes.normal;for(let i=0;i<n.count;i++)n.setXYZ(i,...SPN);return g;})();
 function spriteMesh(parent){const m=new T3.Mesh(SPGEO,matOf(STUMP));m.castShadow=true;(parent||scene).add(m);return m;}
 /* v4.39 균열 몬스터는 보랏빛으로 물든 재질(이미지별 캐시) */const MATR=new Map();function matOfR(img){let m=MATR.get(img);if(!m){m=new T3.MeshLambertMaterial({map:tex(img),alphaTest:.5,side:T3.DoubleSide,color:new T3.Color('#c4a2ff'),emissive:new T3.Color('#3a1060')});MATR.set(img,m);}return m;}
-function setSpr(m,img,x,y,sc=1,lift=0,tint){if(m.userData.img!==img||m.userData.tint!==!!tint){m.material=tint?matOfR(img):matOf(img);m.customDepthMaterial=depthOf(img);m.userData.img=img;m.userData.tint=!!tint;}m.scale.set(img.width*sc,img.height*sc*VS,1);m.position.set(x,elevAt(x,y)+lift,y);}
+function setSpr(m,img,x,y,sc=1,lift=0,tint){if(m.userData.img!==img||m.userData.tint!==!!tint){m.material=tint?matOfR(img):matOf(img);m.customDepthMaterial=depthOf(img);m.userData.img=img;m.userData.tint=!!tint;}m.scale.set(img.width*sc*(img.hk||1),img.height*sc*VS*(img.hk||1),1);/* v4.75: 새 몬스터 그림은 도트 밀도가 높다 → hk로 줄여 그린다 */m.position.set(x,elevAt(x,y)+lift,y);}
 
 /* ================= 효과 ================= */
 function cvs(w,h,fn){const c=mk(w,h),g=c.getContext('2d');fn(g,w,h);return c;}
@@ -1314,7 +1314,7 @@ function toggleZoom(){setZoom(zoomT>1.05?1:1.4);}
 stage.addEventListener('wheel',e=>{if(!started||modal||win)return;/* v4.28 퀘스트 목록이 넘치면 휠은 목록 스크롤 */{const L=e.target.closest&&e.target.closest('#qlist');if(L&&L.scrollHeight>L.clientHeight+1)return;}e.preventDefault();setZoom(zoomT*(e.deltaY<0?ZOOM.step:1/ZOOM.step));},{passive:false});
 const ray=new T3.Raycaster(),ndc=new T3.Vector2();
 function pickAt(sx,sy){let best=null,bd=34;const test=(o,h)=>{const [x,y]=W2S(o.x,o.y,h);const d=Math.hypot(x-sx,y-sy);if(d<bd){bd=d;best=o;}};
-  for(const n of npcList)if(!n.deco)test(n,n.way?22:16);for(const m of mobs)if(alive(m))test(m,MONSPR[m.sp][0].height*m.sc*.5);return best;}
+  for(const n of npcList)if(!n.deco)test(n,n.way?22:16);for(const m of mobs)if(alive(m))test(m,monH(m.sp)*m.sc*.5);return best;}
 function groundAt(sx,sy){const r=stage.getBoundingClientRect();ndc.set(sx/r.width*2-1,-(sy/r.height)*2+1);ray.setFromCamera(ndc,cam);const h=ray.intersectObject(terrain)[0];return h?{x:h.point.x,y:h.point.z}:null;}
 stage.addEventListener('pointerdown',e=>{if(!started||modal||win||traveling||e.target.closest('.hud button,.mm,.joyz,.win'))return;const r=stage.getBoundingClientRect(),sx=e.clientX-r.left,sy=e.clientY-r.top;
   if(e.pointerType==='touch'&&sx<r.width*.42&&sy>r.height*.38)return;
@@ -1700,7 +1700,7 @@ function frameMeshes(){
     setSpr(m.mesh,im,m.x+(m.wind>0?-2:m.chg&&m.chg.ph==='aim'?Math.sin(m.phase*40)*1.2:0)*m.face,m.y,m.sc*(m.gdU>t?.9:m.bst?1+.35*Math.min(1,m.bst.t/((mobB(m)||{}).inf||BURST.inf))+.05*Math.sin(m.phase*30):1)/* v4.58 웅크림 · v4.59 부풀기 */,SPECIES[m.sp].form==='bird'||SPECIES[m.sp].form==='sprite'?4+Math.sin(m.phase*4)*2:0,m.rift);}
   if(player.shield>0&&!player.dead){shRing.visible=true;const k=1+Math.sin(t*4)*.05;shRing.scale.set(30*k,1,22*k);shRing.position.set(player.x,elevAt(player.x,player.y)+.9,player.y);shRing.material.opacity=.5+.3*Math.min(1,player.shield/(pStats().hp*.1));}else shRing.visible=false;
   if(t<player.buffT&&!player.dead){buffRing.visible=true;const k=(t*1.3)%1;buffRing.scale.set(20+k*16,1,(20+k*16)*.75);buffRing.position.set(player.x,elevAt(player.x,player.y)+1,player.y);buffRing.material.opacity=.8*(1-k);}else buffRing.visible=false;
-  if(alive(target)){tgtRing.visible=true;const r=(16+MONSPR[target.sp][0].width*.5)*target.sc;tgtRing.scale.set(r,1,r*.75);tgtRing.position.set(target.x,elevAt(target.x,target.y)+.8,target.y);tgtRing.material.opacity=.6+.3*Math.sin(t*6);}else tgtRing.visible=false;
+  if(alive(target)){tgtRing.visible=true;const r=(16+monW(target.sp)*.5)*target.sc;tgtRing.scale.set(r,1,r*.75);tgtRing.position.set(target.x,elevAt(target.x,target.y)+.8,target.y);tgtRing.material.opacity=.6+.3*Math.sin(t*6);}else tgtRing.visible=false;
   if(moveRing.visible&&moveRing.userData.p){const p=moveRing.userData.p,k=(t*1.5)%1;moveRing.scale.set(10+k*14,1,(10+k*14)*.8);moveRing.position.set(p.x,elevAt(p.x,p.y)+.8,p.y);moveRing.material.opacity=1-k;if(!nav)moveRing.visible=false;}
   teleDraw();}
 function render(){const r=stage.getBoundingClientRect();if(Math.abs(r.width-cssW)>1||Math.abs(r.height-cssH)>1)resize();if(!G0||!M.rt||!M.rt.built){rd.render(pscene,pcam);return;}
@@ -1715,9 +1715,9 @@ function render(){const r=stage.getBoundingClientRect();if(Math.abs(r.width-cssW
   rd.render(pscene,pcam);drawOverlay();}
 /* 가림 페이드 대상: 플레이어 · 대상 · 싸우는/가까운 몬스터 (최대 8) */
 function updateFade(){cam.updateMatrixWorld();const U=FADE.uFade.value,ps=cssH/VIEWH*zoom*pr,L=[];if(!player.dead)L.push([player,17,1]);
-  if(alive(target))L.push([target,MONSPR[target.sp][0].height*target.sc*.5,target.sc]);
+  if(alive(target))L.push([target,monH(target.sp)*target.sc*.5,target.sc]);
   const near=mobs.filter(m=>alive(m)&&m!==target&&(m.aggro||Math.abs(m.x-player.x)<220&&Math.abs(m.y-player.y)<170)).sort((a,b)=>dist(a,player)-dist(b,player));
-  for(const m of near){if(L.length>=FADE_N)break;L.push([m,MONSPR[m.sp][0].height*m.sc*.5,m.sc]);}
+  for(const m of near){if(L.length>=FADE_N)break;L.push([m,monH(m.sp)*m.sc*.5,m.sc]);}
   FADE.uFadeR.value.set(16*ps,22*ps);
   for(let i=0;i<FADE_N;i++){const e=L[i];if(!e){U[i].w=0;continue;}const [o,up,sc]=e,[x,y]=W2S(o.x,o.y,up);U[i].set(x*pr,(cssH-y)*pr,o.y,Math.max(1,.75+.35*sc));}}
 function lvCol(L){const d=L-S.lv;return d<=-5?'#9a96a8':d<=-2?'#9ee07a':d<=1?'#f4ecdc':d<=3?'#ffb050':'#ff6a5a';}
@@ -1735,7 +1735,7 @@ function drawOverlay(){const g=og;g.setTransform(pr,0,0,pr,0,0);g.clearRect(0,0,
     txt(npcName(n.id),x,y+sc*2,'#ffe8b0',fs,true);txt(NPCS[n.id].role,x,y+sc*2+fs*1.05,'#c8bcd8',fs*.8);
     const mk2=npcMark(n.id);if(mk2){const by=y-fs*1.4-Math.abs(Math.sin(t*3))*sc*3;g.fillStyle='rgba(20,12,30,.8)';g.beginPath();g.arc(x,by,fs*1.05,0,6.283);g.fill();g.strokeStyle=mk2[1];g.lineWidth=2;g.stroke();txt(mk2[0],x,by+1,mk2[1],fs*1.5,true);}}
   const q=curQ(),subSp=Object.keys(S.sq).filter(id=>S.sq[id].st==='active').map(id=>SUBQ[id].sp);
-  for(const m of mobs){if(m.dead)continue;const dp=dist(m,player);if(dp>(m.boss?400:190)&&m!==target)continue;const h=MONSPR[m.sp][0].height*m.sc;const [x,y]=W2S(m.x,m.y,h+6);
+  for(const m of mobs){if(m.dead)continue;const dp=dist(m,player);if(dp>(m.boss?400:190)&&m!==target)continue;const h=monH(m.sp)*m.sc;const [x,y]=W2S(m.x,m.y,h+6);
     const isQ=!m.eliteOf&&((S.qs==='active'&&(q.sp===m.sp||(q.type==='zone'&&m.zone===q.zone)))||subSp.includes(m.sp));
     txt('Lv'+m.lv+' '+m.name,x,y-sc*5,m.rage?'#ff6a5a':m.eliteOf||m.riftBoss?'#ffb0ff':m.rift?RIFT_COL.name:lvCol(m.lv),fs*(m.boss?1.15:.85),m.boss||m===target);
     if(isQ){g.fillStyle=subSp.includes(m.sp)?'#7ac8ff':'#ffd040';g.font='700 '+fs*.9+'px sans-serif';g.fillText('◆',x-g.measureText('Lv'+m.lv+' '+m.name).width/2-fs*.9,y-sc*5);}
