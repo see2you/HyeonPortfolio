@@ -322,13 +322,14 @@ function renderSettings(B,F){const C=S.cfg,g=el('div','setw');B.appendChild(g);
   const onoff=[[true,'켬'],[false,'끔']];
   let s1=sec('자동 전투');
   row(s1,'타겟 범위','퀘스트 사냥이 아닐 때 자동 전투가 찾는 거리',[['near','가까이'],['mid','보통'],['far','넓게']],()=>C.scan,v=>C.scan=v);
-  row(s1,'타겟 우선','퀘스트 사냥 중 노릴 몬스터',[['quest','퀘스트 대상 우선'],['near','가까운 몬스터']],()=>C.tgt,v=>C.tgt=v);
+  row(s1,'타겟 우선','원거리 먼저 = 나를 노리는 원거리 몬스터부터',[['quest','퀘스트 대상'],['near','가까운 몬스터'],['ranged','원거리 먼저']],()=>C.tgt||'quest',v=>C.tgt=v);
   row(s1,'스킬 사용 순서','슬롯에 넣은 스킬만 쓴다',[['slot','슬롯 1→8'],['strong','버프 → 강한 순']],()=>C.order,v=>C.order=v);
   row(s1,'몬스터 자동 반격','나를 공격한 몬스터를 먼저 상대',onoff,()=>C.counter!==false,v=>C.counter=v);
-  let s2=sec('물약 · 귀환');
+  let s2=sec('물약 · 귀환 · 회피');
   row(s2,'HP 물약 자동 사용','HP가 이 비율 아래로 떨어지면 마신다',[[.3,'30%'],[.4,'40%'],[.5,'50%'],[.6,'60%'],[0,'끔']],()=>S.autoPot?C.potAt:0,v=>{S.autoPot=v>0;if(v>0)C.potAt=v;});
   row(s2,'자동 진행 물약 보충','자동 진행 중 HP 물약이 '+POT_LOW.hp+'개 아래면 상점에 들러 한도까지 구입',onoff,()=>!!S.autoBuy,v=>S.autoBuy=v);
   row(s2,'긴급 귀환','자동 사냥 중 물약이 없고 HP 40% 미만이면 귀환 주문서로 귀환 (퀘스트 자동 진행 중엔 항상 켜짐)',onoff,()=>!!S.autoRet,v=>S.autoRet=v);
+  row(s2,'예고 회피','자동 전투가 바닥 · 돌진 · 투사체 예고를 피한다',onoff,()=>C.dodge!==false,v=>C.dodge=v);/* v4.72 G1-h — 자동 전투 칸에 두면 첫 줄 높이가 늘어 아래 칸이 스크롤로 밀림 */
   let s3=sec('진행 · 성장 · 장비');
   row(s3,'퀘스트 자동 진행',kTxt('수락 → 이동 → 사냥 → 보상을 자동으로 (T)'),onoff,()=>!!S.autoQ,v=>{S.autoQ=v;});
   row(s3,'자동 성장','능력치·스킬 포인트·스킬서·슬롯을 자동으로 쓴다',onoff,()=>!!S.autoGrow,v=>{S.autoGrow=v;if(v)autoGrowNow();});

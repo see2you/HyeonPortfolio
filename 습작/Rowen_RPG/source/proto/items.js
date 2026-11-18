@@ -265,7 +265,7 @@ function stkIcon(k){const d=STK[k],a=d.col;return paintIcon(d.ic,{a,b:shade(a,1.
 
 /* ===== 세이브 이전 (v4.7 → v4.8) ===== */
 const CFG0={scan:'mid',tgt:'quest',order:'slot',counter:true,potAt:.4,autoDis:-1,autoEq:false,autoLock:-1,autoBuf:false,autoCure:false};
-function migrate48(S,fresh){if(typeof migrateQi==='function')migrateQi(S);if(S.grave===undefined)S.grave=null;if(!S.buf||typeof S.buf!=='object')S.buf={};/* v4.66 G12 버프 물약 남은 시간(초) *//* v4.65 G9 무덤(이전 세이브엔 없음) */S.cfg=Object.assign({},CFG0,S.cfg||{});if(S.cfg.potAt==null)S.cfg.potAt=.4;
+function migrate48(S,fresh){if(S.cfg&&S.cfg.dodge===undefined)S.cfg.dodge=true;/* v4.72 G1-h 예고 회피 설정 */if(typeof migrateQi==='function')migrateQi(S);if(S.grave===undefined)S.grave=null;if(!S.buf||typeof S.buf!=='object')S.buf={};/* v4.66 G12 버프 물약 남은 시간(초) *//* v4.65 G9 무덤(이전 세이브엔 없음) */S.cfg=Object.assign({},CFG0,S.cfg||{});if(S.cfg.potAt==null)S.cfg.potAt=.4;
   if(!S.items){S.items=[];S.eq={};S.bag={};S.nu=S.nu||0;
     /* 기존 세이브: 무기·갑옷 강화 단계를 그대로 옮기고, 몬스터 상향에 맞춰 현재 레벨 티어의 일반 장비 6부위를 지급 */
     const T=fresh?1:tierOfLv(S.lv||1),mkI=(k)=>({u:++S.nu,k,t:T,g:0,en:0,ff:0});
