@@ -1,6 +1,6 @@
 'use strict';
 (function(){
-const GAME_VER='v4.81';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.82';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 /*ART*/
 /* 양감 처리 — 원본 도트(외곽선 없는 원화) 위에 형태 명암·휴 시프트·반사광·선택적 외곽선을 입힌다.
@@ -912,7 +912,8 @@ function gainXp(n){if(S.lv>=LV_MAX)return;S.xp+=n;let up=0;const lv0=S.lv;while(
 const REC=['str','vit','dex','str','int'];
 /* 자동 성장: 능력치 분배 → 가방의 스킬서 사용 → 스킬 습득·강화(관문 조건 우선) → 슬롯 정리 → (설정) 더 좋은 장비 장착 */
 const SK_PRI=['roar','ferv','guard','quake','flame','combo','drain','star','dash','whirl'];
-function autoGrowNow(){let n=0;while(S.sp>0){const k=REC[(S.st.str+S.st.vit+S.st.dex+S.st.int)%REC.length];S.st[k]++;S.sp--;n++;}
+/* 측정용(v4.82 G2-b): window.__statPolicy(S.st)가 있으면 그 함수가 고른 능력치에 넣는다 — tests/growth_sim.py의 STAT_POLICY(5빌드 비교)만 쓴다. 게임에서는 늘 REC 순환(G2-c에서 순서표로 바꾼다) */
+function autoGrowNow(){let n=0;while(S.sp>0){const pk=window.__statPolicy&&window.__statPolicy(S.st),k=Object.prototype.hasOwnProperty.call(STATS,pk)?pk:REC[(S.st.str+S.st.vit+S.st.dex+S.st.int)%REC.length];S.st[k]++;S.sp--;n++;}
   for(const k of ['book_dash','book_roar','book_quake'])if(cnt(k)>0)useBook(k,true);
   const q=curQ(),want=q.gate&&S.qs==='active'?q.gate.skills:{};let guard=0;
   while(S.kp>0&&guard++<60){let pick=-1;for(const id in want){const i=skIdx(id);if(skLv(i)<want[id]&&canLearn(i)){pick=i;break;}}
