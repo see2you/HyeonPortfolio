@@ -26,7 +26,7 @@ with sync_playwright() as p:
         pg.evaluate("(()=>{window.__statPolicy="+POL_JS[POLICY]+";})()")  # 식의 값이 함수면 playwright가 불러 버린다 → 감싼다
     pg.evaluate("__g.S.autoGrow=true;__g.S.cfg.autoEq=true;__g.S.autoQ=true;__g.autoNext()")
     st="(()=>{const q=__g.curQ(),g=__g.gateState(q);return {qi:__g.S.qi,qs:__g.S.qs,lv:__g.S.lv,cp:__g.cpOf(),map:__g.map,trav:__g.traveling,nav:__g.nav&&__g.nav.label,hunt:__g.hunt&&(__g.hunt.sub||__g.hunt.sp||'mob'),modal:__g.modal&&__g.modal.name,sub:JSON.stringify(Object.fromEntries(Object.entries(__g.S.sq).filter(([k,v])=>v.st!=='clear'&&!__g.SUBQ[k].trial).map(([k,v])=>[k,v.st+v.n]))),gate:q.gate?g.ok:null,sk:JSON.stringify(__g.S.sk),hpPot:__g.S.hpPot,w:Math.round(__g.wPct()*100),it:__g.S.items.length,mpPot:__g.S.mpPot,stat:JSON.stringify(__g.STAT),dead:__g.player.dead,gold:__g.S.gold,inv:__g.inv?__g.inv.m.lv+' '+__g.inv.zone:null,invSeen:!!__g.S.invSeen}})()"
-    last=None;stall=0;gatelog={};BOTRIFT=os.environ.get('BOTRIFT')=='1';RIFT_ST=int(os.environ.get('BOTRIFT_ST','40'));riftOn=None;riftUse={'n':0,'k':0,'stone':0};riftRuns=[];NQ=pg.evaluate('__g.QUESTS.length')
+    mapLog=[(0,'rowen',0,1)];    last=None;stall=0;gatelog={};BOTRIFT=os.environ.get('BOTRIFT')=='1';RIFT_ST=int(os.environ.get('BOTRIFT_ST','40'));riftOn=None;riftUse={'n':0,'k':0,'stone':0};riftRuns=[];NQ=pg.evaluate('__g.QUESTS.length')
     for i in range(int(os.environ.get('ITERS','3600'))):
         if pg.evaluate("__g.traveling"):
             pg.wait_for_timeout(300);continue
@@ -64,8 +64,12 @@ with sync_playwright() as p:
                     # 죽었다 살아났거나 다른 까닭으로 밖에 있으면 다시 들어간다(균열은 아직 열려 있다)
                     if rs['up'] and not rs['inn'] and not rs['carry'] and not rs['trav'] and not s['dead'] and not rs['modal'] and pg.evaluate("!__g.nav&&!__g.player.dead"):
                         pg.evaluate("__g.S.hpPot<__g.RIFT.potMin?__g.riftPrepGo():__g.riftEnter(true)");riftOn['re']+=1
+        # v4.83 지역 단위 루트: 맵이 바뀐 기록(균열 제외) — 로웬 → 카르도 → 에르나 → (엔딩) 로웬 말고 다른 이동이 있으면 루트가 지역을 되돌아간 것
+        if s['map']!=mapLog[-1][1] and s['map'] in ('rowen','kardo','erna'): mapLog.append((round(i*3/60,1),s['map'],s['qi'],s['lv']));print('MAP',i*3,mapLog[-1])
         if s['modal'] in ('신의 시련이 열렸다','다음 신의 시련'):  # v4.8.5: 시련 선택은 플레이어 몫 — 시뮬레이션은 '나중에'로 메인만 진행(기준 비교용)
             print('TRIAL CHOICE',i*3);pg.evaluate("__g.modal.btns[0].f()")
+        if pg.evaluate('!!(__g.modal&&__g.modal.pick)'):  # v4.83 보상 택1: 자동 진행은 고르지 않는다 → 봇(플레이어 대역)이 첫 번째를 고른다
+            print('PICK',i*3,pg.evaluate('__g.modal.pick'));pg.evaluate('__g.modal.btns[0].f()')
         if s['dead']:
             print('DEAD',i*3,s);pg.evaluate("if(__g.modal&&__g.modal.name==='사망했습니다')__g.modal.btns[0].f()")
         if s['gate'] is not None and s['qs']=='active':
@@ -84,4 +88,4 @@ with sync_playwright() as p:
     pg.evaluate("__g.snap();__g.render()");pg.screenshot(path='flow_end.png')
     print('gates',gatelog);print('BOTRIFT use',riftUse,'runs',len(riftRuns),'clear',sum(1 for r in riftRuns if r['res']=='clear'),'time',sum(1 for r in riftRuns if r['res']=='time'),'clearSec',[r['end'] for r in riftRuns if r['res']=='clear']) if BOTRIFT else None;print('FINAL',pg.evaluate("JSON.stringify({lv:__g.S.lv,gold:__g.S.gold,kills:__g.S.kills,stone:__g.S.stone,ore:[__g.cnt('ore1'),__g.cnt('ore2'),__g.cnt('ore3')],bls:__g.cnt('bls'),items:__g.S.items.length,eq:Object.values(__g.S.eq).filter(Boolean).map(u=>{const it=__g.S.items.find(i=>i.u===u);return __g.GRADES[it.g].n+' '+__g.itemName(it)}),slots:__g.S.slots,sk:__g.S.sk,w:Math.round(__g.wPct()*100),stat:__g.STAT,t:__g.t})"));print('ERRORS',errs[:5] or 'none')
     # v4.82: 한 줄 요약(빌드 표용) — 완주 여부 · 게임 시간(분) · 사망 · HP 물약 · 능력치 · 켜진 구간 수 · 관문(서브 끝낸 시점) 전투력
-    print('SUMMARY',json.dumps({'policy':POLICY or 'rec','done':pg.evaluate('__g.S.qi>=__g.QUESTS.length'),'min':round(pg.evaluate('__g.t')/60,1),'deaths':pg.evaluate('__g.STAT.deaths||0'),'hpUse':pg.evaluate('__g.STAT.hpUse||0'),'lv':pg.evaluate('__g.S.lv'),'st':pg.evaluate('__g.S.st'),'tb':pg.evaluate('__g.tbCount()'),'cp':pg.evaluate('__g.cpOf()'),'gateCp':{str(k+1):v[1] for k,v in gatelog.items()},'errs':len(errs)},ensure_ascii=False));b.close()
+    print('SUMMARY',json.dumps({'policy':POLICY or 'rec','done':pg.evaluate('__g.S.qi>=__g.QUESTS.length'),'min':round(pg.evaluate('__g.t')/60,1),'deaths':pg.evaluate('__g.STAT.deaths||0'),'hpUse':pg.evaluate('__g.STAT.hpUse||0'),'lv':pg.evaluate('__g.S.lv'),'st':pg.evaluate('__g.S.st'),'tb':pg.evaluate('__g.tbCount()'),'cp':pg.evaluate('__g.cpOf()'),'gateCp':{str(k+1):v[1] for k,v in gatelog.items()},'maps':mapLog,'gateLv':{str(k+1):v[0] for k,v in gatelog.items()},'errs':len(errs)},ensure_ascii=False));b.close()

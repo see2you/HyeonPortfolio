@@ -497,7 +497,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.82</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.83</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>
@@ -510,7 +510,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 <script>
 'use strict';
 (function(){
-const GAME_VER='v4.82';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
+const GAME_VER='v4.83';{const vt=document.getElementById('verTag');if(vt)vt.textContent=GAME_VER;}
 let W=480,H=270;
 const mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
 const cx2=(c,smooth=false)=>{const g=c.getContext('2d');g.imageSmoothingEnabled=smooth;return g;};
@@ -2375,11 +2375,11 @@ const BOSS_PAT={
   q21:{p:['aoe','fan'],rage:true,fx:{fan:'stun'}},/* v4.69 광석골렘 왕 Lv28 (fb6) — 장판 + 휩쓸기(명중 = 기절) + 광폭 */
   q27:{p:['volley','ember'],fx:{ember:'burn',fire:'burn'}},/* v4.70 불티 숲의 주인 · 거목 불티나무 Lv34 (fb7) — 3갈래 투사체 + 불씨 장판(남는 불 4초 · 명중 = 화상) */
   q30:{p:['guard','dash']},/* v4.70 용암 호수의 군주 · 흑요석 대게 Lv37 (fb8) — 방어 태세 + 돌진 */
-  q32:{p:['dash','tri'],rage:true,fx:{tri:'burn'},nm:{dash:'급강하'}},/* v4.70 불새 여왕 홍염 Lv40 — 급강하(돌진) + 3연속 장판(명중 = 화상) + 광폭 */
+  q32:{p:['dash','tri'],rage:true,rageCd:1.9,mul:{dash:1.5,tri:1.15},fx:{tri:'burn'},nm:{dash:'급강하'}},/* v4.83 급강하 배율 2 → 1.5 · 3연속 장판 1.4 → 1.15 · 광폭 공격 주기 1.6 → 1.9초(홍염만 · 보스별 mul 덮어쓰기): 초당 받은 피해가 옛 장판 대비 1.35~1.36(기준 0.75~1.30)이라 낮춤 *//* v4.70 불새 여왕 홍염 Lv40 — 급강하(돌진) + 3연속 장판(명중 = 화상) + 광폭 */
 };
 /* v4.71 G1-g3 침공 보스 · 균열의 주인(지시서 §G1 '그 종의 원형 + ①') — 퀘스트 id가 없으므로 따로 한 줄. gen = 그 종의 원형(MOB_B)이 함께 돈다:
    ① 장판은 원형의 특수 공격(조준 · 돌진 · 웅크림 · 부풀기 · 휘청)과 겹치지 않는다 — 특수 공격 중이거나 끝난 지 2.5초 안이면 장판을 미루고, 장판 중 · 끝난 뒤 2.5초는 원형 대신 근접만 한다(동시 예고 1개 · 패턴 사이 2.5초) */
-const BOSS_GEN={p:['aoe'],gen:true,bk:2};/* bk = 돌진 원형의 뒷걸음질 속도 배율(54 × 2) */
+const BOSS_GEN={p:['aoe'],gen:true,bk:2,chgK:.85};/* v4.83 chgK = 침공 보스의 돌진 피해 배율(불새 · 초당 받은 피해 옛 대비 1.33 → 기준 0.75~1.30 안으로) *//* bk = 돌진 원형의 뒷걸음질 속도 배율(54 × 2) */
 
 
 /* ================= 퀘스트 =================
@@ -2399,15 +2399,15 @@ const QUESTS=[
   {id:'q6',giver:'orvin',title:'숲의 주인',type:'elite',zone:'z2',subs:['sb1','sb2'],gate:{skills:{dash:1},cp:950},
     elite:{sp:'acornboar',lv:8,name:'숲의 주인 · 왕멧돼지',hpMul:3,sc:1.8,fa:0},
     offer:'숲을 뒤흔드는 건 거대한 왕멧돼지일세. 지금 자네로는 어림없어.\n브람과 넬을 도와 힘을 길러 오게. 돌진 기술 없이는 녀석의 돌격을 받아낼 수 없을 걸세.',done:'왕멧돼지를 쓰러뜨렸다니! 자네, 몰라보게 강해졌군.',rw:{xp:500,gold:300,shard:10}},
-  {id:'q7',giver:'orvin',title:'바람 평원으로',type:'kill',subs:['sd1','gc1'],sp:'windfox',n:10,zone:'z3',
+  {id:'q7',giver:'orvin',title:'바람 평원으로',type:'kill',subs:['ex1','gc1'],sp:'windfox',n:10,zone:'z3',
     offer:'북문 너머 바람 평원에서 바람여우 떼가 길을 막고 있네.\n열 마리를 물리치게. 녀석들은 먼저 덤벼드니 조심하게.',done:'평원 길이 열렸군.',rw:{xp:420,gold:260,shard:10}},
-  {id:'q8',giver:'hans',title:'성난 초원황소',type:'kill',subs:['sd2','gc2'],sp:'bull',n:8,zone:'z3',
+  {id:'q8',giver:'hans',title:'성난 초원황소',type:'kill',subs:['ex2','gc2'],sp:'bull',n:8,zone:'z3',
     offer:'초원황소들이 사람만 보면 들이받는다네.\n여덟 마리를 진정시켜 주게.',done:'황소들을 진정시켰다니, 대단하군!',rw:{xp:520,gold:320,stone:4}},
-  {id:'q9',giver:'orvin',title:'안개 호숫가의 이변',type:'kill',subs:['sd3'],sp:'waterslime',n:10,zone:'z4',
+  {id:'q9',giver:'orvin',title:'안개 호숫가의 이변',type:'kill',subs:['ex3'],sp:'waterslime',n:10,zone:'z4',
     offer:'북동쪽 호숫가에 물방울슬라임이 끓어오르고 있네.\n열 마리를 잠재워 주게.',done:'슬라임은 줄었지만, 호수 깊은 곳에 무언가 있네.',rw:{xp:800,gold:480,shard:10}},
   {id:'fb1',giver:'orvin',title:'지역 보스 토벌',type:'fboss',boss:'q6',zone:'z2',n:1,
     offer:'숲의 주인이 다시 깨어났다네. 왕멧돼지는 쓰러져도 숲의 기운을 먹고 더 사납게 일어나지.\n호수로 가기 전에 녀석을 한 번 더 잠재워 주게. 녀석이 지닌 장비는 신앙을 키우는 데 쓸모가 있을 걸세.',done:'역시 자네로군. 이제 호수 쪽을 살필 수 있겠어.',rw:{xp: 700, gold: 420, stone: 4, shard: 10}},
-  {id:'q10',giver:'orvin',title:'호수의 주인',type:'elite',zone:'z4',subs:['sb3','sb4','rp2','ht1'],gate:{skills:{roar:1,star:2},cp:1750},
+  {id:'q10',giver:'orvin',title:'호수의 주인',type:'elite',zone:'z4',subs:['sb3','sb4','rp2','ex5'],gate:{skills:{roar:1,star:2},cp:1750},
     elite:{sp:'lakesnake',lv:13,name:'호수의 주인 · 큰물뱀',hpMul:3,sc:1.8,fa:4},
     offer:'호수 깊은 곳의 큰물뱀이 뒤틀림의 원인일세.\n넬과 미라를 도와 준비하게. 전투 함성을 배우고 별똥별을 더 익혀야 할 걸세.',done:'호수의 기운이 맑아졌네.\n하지만 뒤틀림은 북서쪽 고원에서 흘러오고 있어.',rw:{xp:1200,gold:600,shard:15}},
   /* v4.46 시간의 균열 개방 스토리(G17 · 현 요청): 호수의 주인이 쓰러진 자리에서 안개가 갈라진다 → 조각을 모아 길잡이 표석에 문을 낸다 → 균열 개방.
@@ -2418,56 +2418,56 @@ const QUESTS=[
     offer:'그 조각을 모아 장로님께 가져가면 뭔가 알아내실 거야.\n안개 호숫가의 물방울슬라임에게서 여섯 개만 되찾아 와.',done:'차갑지도 뜨겁지도 않은데, 쥐고 있으면 시계 소리가 나는군.\n장로님께 가져가 봐.',rw:{xp:400,gold:300,stone:4}},
   {id:'rq3',story:'rift',giver:'orvin',title:'균열의 문',type:'talk',npc:'bram',
     offer:'시간의 조각이라… 옛 기록에 있네. 뒤틀림이 시간에 낸 상처, 「시간의 균열」일세.\n조각을 길잡이 표석에 박으면 그 안으로 드나드는 문이 된다네. 브람에게 맡기게.',done:'표석에 박아 넣었다. …문이 열렸군. 표석에 손을 대면 균열로 들어갈 수 있을 거다.\n안의 시간은 한 시간뿐이야. 밖에서 쉬면 다시 차오르니 아껴 써.',rw:{xp:100,shard:5}},
-  {id:'q11',giver:'orvin',title:'잿빛 고원',type:'kill',subs:['sd4','gc3','gc4','gr1'],sp:'emberslime',n:12,zone:'z5',
+  {id:'q11',giver:'orvin',title:'잿빛 고원',type:'kill',subs:['ex4','gc3','gc4','gr1'],sp:'emberslime',n:12,zone:'z5',
     offer:'뒤틀림의 근원은 잿빛 고원일세.\n불씨슬라임 열두 마리를 처치하고 길을 트게.',done:'고원 깊은 곳에서 거대한 열기가 느껴지네…\n마그마골렘 군주가 깨어난 게야.',rw:{xp:1500,gold:800,shard:15}},
   {id:'fb2',giver:'hans',title:'지역 보스 토벌',type:'fboss',boss:'q10',zone:'z4',n:1,
     offer:'호수의 주인이 다시 물 위로 올라왔어. 고원으로 가는 길목이 또 막혔네.\n군주와 맞서려면 신앙이 더 필요해. 큰물뱀을 잡아 그 비늘 장비부터 챙겨 오게.',done:'좋아, 이제 고원으로 갈 채비가 됐군.',rw:{xp: 1300, gold: 700, stone: 5, shard: 10}},
   {id:'q12',giver:'orvin',title:'마그마골렘 군주',type:'elite',zone:'z5',subs:['sb5','sb6','gc5','gc6','rp3','fk1'],gate:{skills:{star:3},cp:2250},
     elite:{sp:'magmagolem',lv:16,name:'마그마골렘 군주',hpMul:6,sc:2.3,fa:30,x:400,y:335},
     offer:'고원 북쪽 끝의 마그마골렘 군주를 쓰러뜨리면 로웬의 이변이 멎을 걸세.\n브람과 한스가 채비를 도울 걸세. 붉은 장판이 보이면 반드시 피하게!',done:'해냈군! 로웬의 원정대원이여, 자네 이름은 오래도록 기억될 걸세.',rw:{xp:3000,gold:2000,shard:40,stone:10}},
+  {id:'fb3',giver:'orvin',title:'지역 보스 토벌',type:'fboss',boss:'q12',zone:'z5',n:1,
+    offer:'잿빛 고원의 마그마골렘 군주가 다시 끓어오른다는 전갈일세. 카르도로 떠나기 전에 로웬의 뒤를 정리해 두게.\n군주의 갑주는 협곡 너머에서도 자네를 지켜 줄 걸세.',done:'이제 로웬은 안심이군. 마음 놓고 협곡을 넘게.',rw:{xp: 1900, gold: 900, stone: 6, shard: 15}},
   {id:'q13',giver:'orvin',title:'협곡 너머 카르도',type:'talk',npc:'karl',
     offer:'남쪽 협곡 너머 카르도에서도 이변이 일어난다는 전갈이 왔네.\n마을의 길잡이 표석으로 카르도에 가서 촌장 카를을 만나게.',done:'로웬의 영웅이 와 주다니! 카르도는 자네를 환영하네.',rw:{xp:600,gold:300},unlock:'kardo'},
-  {id:'q14',giver:'karl',title:'자갈 언덕 정리',type:'kill',subs:['sd5'],sp:'goat',n:10,zone:'k1',
+  {id:'q14',giver:'karl',title:'자갈 언덕 정리',type:'kill',subs:['ex6'],sp:'goat',n:10,zone:'k1',
     offer:'동쪽 자갈 언덕의 절벽산양들이 광부들을 들이받는다네.\n열 마리를 쫓아 주게.',done:'광부들이 한시름 놓겠군.',rw:{xp:1400,gold:600,stone:4}},
-  {id:'q15',giver:'rian',title:'모래도마뱀 소탕',type:'kill',subs:['sd6'],sp:'sandlizard',n:10,zone:'k1',
+  {id:'q15',giver:'rian',title:'모래도마뱀 소탕',type:'kill',subs:['ex7'],sp:'sandlizard',n:10,zone:'k1',
     offer:'모래도마뱀이 마을 창고를 노리고 있어.\n열 마리를 처리해 줘.',done:'창고가 무사하군. 고맙네.',rw:{xp:1700,gold:700}},
-  {id:'fb3',giver:'karl',title:'지역 보스 토벌',type:'fboss',boss:'q12',zone:'z5',n:1,
-    offer:'로웬의 마그마골렘 군주가 다시 끓어오른다는 전갈일세. 카르도의 동굴로 가기 전에 뒤를 정리해 두게.\n군주의 갑주는 동굴 파수꾼의 포자를 견디게 해 줄 걸세. 로웬 잿빛 고원으로 다녀오게.',done:'로웬도 이제 안심이겠군. 동굴로 가세.',rw:{xp: 1900, gold: 900, stone: 6, shard: 15}},
   {id:'q16',giver:'karl',title:'동굴의 파수꾼',type:'elite',zone:'k2',subs:['sk1','sk2','gc7','gc8','rp4','ht2'],gate:{skills:{quake:1,roar:2},cp:2950},
     elite:{sp:'cavemush',lv:21,name:'동굴의 파수꾼 · 거대 동굴버섯',hpMul:3,sc:2,fa:40},
     offer:'남쪽 동굴숲 입구를 거대 동굴버섯이 막고 있네.\n도르와 세나를 도와 준비하게. 대지 가르기 정도는 익혀야 포자를 뚫을 수 있을 게야.',done:'파수꾼이 쓰러졌군! 동굴숲 길이 열렸네.',rw:{xp:3500,gold:1200,shard:15}},
-  {id:'q17',giver:'karl',title:'갑충 협곡의 소음',type:'kill',subs:['sd7'],sp:'stonebeetle',n:12,zone:'k3',
+  {id:'q17',giver:'karl',title:'갑충 협곡의 소음',type:'kill',subs:['ex8'],sp:'stonebeetle',n:12,zone:'k3',
     offer:'동남쪽 협곡에서 돌갑충들이 밤낮없이 바위를 갉는다네.\n열두 마리를 처리해 주게.',done:'협곡이 조용해졌군.',rw:{xp:3200,gold:1000,stone:5}},
-  {id:'q18',giver:'rian',title:'바위게 떼',type:'kill',subs:['sd8'],sp:'rockcrab',n:10,zone:'k3',
+  {id:'q18',giver:'rian',title:'바위게 떼',type:'kill',subs:['ex9'],sp:'rockcrab',n:10,zone:'k3',
     offer:'바위게들이 협곡 길을 막았어. 먼저 덤벼드니 조심해.',done:'길이 뚫렸군!',rw:{xp:3600,gold:1100}},
   {id:'fb4',giver:'rian',title:'지역 보스 토벌',type:'fboss',boss:'q16',zone:'k2',n:1,
     offer:'동굴의 파수꾼이 다시 포자를 뿜고 있어. 협곡의 여왕에게 가기 전에 녀석부터 정리해 줘.\n파수꾼이 떨군 장비로 신앙을 다져 두면 여왕의 열기도 견딜 거야.',done:'좋아, 협곡으로 내려가자.',rw:{xp: 3200, gold: 1100, stone: 6, shard: 15}},
   {id:'q19',giver:'rian',title:'협곡의 여왕',type:'elite',zone:'k3',subs:['sk3','sk4','gc9','gc10','rp5','fk2'],gate:{skills:{quake:2,dash:3},cp:3500},
     elite:{sp:'snail',lv:25,name:'협곡의 여왕 · 등잔달팽이',hpMul:3,sc:2,fa:54},
     offer:'협곡 바닥의 거대 등잔달팽이가 협곡을 달구고 있어.\n모라와 도르가 채비를 도울 거야. 대지 가르기와 돌진을 더 단련해 와.',done:'여왕이 쓰러지니 협곡 바람이 식는군!',rw:{xp:6000,gold:1800,shard:20}},
-  {id:'q20',giver:'karl',title:'수정 호숫가',type:'kill',subs:['sd9'],sp:'puffer',n:10,zone:'k4',
+  {id:'q20',giver:'karl',title:'수정 호숫가',type:'kill',subs:['ex10'],sp:'puffer',n:10,zone:'k4',
     offer:'북쪽 수정 호숫가의 거품복어가 독을 뿜는다네.\n열 마리를 처리해 주게.',done:'호숫가 공기가 맑아졌네. 하지만 수정이 떨고 있어…',rw:{xp:5500,gold:1500,shard:10}},
   {id:'fb5',giver:'karl',title:'지역 보스 토벌',type:'fboss',boss:'q19',zone:'k3',n:1,
     offer:'협곡의 여왕이 다시 등잔불을 켰네. 광석골렘 왕은 그보다 훨씬 강하다네.\n여왕을 한 번 더 쓰러뜨려 협곡을 식히고, 그 장비로 채비를 단단히 하게.',done:'협곡이 식었군. 이제 왕과 맞설 때일세.',rw:{xp: 4800, gold: 1500, stone: 8, shard: 15}},
   {id:'q21',giver:'karl',title:'광석골렘 왕',type:'elite',zone:'k4',subs:['sk5','sk6','gc11','gc12','rp6','lv1'],gate:{skills:{quake:3},cp:3900},
     elite:{sp:'oregolem',lv:28,name:'광석골렘 왕',hpMul:6,sc:2.3,fa:62,x:1500,y:330},
     offer:'호숫가 북동쪽 끝에서 광석골렘 왕이 깨어났네. 카르도 이변의 근원일세.\n세나와 리안이 채비를 도울 걸세.',done:'카르도가 자네에게 큰 빚을 졌네.\n로웬의 오르빈 장로께 이 소식을 전해 주게.',rw:{xp:9000,gold:4000,shard:50,stone:12}},
-  {id:'q22',giver:'karl',title:'승전보',type:'talk',npc:'orvin',
-    offer:'로웬의 오르빈 장로께 카르도의 승전보를 전해 주게.\n길잡이 표석으로 금방 갈 수 있을 걸세.',done:'두 지역의 이변을 모두 잠재웠군! 자네야말로 진정한 원정대원일세.',rw:{xp:3000,gold:2000,shard:20}},
-  {id:'q23',giver:'orvin',title:'불의 땅 에르나',type:'talk',npc:'aila',
-    offer:'카르도 너머 화산 지대 에르나에서 땅이 끓어오른다는 소식이네.\n길잡이 표석으로 에르나에 가서 촌장 아일라를 만나 주게.',done:'두 지역의 영웅이로군! 에르나는 지금 자네 같은 사람이 절실하다네.',rw:{xp:3000,gold:1000},unlock:'erna'},
-  {id:'q24',giver:'aila',title:'잿가루 언덕의 화산양',type:'kill',subs:['sd10'],sp:'volsheep',n:12,zone:'e1',
+  {id:'fb6',giver:'karl',title:'지역 보스 토벌',type:'fboss',boss:'q21',zone:'k4',n:1,
+    offer:'수정 호숫가의 광석골렘 왕이 다시 일어났다네. 카르도를 떠나기 전에 한 번 더 잠재워 주게.\n왕의 갑주는 불의 땅에서도 쓸모가 있을 걸세.',done:'카르도 사람들이 두 다리 뻗고 자겠군. 고맙네.',rw:{xp: 5200, gold: 1800, stone: 8, shard: 15}},
+  {id:'q22',giver:'karl',title:'승전보',type:'talk',npc:'rian',
+    offer:'카르도의 이변을 모두 잠재웠군. 경비대장 리안에게 알려 주게 — 로웬의 오르빈 장로께 승전보를 띄울 걸세.',done:'두 지역의 이변을 모두 잠재웠다고? 전령을 바로 로웬으로 보내지. 자네야말로 진정한 원정대원이야.',rw:{xp:3000,gold:2000,shard:20}},
+  {id:'q23',giver:'rian',title:'불의 땅 에르나',type:'talk',npc:'aila',
+    offer:'전령이 돌아오는 길에 소식을 들었어. 카르도 너머 화산 지대 에르나에서 땅이 끓어오른다더군.\n길잡이 표석으로 에르나에 가서 촌장 아일라를 만나 줘.',done:'두 지역의 영웅이로군! 에르나는 지금 자네 같은 사람이 절실하다네.',rw:{xp:3000,gold:1000},unlock:'erna'},
+  {id:'q24',giver:'aila',title:'잿가루 언덕의 화산양',type:'kill',subs:['ex11'],sp:'volsheep',n:12,zone:'e1',
     offer:'서쪽 잿가루 언덕의 화산양들이 불붙은 털로 들판을 태우고 있네.\n열두 마리를 진정시켜 주게.',done:'들불이 잦아들었군. 고맙네.',rw:{xp:4200,gold:1600,stone:5}},
   {id:'q25',giver:'taon',title:'유황 결정',type:'collect',sp:'sulfurbeetle',item:'유황 결정',rate:.6,n:8,zone:'e1',
     offer:'유황딱정벌레 등에 붙은 결정으로 마을 방벽을 굳힌다.\n여덟 개를 모아 와.',done:'이 정도면 방벽이 버티겠군.',rw:{xp:4800,gold:1700}},
-  {id:'q26',giver:'aila',title:'불티 숲의 정령',type:'kill',subs:['sd11'],sp:'flamewisp',n:12,zone:'e2',
+  {id:'q26',giver:'aila',title:'불티 숲의 정령',type:'kill',subs:['ex12'],sp:'flamewisp',n:12,zone:'e2',
     offer:'더 서쪽 불티 숲에서 불꽃정령들이 날뛰고 있네.\n열둘을 잠재워 주게.',done:'숲의 불길이 약해졌네. 그런데 숲 깊은 곳에서 나무가 울고 있어…',rw:{xp:5700,gold:1900,shard:10}},
-  {id:'fb6',giver:'aila',title:'지역 보스 토벌',type:'fboss',boss:'q21',zone:'k4',n:1,
-    offer:'카르도에서 광석골렘 왕이 다시 일어났다는 소식이 왔네. 에르나의 거목과 맞서려면 왕의 갑주가 필요할 걸세.\n길잡이 표석으로 카르도 수정 호숫가에 다녀오게.',done:'카르도 사람들이 고마워하더군. 이제 숲의 주인일세.',rw:{xp: 5200, gold: 1800, stone: 8, shard: 15}},
-  {id:'q27',giver:'aila',title:'불티 숲의 주인',type:'elite',zone:'e2',subs:['se1','se2','gc13','gc14','rp7','ht3'],gate:{skills:{quake:4,star:5},cp:4850},
+  {id:'q27',giver:'aila',title:'불티 숲의 주인',type:'elite',zone:'e2',subs:['se1','se2','gc13','gc14','rp7','ex15'],gate:{skills:{quake:4,star:5},cp:4850},
     elite:{sp:'embertree',lv:34,name:'불티 숲의 주인 · 거목 불티나무',hpMul:3.2,sc:2.2,fa:78},
     offer:'숲 한가운데 거목 불티나무가 불씨를 뿌리고 있네.\n고로와 하나를 도와 채비를 갖추게. 불씨는 대지 가르기로 끊어 내야 할 걸세.',done:'거목이 쓰러지니 숲이 숨을 쉬는군!',rw:{xp:9000,gold:3000,shard:20}},
-  {id:'q28',giver:'taon',title:'용암도마뱀 토벌',type:'kill',subs:['sd12'],sp:'lavalizard',n:12,zone:'e3',
+  {id:'q28',giver:'taon',title:'용암도마뱀 토벌',type:'kill',subs:['ex13'],sp:'lavalizard',n:12,zone:'e3',
     offer:'북쪽 용암 호수의 용암도마뱀들이 길을 막았다. 먼저 덤벼드니 조심해.\n열두 마리를 처리해.',done:'길이 열렸군. 호수의 열기가 심상치 않아.',rw:{xp:7200,gold:2200}},
   {id:'q29',giver:'aila',title:'흑요석 핵',type:'collect',sp:'obsidiancrab',item:'흑요석 핵',rate:.6,n:6,zone:'e3',
     offer:'흑요석게 몸속의 핵이 화산의 맥을 읽는 열쇠라네.\n여섯 개를 모아 주게.',done:'핵이 떨고 있군… 호수 바닥에 무언가 있네.',rw:{xp:7800,gold:2300,stone:6}},
@@ -2476,7 +2476,7 @@ const QUESTS=[
   {id:'q30',giver:'taon',title:'용암 호수의 군주',type:'elite',zone:'e3',subs:['se3','se4','gc15','gc16','rp8','fk3'],gate:{skills:{quake:5,roar:5},cp:5300},
     elite:{sp:'obsidiancrab',lv:37,name:'용암 호수의 군주 · 흑요석 대게',hpMul:3.5,sc:2.2,fa:98,x:1500,y:840},
     offer:'호수 한가운데의 흑요석 대게가 용암을 휘젓고 있다.\n루미와 고로가 채비를 도울 거다. 장비부터 단단히 해.',done:'군주가 가라앉았다! 이제 남은 건 둥지뿐이군.',rw:{xp:12600,gold:3500,shard:25}},
-  {id:'q31',giver:'aila',title:'불새 둥지',type:'kill',subs:['sd13'],sp:'phoenix',n:10,zone:'e4',
+  {id:'q31',giver:'aila',title:'불새 둥지',type:'kill',subs:['ex14'],sp:'phoenix',n:10,zone:'e4',
     offer:'북서쪽 화산 위 불새 둥지에서 새끼들이 쏟아져 나오고 있네.\n열 마리를 쫓아 주게.',done:'둥지 꼭대기에서 거대한 날갯짓이 들리네… 여왕이 깨어났어.',rw:{xp:10800,gold:2800,shard:10}},
   {id:'fb8',giver:'aila',title:'지역 보스 토벌',type:'fboss',boss:'q30',zone:'e3',n:1,
     offer:'용암 호수의 군주가 다시 떠올랐네. 홍염에게 가기 전 마지막 채비일세.\n군주를 쓰러뜨리고 그 장비로 신앙을 끝까지 끌어올리게. 홍염의 불길은 신앙 없이는 견딜 수 없네.',done:'이제 남은 건 화산 꼭대기뿐일세.',rw:{xp: 9500, gold: 2600, stone: 10, shard: 20}},
@@ -2571,6 +2571,22 @@ Object.assign(SUBQ,{
   sd11:{giver:'rumi',type:'collect',sp:'flamewisp',item:'정령의 불씨',rate:.6,n:6,zone:'e2',title:'정령의 불씨',offer:'불꽃정령의 불씨로 화염 물약을 달여요. 여섯 개!',done:'불씨가 살아 있어요! 고마워요.',rw:{xp:3200,stk:{asc:2}}},
   sd12:{giver:'goro',type:'hunt',zone:'e3',n:30,title:'용암 호숫가 정찰',offer:'호숫가 놈들 서른. 흑요석 캘 자리를 봐야 하네.',done:'좋은 자리를 찾았네.',rw:{xp:4000,stone:8}},
   sd13:{giver:'hana',type:'kill',sp:'flamewisp',n:10,zone:'e4',title:'둥지의 불꽃정령',offer:'둥지 근처 불꽃정령이 온천까지 내려와요. 열만요.',done:'이제 안심이에요!',rw:{xp:5500,stk:{wsc:2}}},
+  /* ===== v4.83 G10 새 서브 유형(지시서 §G10) — 탐색(reach) · 방어(wave) · 보상 택1(rw.pick). 옛 곁가지 서브(sd1~sd13 · ht1 · ht3)와 바꿔 끼웠다(XQ_OLD · 옛 데이터는 진행 중 세이브를 위해 남겨 둔다) ===== */
+  ex1:{giver:'hans',type:'reach',zone:'z3',n:3,title:'평원 길 살피기',offer:'평원에 낯선 발자국이 늘었어. 세 군데만 둘러보고 와 줘.',done:'발자국이 평원 안쪽으로 이어진다고? 덕분에 순찰 길을 다시 짰어.',rw:{xp:300,gold:150,stone:3}},
+  ex2:{giver:'mira',type:'collect',sp:'sheep',item:'보송 양털',rate:.6,n:6,zone:'z3',title:'보송 양털',offer:'평원 양털로 물약 거름망을 만들 거야. 여섯 뭉치만! 수고비는 골라 가.',done:'보송보송! 약속한 수고비야. 하나 골라.',rw:{xp:350,pick:[{gold:200,stone:3},{stone:6},{shard:6}]}},
+  ex3:{giver:'nell',type:'wave',zone:'z3',n:3,title:'평원 야영지 지키기',offer:'평원 야영지에 들짐승이 몰려온대. 자리를 지키고 세 번만 막아 줘.',done:'야영지가 무사하다니 다행이야. 푹 쉬다 가.',rw:{xp:500,stone:4}},
+  ex4:{giver:'hans',type:'reach',zone:'z5',n:3,title:'고원의 갈라진 땅',offer:'잿빛 고원 땅이 갈라진다는 말이 있어. 세 군데를 직접 보고 와.',done:'군주가 깨어나려는 게 틀림없군. 수고했어.',rw:{xp:900,stk:{asc:2}}},
+  ex5:{giver:'bram',type:'hunt',zone:'z4',n:30,title:'호숫가 정찰',offer:'호숫가 아무 놈이나 서른 마리. 녀석들 버릇을 알아야 큰물뱀도 잡지. 품삯은 고르게.',done:'몸이 호숫가에 익었군. 뭘로 받겠나?',rw:{xp:700,pick:[{stone:5},{gold:350},{shard:8}]}},
+  ex6:{giver:'dor',type:'collect',sp:'mole',item:'두더지 발톱',rate:.6,n:6,zone:'k1',title:'두더지 발톱',offer:'두더지 발톱이 곡괭이 날로 그만이지. 여섯 개만 구해 주게. 값은 고르게.',done:'좋은 발톱이군! 하나 골라 가게.',rw:{xp:900,pick:[{stone:5},{gold:500},{shard:8}]}},
+  ex7:{giver:'mora',type:'reach',zone:'k1',n:3,title:'언덕길 살피기',offer:'자갈 언덕 길이 무너졌다는 소문이야. 세 군데만 보고 와 줘.',done:'길은 멀쩡하구나. 장사 길이 다시 열리겠어.',rw:{xp:1000,stk:{wsc:1}}},
+  ex8:{giver:'sena',type:'collect',sp:'rockcrab',item:'바위게 껍데기',rate:.6,n:6,zone:'k3',title:'바위게 껍데기',offer:'바위게 껍데기 여섯 장이 필요해. 대가는 골라.',done:'단단한 껍데기네. 어느 쪽으로 받을래?',rw:{xp:1800,pick:[{stone:6},{gold:800},{shard:10}]}},
+  ex9:{giver:'karl',type:'wave',zone:'k3',n:3,title:'협곡 초소 지키기',offer:'협곡 초소로 놈들이 몰려온다네. 초소 자리에서 세 번만 막아 주게.',done:'초소가 버텼군. 카르도가 자네에게 빚을 졌네.',rw:{xp:2000,stone:6}},
+  ex10:{giver:'mora',type:'reach',zone:'k4',n:3,title:'수정이 자라는 자리',offer:'수정 호숫가에 새 수정이 돋았다던데, 세 군데만 확인해 줘.',done:'정말 돋았구나! 좋은 소식이야.',rw:{xp:2800,stk:{wsc:1}}},
+  ex11:{giver:'hana',type:'reach',zone:'e1',n:3,title:'잿가루 언덕의 연기',offer:'언덕 세 군데에서 연기가 오른대. 가서 살펴봐 줘.',done:'땅속 불길이 올라오는 거였구나. 고마워.',rw:{xp:2600,stone:6}},
+  ex12:{giver:'rumi',type:'collect',sp:'flamewisp',item:'정령의 불씨',rate:.6,n:6,zone:'e2',title:'정령의 불씨',offer:'정령의 불씨 여섯 개가 필요해. 답례는 골라 가.',done:'따뜻한 불씨야. 어느 걸로 할래?',rw:{xp:3200,pick:[{stone:6},{gold:1200},{shard:12}]}},
+  ex13:{giver:'goro',type:'wave',zone:'e3',n:3,title:'용암 호숫가 지키기',offer:'호숫가 대장간 터로 놈들이 몰려와. 터를 지키고 세 번만 막아.',done:'터가 무사하군. 솜씨가 좋아.',rw:{xp:4000,stone:8}},
+  ex14:{giver:'hana',type:'reach',zone:'e4',n:3,title:'둥지로 가는 길',offer:'불새 둥지로 가는 길 세 군데를 살펴 줘. 여왕과 싸우기 전에 길을 알아야지.',done:'길을 다 봐 뒀구나. 이제 여왕만 남았어.',rw:{xp:5500,stk:{wsc:2}}},
+  ex15:{giver:'taon',type:'hunt',zone:'e2',n:40,title:'불티 숲 소각',offer:'불티 숲 놈들 마흔 마리. 숲의 주인에게 가는 길을 열어 둬. 보급은 골라.',done:'길이 열렸군. 보급을 골라 가.',rw:{xp:4300,pick:[{stone:9},{gold:1500},{shard:15}]}},
 });
 const STATE_T={rep:1,lv:1};
 Object.assign(SUBQ,{
@@ -2585,14 +2601,14 @@ Object.assign(SUBQ,{
   gc7:{giver:'karl',grow:'reg',n:1,title:'보스의 유품',offer:'로웬의 보스들이 떨군 전용 장비를 아직 갖고 있나?\n그걸 컬렉션에 하나 등록해 보게. 같은 보스의 유품을 모두 바치면 큰 신앙을 얻지.\n쓰러뜨린 지역 보스는 시간이 지나면 다시 나타난다네.',done:'유품을 바쳤군. 보스를 다시 잡아 나머지도 채우게.',rw:{xp:1400,stk:{rcp2:1}}},
   gc8:{giver:'dor',grow:'craft',g:2,n:1,title:'희귀 장비 제작',give:{rcp2:2,stone:10},offer:'희귀 장비는 비법서가 있어야 해. 두 권 줄 테니 고급 장비를 재료로 희귀를 만들어 봐.\n실패해도 재료 장비는 남으니 걱정 말고.',done:'푸른빛! 카르도 광부들도 인정할 솜씨야.',rw:{xp:1400,stk:{asc:4}}},
   gc9:{giver:'dor',grow:'ench',k:'weapon',en:7,title:'한계 너머의 단련',give:{wscB:1,wsc:2},offer:'안전 강화(+5)를 넘으면 확률이야. 실패해도 깨지진 않으니 두려워 마.\n무기를 +7까지 올려 와. 축복받은 주문서도 하나 주지.',done:'+7! 이제 협곡 여왕의 껍데기도 갈라지겠군.',rw:{xp:2200,stk:{rcp3:1}}},
-  gc10:{giver:'rian',grow:'coll',n:7,title:'수집가의 길',offer:'컬렉션 일곱 개를 완성하면 카르도 수집가 조합에서 인정해 주지.\n남는 장비는 분해하지 말고 컬렉션에 넣어.',done:'훌륭한 수집가야. 이건 조합의 선물이다.',rw:{xp:2200,stk:{ascB:1}}},
+  gc10:{giver:'rian',grow:'coll',n:6,title:'수집가의 길',offer:'컬렉션 여섯 개를 완성하면 카르도 수집가 조합에서 인정해 주지.\n남는 장비는 분해하지 말고 컬렉션에 넣어.',done:'훌륭한 수집가야. 이건 조합의 선물이다.',rw:{xp:2200,stk:{ascB:1}}},
   gc11:{giver:'karl',grow:'bcoll',n:1,title:'지역 보스 토벌 기록',offer:'지역 보스의 유품을 모두 모아 보스 컬렉션 하나를 완성하게.\n쓰러뜨린 보스는 다시 나타나니, 트래커의 「지역 보스」로 찾아가면 된다네.',done:'토벌 기록이 남았군. 광석골렘 왕도 자네를 알아볼 걸세.',rw:{xp:3200,stk:{wscB:1}}},
   gc12:{giver:'karl',grow:'faith',n:62,title:'신앙의 증명 · 카르도',offer:'광석골렘 왕의 몸은 신앙 없이는 흠집도 나지 않네.\n신앙 62에 이르게.',done:'좋아, 이제 왕의 몸에 칼이 들어갈 걸세.',rw:{xp:3200,stk:{rcp3:1}}},
   gc13:{giver:'goro',grow:'craft',g:3,n:1,title:'영웅 장비 제작',give:{rcp3:3,stone:20},offer:'영웅 비법서 세 권이다. 희귀 장비를 재료로 영웅을 두드려 보게. 성공률은 반반이야.',done:'붉게 타오르는군. 에르나의 불도 견딜 걸세.',rw:{xp:4200,stk:{ascB:1}}},
   gc14:{giver:'goro',grow:'ench',k:'armor',en:5,n:4,title:'흑요석 단련',give:{asc:6},offer:'방어구 넷을 +5까지 올려 오게. +5를 넘으면 확률이지만 깨지진 않아.',done:'흑요석처럼 단단해졌군.',rw:{xp:4200,stk:{wscB:1}}},
-  gc15:{giver:'taon',grow:'bcoll',n:3,title:'토벌대의 기록',offer:'지역 보스 컬렉션 셋을 완성해. 군주는 토벌 경험이 없는 자를 비웃는다.',done:'세 보스의 유산이군. 전설 비법서를 주지.',rw:{xp:5200,stk:{rcp4:1}}},
+  gc15:{giver:'taon',grow:'bcoll',n:2,title:'토벌대의 기록',offer:'지역 보스 컬렉션 둘을 완성해. 군주는 토벌 경험이 없는 자를 비웃는다.',done:'두 보스의 유산이군. 전설 비법서를 주지.',rw:{xp:5200,stk:{rcp4:1}}},
   gc16:{giver:'aila',grow:'faith',n:98,title:'신앙의 증명 · 에르나',offer:'용암 호수의 군주는 깊은 신앙만이 꿰뚫을 수 있네.\n신앙 98에 이르게.',done:'호수의 열기가 자네를 피하는군.',rw:{xp:5200,stk:{ascB:1}}},
-  gc17:{giver:'aila',grow:'coll',n:11,title:'대수집가',offer:'컬렉션 열하나를 완성하게. 원정대의 전설은 모두 그렇게 시작됐지.',done:'대수집가의 칭호를 내리지.',rw:{xp:6400,stk:{wscB:1}}},
+  gc17:{giver:'aila',grow:'coll',n:9,title:'대수집가',offer:'컬렉션 아홉 개를 완성하게. 원정대의 전설은 모두 그렇게 시작됐지.',done:'대수집가의 칭호를 내리지.',rw:{xp:6400,stk:{wscB:1}}},
   gc18:{giver:'aila',grow:'faith',n:118,title:'불의 신앙',offer:'홍염은 불의 신앙 118에 이른 자에게만 깃털을 허락하네.',done:'불의 신앙이 자네를 감싸는군. 이제 여왕에게 가게.',rw:{xp:6400,stone:20}},
 });
 const TRIALS=['ga','gr','gz'],TRIAL_OF={athena:'ga',artemis:'gr',zeus:'gz'};
@@ -2608,12 +2624,23 @@ const QFB=q=>QUESTS.find(x=>x.id===q.boss);QUESTS.forEach(q=>{if(q.type==='fboss
 /* 이전 세이브의 S.qi는 v4.18까지의 순서 — 퀘스트 id로 옮긴다 */
 const QORDER_418=['q1','q2','q3','q4','q5','q6','q7','q8','q9','q10','q11','q12','q13','q14','q15','q16','q17','q18','q19','q20','q21','q22','q23','q24','q25','q26','q27','q28','q29','q30','q31','q32','q33'];
 const QORDER_445=['q1','q2','q3','q4','q5','q6','q7','q8','q9','fb1','q10','q11','fb2','q12','q13','q14','q15','fb3','q16','q17','q18','fb4','q19','q20','fb5','q21','q22','q23','q24','q25','q26','fb6','q27','q28','q29','fb7','q30','q31','fb8','q32','q33'];
+const QORDER_446=['q1','q2','q3','q4','q5','q6','q7','q8','q9','fb1','q10','rq1','rq2','rq3','q11','fb2','q12','q13','q14','q15','fb3','q16','q17','q18','fb4','q19','q20','fb5','q21','q22','q23','q24','q25','q26','fb6','q27','q28','q29','fb7','q30','q31','fb8','q32','q33'];/* qv 3의 순서(v4.46~v4.82) */
 /* v4.46 메인에 균열 개방 스토리 3개(rq1~rq3)를 q10 뒤에 끼움 → 순번을 id로 다시 찾는다. qv 3 = 이 순서. 옛 순번(qv 2 = QORDER_445 · 그 전 = QORDER_418)의 id를 지금 QUESTS에서 찾는다.
    · q10을 넘긴 세이브는 스토리를 지난 것으로 본다(균열 열림 — 한 번 알림) · q10 전인데 옛 규칙으로 균열을 써 본 세이브는 riftKey로 계속 열어 둔다 · q11을 지난 세이브에는 '첫 균열 탐사'를 열어 준다 */
-function migrateQi(S){const v=S.qv||0;if(v>=3)return;if(S.qi!=null){const id=(v>=2?QORDER_445:QORDER_418)[S.qi];const i=id?QUESTS.findIndex(q=>q.id===id):QUESTS.length;if(i>=0)S.qi=i;
-    const k=QUESTS.findIndex(q=>q.id==='rq3'),k11=QUESTS.findIndex(q=>q.id==='q11');
+const XQ_OLD={'sd1':'ex1','sd2':'ex2','sd3':'ex3','sd4':'ex4','ht1':'ex5','sd5':'ex6','sd6':'ex7','sd7':'ex8','sd8':'ex9','sd9':'ex10','sd10':'ex11','sd11':'ex12','sd12':'ex13','sd13':'ex14','ht3':'ex15'};
+/* v4.83 옛 곁가지 서브 → 새 서브: 끝낸 것은 끝낸 것으로 · 보상 전이면 보상 전으로 · 그 밖(받기 전 · 진행 중)은 새 서브를 받기 전으로 */
+function migrateXq(S){if(!S.sq)return;for(const o in XQ_OLD){const n=XQ_OLD[o],a=S.sq[o];if(!a||S.sq[n])continue;S.sq[n]=a.st==='clear'?{st:'clear',n:0}:a.st==='done'?{st:'done',n:SUBQ[n].n||0}:{st:'avail',n:0};delete S.sq[o];}}
+function migrateQi(S){migrateXq(S);const v=S.qv||0;if(v>=4)return;if(v<3){if(S.qi!=null){const id=(v>=2?QORDER_445:QORDER_418)[S.qi];const i=id?QORDER_446.indexOf(id):QORDER_446.length;if(i>=0)S.qi=i;
+    const k=QORDER_446.indexOf('rq3'),k11=QORDER_446.indexOf('q11');
     if(S.qi>k)S.riftNote=1;else if((S.riftK||0)>0)S.riftKey=1;
-    if(S.sq&&!S.sq.gr1&&(S.qi>k11||S.qi===k11&&S.qs&&S.qs!=='avail'))S.sq.gr1={st:'avail',n:0};}S.qv=3;}
+    if(S.sq&&!S.sq.gr1&&(S.qi>k11||S.qi===k11&&S.qs&&S.qs!=='avail'))S.sq.gr1={st:'avail',n:0};}}
+  /* v4.83 지역 단위 루트(qv 4): 재토벌 fb3 · fb6을 그 지역의 끝(q12 · q21 뒤)으로 옮겼다. 옛 순번의 id로 새 자리를 찾는다 —
+     옛 자리의 fb3 · fb6에 서 있던 세이브는 옛 순서의 다음 퀘스트로(이미 다음 지역에 있으니 되돌아가지 않는다) · 그렇게 건너뛴 재토벌은 끝낸 것으로 치고 보상(경험치 · 골드 · 강화석)을 준다(한 번 알림) */
+  if(S.qi!=null){const O=QORDER_446,oi=S.qi,id=O[oi];let ni=id?QUESTS.findIndex(q=>q.id===id):QUESTS.length;
+    if(id==='fb3'||id==='fb6'){ni=QUESTS.findIndex(q=>q.id===O[oi+1]);S.qs='avail';S.qn=0;}
+    for(const m of ['fb3','fb6']){const om=O.indexOf(m),nm=QUESTS.findIndex(q=>q.id===m);if(oi<=om&&ni>nm){const rw=QUESTS[nm].rw;S.xp=(S.xp||0)+(rw.xp||0);S.gold=(S.gold||0)+(rw.gold||0);S.stone=(S.stone||0)+(rw.stone||0);S.routeNote=(S.routeNote||0)+1;}}
+    S.qi=ni;}
+  S.qv=4;}
 {let j=0;QUESTS.forEach(q=>{const i=j;if(!q.story)j++;if(q.type==='talk'||q.story)return;const r=MAP_REG[q.type==='fboss'?NALL[q.giver].map:qMap(q)]||1;q.rw.ore=(q.rw.ore||0)+(q.elite?6+4*r:3+2*r);if(q.elite)q.rw.dsg=(q.rw.dsg||0)+2;else if(i%2===0)q.rw.dsg=(q.rw.dsg||0)+1;});}
 for(const id of ['gc1','gc4','gc8','gc13']){const q=SUBQ[id];q.give=q.give||{};const r=id==='gc13'?3:id==='gc8'?2:1;q.give['ore'+r]=(q.give['ore'+r]||0)+(id==='gc1'?8:id==='gc4'?10:20);q.give.dsgAny=(id==='gc1'?2:1);if(q.give.stone){delete q.give.stone;}}
 
@@ -2936,7 +2963,7 @@ function playerHit(m,mul,skill){player.lastAtk=t;if(!skill&&player.tbNx){player.
 /* 무게 82% 이상: 공격·스킬 불가 (리니지) */
 const tooHeavy=()=>wPct()>=.82;
 function heavyBlock(silent){if(!tooHeavy())return false;if(!silent)toastThr('무게 '+Math.round(wPct()*100)+'% · 82% 이상이면 공격할 수 없다 — 가방(I)에서 분해하자');return true;}
-function killMob(m){m.gburn=null;gfxKill(m);if(tbVal('killAtk'))player.tbKillT=t+3;/* v4.80 힘 30 */if(m.bst){m.bst=null;STAT.bstKill=(STAT.bstKill||0)+1;}/* v4.59 부풀기 중 처치 → 폭발 없음 */m.dead=true;m.deadT=0;m.hp=0;m.respawn=m.field?FIELD_RESP:m.boss||m.riftBoss?1e9:m.rift?riftResp():9;if(m.sumOf){m.respawn=1e9;m.gone=true;}if(m.boss)bpDismiss(m);/* v4.69 졸개는 다시 나오지 않음 · 보스가 쓰러지면 졸개도 사라짐 */const inRift=riftHas(m);if(target===m)target=null;if(chase===m)chase=null;S.kills++;m.aoe=null;m.bp=null;
+function killMob(m){m.gburn=null;gfxKill(m);if(tbVal('killAtk'))player.tbKillT=t+3;/* v4.80 힘 30 */if(m.bst){m.bst=null;STAT.bstKill=(STAT.bstKill||0)+1;}/* v4.59 부풀기 중 처치 → 폭발 없음 */m.dead=true;m.deadT=0;m.hp=0;m.respawn=m.field?FIELD_RESP:m.boss||m.riftBoss?1e9:m.rift?riftResp():9;if(m.sumOf){m.respawn=1e9;m.gone=true;}if(m.wave)m.respawn=1e9;/* v4.83 방어 웨이브 몬스터 */if(m.boss)bpDismiss(m);/* v4.69 졸개는 다시 나오지 않음 · 보스가 쓰러지면 졸개도 사라짐 */const inRift=riftHas(m);if(target===m)target=null;if(chase===m)chase=null;S.kills++;m.aoe=null;m.bp=null;
   if(Math.random()<(inRift?RIFT.stoneP:STONE_P)||m.boss){const n0=S.stone;const n=m.boss?(m.inv||m.field?3:6):Math.ceil(tierOfLv(m.lv)/2);S.stone+=n;if(inRift)rift.stone+=S.stone-n0;floatTxt(m.x,m.y-14,'+강화석 '+n,'#9ee6ff');}
   dropFrom(m);if(inRift)riftLoot(m);
   if(m.boss){const sh=m.inv?20:m.field?5:15;S.shard+=sh;floatTxt(m.x,m.y-22,'+권능 파편 '+sh,'#ffe08a');if(m.inv){toast('침공 보스 토벌! 권능 파편 +'+sh+' · 강화석 +3',true);inv=null;invNext=t+INV.every;lastQKey='';}}
@@ -3089,14 +3116,14 @@ function openGrowth(sq){if(sq.grow==='rift')return openRift();if(sq.grow==='craf
   if(sq.grow==='coll'||sq.grow==='bcoll'||sq.grow==='reg'){colCat=sq.grow==='coll'?-1:4;return openColl();}openBag();}
 let growHintT=-99;function growHint(){if(t<growHintT)return;growHintT=t+45;const L=activeSubs().filter(id=>isGrowth(id)&&subSt(id)==='active').map(id=>SUBQ[id].title),R2=activeSubs().filter(id=>SUBQ[id].type==='rep'&&subSt(id)==='active').map(id=>SUBQ[id].title);if(L.length)toast('성장 퀘스트 「'+L.join('」 「')+'」는 직접 — 제작 · 강화 · 컬렉션 등록은 자동 진행이 하지 않는다 · 그동안 수련 사냥',true);if(R2.length)toast('「'+R2.join('」 「')+'」 — 퀘스트 [반복] 탭에서 토벌 의뢰를 받거나 반복을 켜자',true);}
 function activeSubs(){const L=[];for(const id in S.sq){const s=S.sq[id];if(s.st!=='clear')L.push(id);}return L;}
-function qGoal(q,n){if(q.grow)return growthGoal(q,S.sq[q.id]);if(q.type==='rep')return MAPS[q.map].name+' 토벌 의뢰 '+Math.min(n,q.n)+'/'+q.n+'회';if(q.type==='lv')return '레벨 '+Math.min(S.lv,q.n)+'/'+q.n;if(q.type==='hunt')return ZALL[q.zone].name+' 몬스터 '+n+'/'+q.n;if(q.type==='fbk')return MAPS[q.map].name+' 지역 보스 '+n+'/'+q.n;if(q.type==='fboss')return QFB(q).elite.name+' 처치 '+Math.min(n,q.n)+'/'+q.n;if(q.type==='talk')return npcName(q.npc)+'와(과) 대화';if(q.type==='collect')return q.item+' '+n+'/'+q.n;if(q.type==='elite')return q.elite.name+' 처치';
+function qGoal(q,n){if(q.grow)return growthGoal(q,S.sq[q.id]);if(q.type==='rep')return MAPS[q.map].name+' 토벌 의뢰 '+Math.min(n,q.n)+'/'+q.n+'회';if(q.type==='lv')return '레벨 '+Math.min(S.lv,q.n)+'/'+q.n;if(q.type==='hunt')return ZALL[q.zone].name+' 몬스터 '+n+'/'+q.n;if(q.type==='reach')return ZALL[q.zone].name+' 지점 '+Math.min(n,q.n)+'/'+q.n+' 살피기';if(q.type==='wave')return ZALL[q.zone].name+' 방어 '+Math.min(n,q.n)+'/'+q.n+' 웨이브';if(q.type==='fbk')return MAPS[q.map].name+' 지역 보스 '+n+'/'+q.n;if(q.type==='fboss')return QFB(q).elite.name+' 처치 '+Math.min(n,q.n)+'/'+q.n;if(q.type==='talk')return npcName(q.npc)+'와(과) 대화';if(q.type==='collect')return q.item+' '+n+'/'+q.n;if(q.type==='elite')return q.elite.name+' 처치';
   if(q.type==='zone')return ZALL[q.zone].name+' 몬스터 '+n+'/'+q.n;return SPECIES[q.sp].name+' '+n+'/'+q.n;}
 function rwList(rw){const a=[];if(rw.god)a.push('권능 「'+GODS[rw.god].name+' · '+GODS[rw.god].title+'」');if(rw.xp)a.push('경험치 '+fmt(rw.xp));if(rw.gold)a.push('골드 '+fmt(rw.gold));if(rw.book)a.push('스킬서 「'+SK[skIdx(rw.book)].name+'」');if(rw.stat)a.push('능력치 포인트 +'+rw.stat);if(rw.kp)a.push('스킬 포인트 +'+rw.kp);
   if(rw.ore)a.push(STK['ore'+(MAP_REG[MAPID]||1)].n+' '+rw.ore);if(rw.dsg)a.push('장비 도면 '+rw.dsg+'장');if(rw.stk)for(const k in rw.stk)a.push(STK[k].n+' '+rw.stk[k]);if(rw.wup)a.push('무기 강화 +1');if(rw.aup)a.push('갑옷 강화 +1');if(rw.stone)a.push('강화석 '+rw.stone);if(rw.shard)a.push('권능 파편 '+rw.shard);if(rw.hp)a.push('HP 물약 '+rw.hp);if(rw.mp)a.push('MP 물약 '+rw.mp);return a;}
 function applyRw(rw,src){return withAcq(src||'보상',acqZoneOf(null),()=>applyRw0(rw));}
 function applyRw0(rw){gainXp(rw.xp||0);S.gold+=rw.gold||0;STAT.rwG+=rw.gold||0;S.hpPot+=rw.hp||0;S.mpPot+=rw.mp||0;S.stone+=rw.stone||0;S.shard+=rw.shard||0;S.sp+=rw.stat||0;S.kp+=rw.kp||0;if(rw.wup&&!enchantEquipped('weapon'))toast('장착한 무기가 없거나 최대 강화라 무기 마법 주문서로 받았다',true);if(rw.aup&&!enchantEquipped('armor'))toast('장착한 갑옷이 없거나 최대 강화라 갑옷 마법 주문서로 받았다',true);if(rw.book)addStk('book_'+rw.book,1);if(rw.stk)for(const k in rw.stk)addStk(k,rw.stk[k]);if(rw.ore)addStk('ore'+(MAP_REG[MAPID]||1),rw.ore);if(rw.dsg)for(let i=0;i<rw.dsg;i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);if(rw.god)gainGod(rw.god);
   toast('보상 · '+rwList(rw).join(' · '),true);burst(player.x,player.y,16,'#ffe08a',30,80,4);if(S.autoGrow&&(rw.stat||rw.kp||rw.book))autoGrowNow();lastQKey='';}
-function progressKill(m){if(m.rift){lastQKey='';return;}/* v4.46 균열 전용 공간의 처치는 메인 · 서브 · 반복 의뢰에 들지 않는다 */const q=curQ();
+function progressKill(m){if(m.wave){xqWaveKill(m);return;}if(m.rift){lastQKey='';return;}/* v4.46 균열 전용 공간의 처치는 메인 · 서브 · 반복 의뢰에 들지 않는다 */const q=curQ();
   if(S.qs==='active'){let inc=false;if(q.type==='kill'&&q.sp===m.sp)inc=true;else if(q.type==='collect'&&q.sp===m.sp&&Math.random()<q.rate){inc=true;toast(q.item+' 획득 '+(S.qn+1)+'/'+q.n);}
     else if(q.type==='zone'&&m.zone===q.zone)inc=true;else if(q.type==='elite'&&m.eliteOf===q.id)inc=true;else if(q.type==='fboss'&&m.field&&m.eliteOf===q.boss)inc=true;
     if(inc){S.qn=Math.min(q.n||1,S.qn+1);if(S.qn>=(q.n||1))mainDone();}}
@@ -3130,8 +3157,49 @@ function subGo(id){const s=S.sq[id],q=SUBQ[id];if(!s)return;if(q.grow&&s.st==='a
   if(s.st==='active'&&q.type==='lv'){const z=repZone();return goHunt(z,null,null,ZALL[z].name+'(으)로 · 수련 사냥');}
   if(s.st==='active'&&q.type==='fbk'){const f=pStats(null,true).faith;const go=()=>{const fb=fieldBossInfo(),al=fb.filter(alive);if(al.length){const m=al[0];return goHunt(m.zone,null,m,ZONES[m.zone].name+'(으)로 · 지역 보스 토벌');}if(fb.length){toast('지역 보스가 다시 나타날 때까지 토벌 의뢰를 하자');return repGo(q.map);}return repGo(q.map);};if(q.map!==MAPID)return travelTo(q.map,go);return go();}
   if(s.st==='avail')return goNpc(q.giver,npcName(q.giver)+'에게 · 서브 받기');if(s.st==='done')return goNpc(q.giver,npcName(q.giver)+'에게 · 서브 보상');
+  if(s.st==='active'&&(q.type==='reach'||q.type==='wave')){const mid=ZALL[q.zone].map,go=()=>{xqEnsure(id);const i=q.type==='wave'?0:xqNext(id);if(i<0||!s.pts)return;const p=s.pts[i];
+      if(q.type==='wave'&&Math.hypot(p[0]-player.x,p[1]-player.y)<=XQ.near){if(!hunt||hunt.sub!==id)startHunt(q.zone,null,null,id);return;}
+      if(navTo('pt',{x:p[0],y:p[1]},ZONES[q.zone].name+' · '+q.title+(q.type==='wave'?' (방어 지점)':' (지점 '+((s.n|0)+1)+'/'+q.n+')'))){nav.xq=id;if(q.type==='wave')nav.hunt={zone:q.zone,sp:null,sub:id};}};
+    if(mid!==MAPID)return travelTo(mid,go);return go();}
   if(s.st==='active'){const z=q.zone;const mid=ZALL[z].map;const go=()=>{if(inR(ZONES[z].r,player.x,player.y,40))startHunt(z,q.sp,null,id);else if(navTo('zone',z,ZONES[z].name+'(으)로 · '+q.title))nav.hunt={zone:z,sp:q.sp,sub:id};};
     if(mid!==MAPID)return travelTo(mid,go);go();}}
+/* ===== v4.83 G10 탐색(reach) · 방어(wave) · 보상 택1(pick) =====
+   탐색: 그 사냥터의 지점 n곳(반경 XQ.r)을 아무 순서로 밟는다 · 도착하면 30%로 매복(가까운 몬스터 2마리가 덤빈다)
+   방어: 지점에 서면 웨이브(3 · 4 · 5마리 · 그 사냥터 종 · 종마다 가장 낮은 레벨)가 온다 · 지점에서 XQ.leash 넘게 벗어나 있으면 다음 웨이브는 오지 않는다
+   지점은 그 사냥터 몬스터들의 집 자리에서 고른다(걸을 수 있는 자리) — 서로 가장 먼 곳부터. 세이브에 좌표로 남는다(s.pts) */
+/* 택1 보상: 기본 보상 + 고른 묶음 */
+function xqRw(rw,pi){if(!rw.pick)return rw;const o=Object.assign({},rw,rw.pick[pi]||{});delete o.pick;if(rw.stk||(rw.pick[pi]||{}).stk)o.stk=Object.assign({},rw.stk||{},(rw.pick[pi]||{}).stk||{});return o;}
+const xqHold=id=>{const s=S.sq[id];return !!(s&&s.st==='done'&&s.hold&&SUBQ[id].rw.pick);};
+const XQ={r:24,amb:.3,ambN:2,wave:[3,4,5],near:40,leash:60,gap:2.5};
+function xqPts(zone,n){const hs=mobs.filter(m=>m.zone===zone&&!m.boss&&!m.eliteOf&&!m.wave&&!m.sumOf&&!m.inv&&!m.rift).map(m=>m.home);if(!hs.length)return [ZONES[zone].c.slice()];
+  const c=ZONES[zone].c,d2=(a,b)=>(a.x-b.x)**2+(a.y-b.y)**2,out=[hs.reduce((a,b)=>d2(a,{x:c[0],y:c[1]})<=d2(b,{x:c[0],y:c[1]})?a:b)];
+  while(out.length<n&&out.length<hs.length){let best=null,bd=-1;for(const h of hs){const d=Math.min(...out.map(o=>d2(o,h)));if(d>bd){bd=d;best=h;}}out.push(best);}
+  return out.map(h=>[Math.round(h.x),Math.round(h.y)]);}
+const xqHere=q=>ZALL[q.zone].map===MAPID&&!M.inst;
+function xqEnsure(id){const s=S.sq[id],q=SUBQ[id];if(!s.pts&&xqHere(q))s.pts=xqPts(q.zone,q.type==='wave'?1:q.n);return s.pts;}
+const xqNext=id=>{const s=S.sq[id];return s.pts?s.pts.findIndex((p,i)=>!((s.v|0)&1<<i)):-1;};
+function xqDone(id){const s=S.sq[id],q=SUBQ[id];s.st='done';toast('서브 완료 · '+q.title+' — '+npcName(q.giver)+'에게',true);if(hunt&&hunt.sub===id)hunt=null;if(nav&&nav.xq===id)nav=null;save();lastQKey='';if(S.autoQ)later(.9,()=>{if(!modal&&!player.dead)autoGo();});}
+const xqWaveMobs=id=>mobs.filter(m=>m.wave===id);
+function xqSpawn(id){const s=S.sq[id],q=SUBQ[id],P=s.pts[0],need=XQ.wave[Math.min(s.n,XQ.wave.length-1)],T0=ZONES[q.zone].mobs,Tn=T0.filter(r=>mobBeh({sp:r[0],zone:q.zone})!=='burst'),T=Tn.length?Tn:T0,/* 자폭형은 웨이브에 넣지 않는다 — 여러 마리가 한꺼번에 터지면 피할 수 없다 */pool=xqWaveMobs(id);
+  const hs=mobs.filter(m=>m.zone===q.zone&&!m.boss&&!m.eliteOf&&!m.wave&&!m.sumOf&&!m.inv).map(m=>m.home).sort((a,b)=>Math.hypot(a.x-P[0],a.y-P[1])-Math.hypot(b.x-P[0],b.y-P[1])).filter(h=>Math.hypot(h.x-P[0],h.y-P[1])>30);
+  for(let i=0;i<need;i++){const [sp,lo]=T[i%T.length],lv=Math.max(1,Math.min(lo,S.lv)),/* 그 종의 가장 낮은 레벨(내 레벨보다 높지는 않게) — 한꺼번에 덤비므로 */h=hs[i%Math.max(1,hs.length)]||{x:P[0]+60,y:P[1]},jx=(i*37%21)-10,jy=(i*53%21)-10;let m=pool[i];
+    if(!m)m=makeMob(sp,lv,h.x+jx,h.y+jy,q.zone,false,{ext:{wave:id}});else{m.home.x=h.x+jx;m.home.y=h.y+jy;}
+    m.dead=false;m.gone=false;m.hp=m.max;m.x=m.home.x;m.y=m.home.y;m.deadT=0;m.respawn=1e9;m.ret=false;m.aggro=true;m.wind=0;m.atkT=1+i*.15;m.mesh.visible=true;}
+  s.live=need;toast('방어 '+(s.n+1)+'/'+q.n+' · '+need+'마리가 몰려온다',true);banner('방어 '+(s.n+1)+' / '+q.n,ZONES[q.zone].name+' · 자리를 지켜라');}
+function xqWaveKill(m){const id=m.wave,s=S.sq[id],q=SUBQ[id];if(!s||s.st!=='active')return;if(xqWaveMobs(id).some(e=>!e.dead))return;
+  s.n++;s.live=0;lastQKey='';if(s.n>=q.n)return xqDone(id);s.wt=t+XQ.gap;toast('웨이브를 막았다 · 다음 웨이브 준비',true);save();}
+let xqFxT=0;
+function xqTick(dt){if(player.dead||!started)return;const fx=t>=xqFxT;if(fx)xqFxT=t+.7;
+  for(const id in S.sq){const s=S.sq[id],q=SUBQ[id];if(!q||s.st!=='active'||q.type!=='reach'&&q.type!=='wave'||!xqHere(q))continue;xqEnsure(id);
+    if(q.type==='reach'){s.pts.forEach((p,i)=>{if((s.v|0)&1<<i)return;if(fx)burst(p[0],p[1],6,'#8fe8ff',3,22,3);if(Math.hypot(p[0]-player.x,p[1]-player.y)>XQ.r)return;
+        s.v=(s.v|0)|1<<i;s.n=Math.min(q.n,(s.n|0)+1);burst(p[0],p[1],14,'#8fe8ff',18,70,4);toast(q.title+' · 지점 '+s.n+'/'+q.n+' 확인');lastQKey='';
+        if(s.n>=q.n)return xqDone(id);
+        if(Math.random()<XQ.amb){const near=mobs.filter(m=>!m.dead&&m.zone===q.zone&&!m.boss&&!m.eliteOf&&!m.wave&&!m.inv&&Math.hypot(m.x-player.x,m.y-player.y)<260).sort((a,b)=>dist(a,player)-dist(b,player)).slice(0,XQ.ambN);if(near.length){for(const m of near){m.aggro=true;m.ret=false;}toast('매복이다! · '+near.length+'마리가 덤벼든다',true);}}
+        save();if(S.autoQ||nav&&nav.xq===id)later(.6,()=>{if(!modal&&!player.dead&&S.sq[id].st==='active')subGo(id);});});}
+    else{const P=s.pts[0],d=Math.hypot(P[0]-player.x,P[1]-player.y),live=xqWaveMobs(id).filter(m=>!m.dead);if(fx)burst(P[0],P[1],6,'#ffd27a',3,22,3);
+      if(live.length&&d<=XQ.leash){for(const m of live)if(!m.aggro||m.ret){m.aggro=true;m.ret=false;}}/* 자리를 지키고 있으면 남은 웨이브 몬스터가 다시 덤빈다(자리를 비웠다 돌아와도 이어진다) */
+      if(!live.length){if(d<=XQ.near&&t>=(s.wt||0))xqSpawn(id);
+        else if(d>XQ.near&&hunt&&hunt.sub===id&&!nav&&!alive(target)){hunt=null;subGo(id);}}}}}
 /* ===== v4.11 반복 토벌 의뢰 (경비대장 · 아이온2 일일 수호자 임무 · 제우스 신탁처럼 몇 번이고) =====
    지역 사냥터 하나에서 아무 몬스터 REP.n마리 → 경비대장에게 보상. 지역별 누적 횟수(S.repR)가 관문 서브 조건이 된다 */
 const REP={n:20,lv:10};
@@ -3157,16 +3225,16 @@ function autoGo(){if(S.autoQ)autoNext();}
 let aqIdle=0;function aqWatch(dt){if(!S.autoQ||!started||modal||nav||hunt||chase||traveling||player.dead||M.inst||trainFor){aqIdle=0;return;}aqIdle+=dt;if(aqIdle>=2.5){aqIdle=-3;autoNext();}}
 function stopAutoQ(){trainFor=null;if(!S.autoQ)return;S.autoQ=false;toast('수동 조작 · 퀘스트 자동 진행 끔');save();}
 function autoNext(){if(player.dead||modal)return;if(needShop()&&shopGo())return;const q=curQ();
-  if(S.qs==='done')return questGo();const sd=Object.keys(S.sq).find(id=>S.sq[id].st==='done');if(sd)return subGo(sd);if(S.rq&&S.rq.st==='done')return repGo();
+  if(S.qs==='done')return questGo();const sd=Object.keys(S.sq).find(id=>S.sq[id].st==='done'&&!xqHold(id));if(sd)return subGo(sd);if(S.rq&&S.rq.st==='done')return repGo();
   /* v4.17 반복 의뢰는 플레이어가 고른다: 받은 의뢰는 끝까지, [반복] 켜면 계속 다시 받는다 */
   if(S.rq&&S.rq.st==='active')return repGo();if(S.repLoop&&S.lv>=REP.lv)return repGo(S.repLoop);
   /* 플레이어가 수락한 신의 시련은 자동 진행이 이어서 한다 (수락은 직접) */
   const tr=TRIALS.find(id=>(S.sq[id]||{}).st==='active');if(tr&&S.qs!=='active'||tr&&q.type!=='elite')return subGo(tr);
-  if(S.qs==='active'&&q.type==='elite'){const g=gateState(q);if(!g.ok){const nx=(q.subs||[]).find(id=>subSt(id)!=='clear'&&!(isGrowth(id)&&subSt(id)==='active'));if(nx)return subGo(nx);if(S.autoGrow)autoGrowNow();if(!gateState(q).ok){growHint();/* 전투력·성장·대기 — 같은 지역 수련 사냥 (서브 밖 반복 의뢰는 플레이어가 고른다) */trainFor=q.id;return goHunt(q.zone,null,null,ZONES[q.zone]?ZONES[q.zone].name+'(으)로 · 수련 사냥':'수련 사냥');}}}
+  if(S.qs==='active'&&q.type==='elite'){const g=gateState(q);if(!g.ok){const nx=(q.subs||[]).find(id=>subSt(id)!=='clear'&&!(isGrowth(id)&&subSt(id)==='active')&&!xqHold(id));if(nx)return subGo(nx);if(S.autoGrow)autoGrowNow();if(!gateState(q).ok){growHint();/* 전투력·성장·대기 — 같은 지역 수련 사냥 (서브 밖 반복 의뢰는 플레이어가 고른다) */trainFor=q.id;return goHunt(q.zone,null,null,ZONES[q.zone]?ZONES[q.zone].name+'(으)로 · 수련 사냥':'수련 사냥');}}}
   /* 일반 메인의 곁가지 서브: 자동 진행이 먼저 끝낸다 */
   if(S.qs==='active'&&q.type!=='elite'){const sx=(q.subs||[]).find(id=>{const st=subSt(id);return st==='avail'||st==='active'&&!isGrowth(id);});if(sx)return subGo(sx);}
   questGo();}
-function acceptQuest(){const q=curQ();S.qs='active';S.qn=0;if(q.rep)S.rep={zone:q.zone};if(q.unlock&&!S.maps.includes(q.unlock)){S.maps.push(q.unlock);banner('새 지역',MAPS[q.unlock].name+' · 길잡이 표석으로 이동 가능');for(const n of [2,3])if(SK_TIER[n].map===q.unlock&&tierOpen(n))toast(SK_TIER[n].n+' 스킬이 열렸다 · 스킬 수련 창(K)',true);}
+function acceptQuest(){const q=curQ();S.qs='active';S.qn=0;if(q.rep)S.rep={zone:q.zone};if(q.unlock&&!S.maps.includes(q.unlock)){S.maps.push(q.unlock);banner(MAPS[NALL[q.giver].map].name+' 원정 완료','다음 지역 '+MAPS[q.unlock].name+' · 길잡이 표석으로 이동 가능');for(const n of [2,3])if(SK_TIER[n].map===q.unlock&&tierOpen(n))toast(SK_TIER[n].n+' 스킬이 열렸다 · 스킬 수련 창(K)',true);}
   if(q.subs){for(const id of q.subs)if(!S.sq[id])S.sq[id]={st:'avail',n:0};toast((q.gate?'관문 퀘스트 · ':'')+'서브 퀘스트 '+q.subs.length+'개가 열렸다',true);}
   toast('퀘스트 수락 · '+q.title);save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
 function claimQuest(){const q=curQ();if(S.qs!=='done')return;anchor=null;hunt=null;applyRw(q.rw,'메인 「'+q.title+'」');
@@ -3174,7 +3242,7 @@ function claimQuest(){const q=curQ();if(S.qs!=='done')return;anchor=null;hunt=nu
   if(S.qi===QUESTS.length&&!q.rep)banner('메인 퀘스트 완료','이제 경비대의 토벌 의뢰를 반복할 수 있다');if(q.id==='rq3')riftUnlocked();if(q.id==='q5'&&openTrials())return;/* 시련 선택 창이 먼저 — 고를 때까지 자동 진행 대기 */
   if(here&&nq.giver===here){openNpc(here);return;}if(S.autoQ)later(.6,autoGo);}
 function acceptSub(id){S.sq[id].st='active';S.sq[id].n=0;toast('서브 수락 · '+SUBQ[id].title);const gv=SUBQ[id].give;if(gv)withAcq('수락 지급 「'+SUBQ[id].title+'」',acqZoneOf(null),()=>{const a=[];for(const k in gv){if(k==='stone')S.stone+=gv[k];else if(k==='gold')S.gold+=gv[k];else if(k==='dsgAny'){for(let i=0;i<gv[k];i++)addStk(dsgRand(MAP_REG[MAPID]||1),1);}else addStk(k,gv[k]);a.push((k==='stone'?'강화석':k==='gold'?'골드':k==='dsgAny'?'장비 도면':STK[k].n)+' '+gv[k]);}toast('지급 · '+a.join(' · '),true);});if(SUBQ[id].grow)growthTick();save();lastQKey='';closeModal();if(S.autoQ)later(.5,autoGo);}
-function claimSub(id){const s=S.sq[id];if(!s||s.st!=='done')return;anchor=null;hunt=null;s.st='clear';applyRw(SUBQ[id].rw,(isGrowth(id)?'성장 「':'서브 「')+SUBQ[id].title+'」');const rw=SUBQ[id].rw;
+function claimSub(id,pi){const s=S.sq[id];if(!s||s.st!=='done')return;const R0=SUBQ[id].rw;if(R0.pick&&!(pi>=0&&pi<R0.pick.length))return;/* v4.83 택1은 고른 뒤에만 */anchor=null;hunt=null;s.st='clear';delete s.hold;applyRw(xqRw(R0,pi),(isGrowth(id)?'성장 「':'서브 「')+SUBQ[id].title+'」');const rw=xqRw(R0,pi);
   if(rw.book)toast('스킬서 「'+SK[skIdx(rw.book)].name+'」 · 가방(I)에서 사용하면 배울 수 있다',true);if(rw.stat||rw.kp)toast('능력치·스킬 포인트가 늘었다 · C · K',true);save();lastQKey='';const here=modal&&modal.npc;closeModal();
   const q=curQ();if(q.gate&&S.qs==='active'&&gateState(q).ok)banner('관문 조건 충족',q.title+' · 정예에게 도전할 수 있다');
   if(SUBQ[id].trial&&TRIALS.some(x=>subSt(x)==='avail'&&trialReady(x)))toast('다음 신의 시련을 고를 수 있다 · 퀘스트 [시련] 탭',true);
@@ -3191,7 +3259,7 @@ function openModal(o){modal=o;$('modal').hidden=false;portrait(o.who,$('dlgF'));
 function closeModal(){modal=null;$('modal').hidden=true;stage.focus({preventScroll:true});}
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
 function qbox(q,kind,withRw){const d=el('div','qbox');d.appendChild(el('b',null,(kind==='sub'?'[서브] ':q.rep?'[반복] ':q.gate?'[관문] ':q.type==='fboss'?'[지역 보스] ':'[메인] ')+q.title));
-  const goal=q.grow?growthGoal(q,S.sq[q.id])+' · '+GROW_HOW[q.grow]+' (직접 진행)':q.type==='rep'||q.type==='lv'||q.type==='hunt'||q.type==='fbk'?qGoal(q,(S.sq[q.id]||{}).n||0)+(q.type==='rep'?' · '+npcName(guardOf(q.map))+'의 반복 의뢰 (몇 번이고 다시 받을 수 있다)':q.type==='lv'?' · 사냥·토벌 의뢰로 레벨 업':''):q.type==='talk'?npcName(q.npc)+'와(과) 대화'+(NALL[q.npc].map!==MAPID?' ('+MAPS[NALL[q.npc].map].name+')':''):q.type==='collect'?SPECIES[q.sp].name+'에게서 '+q.item+' '+q.n+'개':q.type==='zone'?ZALL[q.zone].name+' 몬스터 '+q.n+'마리':q.type==='elite'?q.elite.name+' 처치':q.type==='fboss'?QFB(q).elite.name+' (지역 보스 · Lv '+(QFB(q).elite.lv+FB_UP.lv)+') 처치 · 보스 전용 장비 확정':SPECIES[q.sp].name+' '+q.n+'마리';
+  const goal=q.grow?growthGoal(q,S.sq[q.id])+' · '+GROW_HOW[q.grow]+' (직접 진행)':q.type==='rep'||q.type==='lv'||q.type==='hunt'||q.type==='fbk'||q.type==='reach'||q.type==='wave'?qGoal(q,(S.sq[q.id]||{}).n||0)+(q.type==='rep'?' · '+npcName(guardOf(q.map))+'의 반복 의뢰 (몇 번이고 다시 받을 수 있다)':q.type==='lv'?' · 사냥·토벌 의뢰로 레벨 업':''):q.type==='talk'?npcName(q.npc)+'와(과) 대화'+(NALL[q.npc].map!==MAPID?' ('+MAPS[NALL[q.npc].map].name+')':''):q.type==='collect'?SPECIES[q.sp].name+'에게서 '+q.item+' '+q.n+'개':q.type==='zone'?ZALL[q.zone].name+' 몬스터 '+q.n+'마리':q.type==='elite'?q.elite.name+' 처치':q.type==='fboss'?QFB(q).elite.name+' (지역 보스 · Lv '+(QFB(q).elite.lv+FB_UP.lv)+') 처치 · 보스 전용 장비 확정':SPECIES[q.sp].name+' '+q.n+'마리';
   if(q.give)d.appendChild(el('div','give','수락하면 지급 · '+Object.entries(q.give).map(([k,v])=>(k==='stone'?'강화석':k==='gold'?'골드':k==='dsgAny'?'장비 도면':STK[k].n)+' '+v).join(' · ')));
   d.appendChild(el('div',null,'목표 · '+goal+(q.zone?' ('+MAPS[ZALL[q.zone].map].name+' · '+ZALL[q.zone].name+' Lv '+ZALL[q.zone].lv+')':'')));
   if(q.type==='fboss'){const E=QFB(q).elite,f=pStats(null,true).faith;d.appendChild(el('div','gate',''));d.lastChild.append(el('span','gh','지역 보스'),el('span',null,'관문 때보다 강하다 (Lv +'+FB_UP.lv+' · 체력 ×'+FB_UP.hp+') · '+Math.round(FIELD_RESP/60*10)/10+'분마다 다시 나타난다'),el('span',E.fa&&f<E.fa?'warn':'ok','권장 신앙 '+(E.fa||0)+' (현재 '+f+')'));}
@@ -3202,6 +3270,8 @@ function openNpc(id){if(player.dead)return;if(id==='way')return openWay();const 
   if(S.qs==='done'&&turnNpc(q)===id){openModal({...base,text:q.done,body:qbox(q,'main',true),btns:[{t:'보상 받기',pri:true,f:claimQuest}],autoBtn:S.autoQ?claimQuest:null});return;}
   if(S.rq&&S.rq.st==='done'&&guardOf(S.rq.map)===id){const rw=repRw(),b=el('div','qbox');b.append(el('b',null,'[의뢰] '+MAPS[S.rq.map].name+' 토벌 의뢰'));const r=el('div','rw');for(const x of rwList(rw))r.appendChild(el('span',null,x));b.appendChild(r);openModal({...base,text:'깔끔하군. 다음에도 부탁하지.',body:b,btns:[{t:'보상 받기',pri:true,f:claimRep}],autoBtn:S.autoQ?claimRep:null});return;}
   for(const sid in S.sq){const s=S.sq[sid],sq=SUBQ[sid];if(sq.giver!==id)continue;
+    if(s.st==='done'&&sq.rw.pick){/* v4.83 보상 택1 — 자동 진행은 고르지 않는다(자동 버튼 없음). [나중에]를 누르면 자동 진행은 이 서브를 두고 다른 일을 한다 */
+      openModal({...base,text:sq.done+'\n\n보상을 하나 고르자.',body:qbox(sq,'sub',true),pick:sid,btns:[...sq.rw.pick.map((r,i)=>({t:rwList(r).join(' · '),pri:true,cls:'pickb',f:()=>claimSub(sid,i)})),{t:'나중에',alt:true,f:()=>{s.hold=1;save();closeModal();lastQKey='';if(S.autoQ)later(.4,autoGo);}}]});return;}
     if(s.st==='done'){openModal({...base,text:sq.done,body:qbox(sq,'sub',true),btns:[{t:'보상 받기',pri:true,f:()=>claimSub(sid)}],autoBtn:S.autoQ?()=>claimSub(sid):null});return;}
     if(s.st==='avail'&&sq.trial&&(!trialReady(sid)||S.autoQ))continue;/* v4.17: 시련은 플레이어가 [시련] 탭에서 고른다 */
     if(s.st==='avail'&&sq.trial&&S.qs==='avail'&&q.giver===id)continue;/* 메인 퀘스트 제안이 먼저 */
@@ -3949,7 +4019,7 @@ const bossPat=m=>m&&(m.boss&&m.eliteOf&&BOSS_PAT[m.eliteOf]||(m.inv&&m.boss||m.r
 const spBusy=m=>!!(m.chg||m.aim||m.bst||m.gdU>t||m.stag>t||mobBeh(m)==='guard'&&m.gdN>t&&m.gdN-t<GUARD.pre);/* v4.71 원형 특수 공격 중(조준 · 돌진 · 부풀기 · 웅크림(직전 포함) · 휘청) */
 function bpStat(k,hit){const o=STAT.bp||(STAT.bp={});const r=o[k]||(o[k]={n:0,hit:0});if(hit)r.hit++;else r.n++;}
 const BP_ZONE={aoe:1,ember:1,tri:1,fire:1};/* v4.74 장판 계열(등잔 껍데기 갑옷) */
-function bpHit(m,k){const P=bossPat(m),D=BPAT[k];if(player.dead)return false;hurtPlayer(calcDmg(m.atk,D.mul,pStats().def,m.lv,S.lv),m,BP_ZONE[k]?'zone':null);if(player.lastHit!==t)return false;bpStat(k,true);const fx=P&&P.fx&&P.fx[k];if(fx)addFx(fx,m);return true;}
+function bpHit(m,k){const P=bossPat(m),D=BPAT[k];if(player.dead)return false;hurtPlayer(calcDmg(m.atk,P&&P.mul&&P.mul[k]||D.mul,pStats().def,m.lv,S.lv),m,BP_ZONE[k]?'zone':null);if(player.lastHit!==t)return false;bpStat(k,true);const fx=P&&P.fx&&P.fx[k];if(fx)addFx(fx,m);return true;}
 function bpTri(m){const c=m.bp,B=BPAT.tri,x=player.x,y=player.y;bpTele(m,{kind:'circle',x,y,r:B.r,dur:B.dur,hit:()=>{if(Math.hypot(player.x-x,player.y-y)<B.r)bpHit(m,'tri');burst(x,y,5,'#ff7030',30,120,5);}});c.n++;if(c.n>1)bpStat('tri');}/* 3연속: 그 순간 플레이어 자리 · 하나하나를 한 번의 시도로 센다 */
 function bpTele(m,o){return teleAdd(Object.assign({ownP:m,bid:m.bp.id},o));}
 /* v4.70 G1-g2 남는 불 장판 — 불씨 장판이 터진 자리에 4초(같은 패턴 id · 동시 예고 1개로 센다). 1초마다 안에 있으면 ×0.3 · 자동 전투에게도 위험 지역(dangerAt) */
@@ -3998,7 +4068,7 @@ function bossTick(m,dt,dp){const P=bossPat(m),R=BPAT.rage;
 const BEHAV={
   melee:{tick(m,dt,dp,moveTo){const reach2=(m.boss?18+12*m.sc:22)+4;
     if(m.wind>0){m.wind+=dt;if(m.wind>=.45){m.wind=0;if(dist(m,player)<reach2+8){hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv),m,'melee');if(player.lastHit===t)mobFx(m,'melee');}}return;}
-    if(dp>reach2){moveTo(player.x,player.y,m.boss?46:54);}else if(m.atkT<=0){m.wind=.001;m.atkT=m.boss?(m.rage?BPAT.rage.cd:2.2):1.8;m.face=player.x<m.x?-1:1;}}},
+    if(dp>reach2){moveTo(player.x,player.y,m.boss?46:54);}else if(m.atkT<=0){m.wind=.001;m.atkT=m.boss?(m.rage?((bossPat(m)||{}).rageCd||BPAT.rage.cd):2.2):1.8;m.face=player.x<m.x?-1:1;}}},
   /* v4.49 원거리(G1-b): 조준(예고선) → 투사체. 가까이 오면 물러나지만 집에서 leash 밖으로는 안 간다(몰리면 그 자리에서 쏜다) */
   ranged:{tick(m,dt,dp,moveTo){const R=RANGED;
     if(m.aim&&dp<R.flee){/* v4.50 G1-b2: 조준 중에 플레이어가 flee 안으로 들어오면 쏘지 않고 조준을 거둔다(바로 앞에서 쏜 투사체는 반응할 틈이 없다 · 예고 → 반응 원칙) */const i=tele.indexOf(m.aim.e);if(i>=0)tele.splice(i,1);m.aim=null;STAT.aimCancel=(STAT.aimCancel||0)+1;}
@@ -4018,7 +4088,7 @@ const BEHAV={
         if(c.t>=C.aim){c.ph='dash';STAT.chgN=(STAT.chgN||0)+1;}return;}
       /* dash */const x0=m.x,y0=m.y,ca=Math.cos(c.a),sa=Math.sin(c.a),v=Math.min(c.rem,SPD*dt),mv=stepMove(m,ca,sa,v/dt,dt);c.rem-=v;m.moving=true;m.face=ca<0?-1:1;e.x=m.x;e.y=m.y;e.len=Math.max(0,c.rem);
       if(!c.hit&&!player.dead){const px=player.x-x0,py=player.y-y0,u=Math.max(0,Math.min(v,px*ca+py*sa)),qx=x0+ca*u-player.x,qy=y0+sa*u-player.y;
-        if(Math.hypot(qx,qy)<C.w/2+6){c.hit=true;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*C.mul,m);if(player.lastHit===t){STAT.chgHit=(STAT.chgHit||0)+1;mobFx(m,'charge');burst(player.x,player.y,10,'#e0b080',10,80,4);}else c.hit=false;}}
+        if(Math.hypot(qx,qy)<C.w/2+6){c.hit=true;hurtPlayer(calcDmg(m.atk,1,pStats().def,m.lv,S.lv)*C.mul*(m.inv&&BOSS_GEN.chgK||1),m);if(player.lastHit===t){STAT.chgHit=(STAT.chgHit||0)+1;mobFx(m,'charge');burst(player.x,player.y,10,'#e0b080',10,80,4);}else c.hit=false;}}
       if(Math.random()<dt*20)burst(m.x,m.y,1,'#b89a70',3,30,2);
       if(c.rem<=.01||!mv){const i=tele.indexOf(e);if(i>=0)tele.splice(i,1);m.chg=null;
         if(!c.hit){m.stag=t+C.stag;STAT.chgMiss=(STAT.chgMiss||0)+1;floatTxt(m.x,m.y,'휘청','#ffd070');}else m.atkT=Math.max(m.atkT,CHARGE.rest);}/* 맞힌 뒤 숨 고르기 — 돌진이 거리를 단숨에 좁혀 짧은 싸움에서 근접형보다 먼저 때리기 시작하던 몫을 덜어 낸다 */
@@ -4144,7 +4214,7 @@ function update(dt){zoom+=(zoomT-zoom)*Math.min(1,dt*12);if(Math.abs(zoomT-zoom)
   for(const n of npcList)if(n.deco){n.next-=dt;if(n.mv){const dx=n.mv.x-n.x,dy=n.mv.y-n.y,d=Math.hypot(dx,dy);if(d<2){n.mv=null;n.walk=0;}else{n.x+=dx/d*24*dt;n.y+=dy/d*24*dt;n.walk+=dt;n.dir=Math.abs(dx)>Math.abs(dy)?(dx<0?'left':'right'):(dy<0?'up':'down');}}
     else if(n.next<=0){n.next=rand(3,7);const x=n.hx+rand(-30,30),y=n.hy+rand(-16,16);if(!blockedAt(x,y))n.mv={x,y};}}
   for(const b of bolts)b.life+=dt;bolts=bolts.filter(b=>b.life<(b.max||.22));for(const f of floats)f.life+=dt;floats=floats.filter(f=>f.life<1.1);tickParts(dt);tickFx(dt);
-  let z='field';for(const k in ZONES)if(inR(ZONES[k].r,player.x,player.y)){z=k;break;}if(HUNT.includes(z)&&!M.inst)S.aiZone=z;invTick(dt);riftTick(dt);riftFx(dt);aqWatch(dt);
+  let z='field';for(const k in ZONES)if(inR(ZONES[k].r,player.x,player.y)){z=k;break;}if(HUNT.includes(z)&&!M.inst)S.aiZone=z;invTick(dt);riftTick(dt);riftFx(dt);xqTick(dt);aqWatch(dt);
   if(z!==curZone){const first=curZone==='';curZone=z;if(z!=='field'){const Z=ZONES[z],fa=ZFAITH[z]||0;banner(Z.name,Z.lv?M.name+' · Lv '+Z.lv+(fa?' · 권장 신앙 '+fa:''):M.name+' · 안전 지역');if(fa&&pStats(null,true).faith<fa)later(1.2,()=>toast('신앙 '+pStats(null,true).faith+' / '+fa+' · 이 지역에선 주는 피해가 줄고 받는 피해가 늘어난다 — 제작·강화·컬렉션으로 신앙을 올리자'));}}
   for(const h of HOUSES)if(h.smoke&&Math.random()<dt*3)spawnP(h.smoke.x+rand(-2,2),h.smoke.y,h.smoke.z,{col:'#6a6070',vx:rand(-4,4),vy:-2,vz:14,life:1.6,size:3,size1:9});
   if(Math.random()<dt*1.2)for(const L of LAVA)if(Math.hypot(L.x-player.x,L.y-player.y)<500)spawnP(L.x+rand(-L.rx,L.rx)*.7,L.y+rand(-L.ry,L.ry)*.6,2,{col:'#ff8a3a',vz:rand(20,50),g:-10,life:1.2,size:3,size1:0});
@@ -4261,6 +4331,7 @@ function drawMini(){if(!miniBase)return;const g=mg,V=M.mini;g.setTransform(1,0,0
   if(rift&&M.inst)for(const m of mobs)if(m.rift&&alive(m)){g.fillStyle=m.riftBoss?'#ff9cff':RIFT_COL.dot;g.beginPath();g.arc(m.x*s,m.y*s,m.riftBoss?3:1.1,0,6.283);g.fill();if(m.riftBoss){g.strokeStyle='#fff';g.lineWidth=.8;g.stroke();}}
   for(const m of mobs)if(alive(m)&&(m.aggro||m.boss)){g.fillStyle=m.boss?'#ff3a20':'#ff5a4a';g.beginPath();g.arc(m.x*s,m.y*s,m.boss?4:1.5,0,6.283);g.fill();}
   for(const n of npcList)if(!n.deco&&!n.way){g.fillStyle='#ffe8a0';g.fillRect(n.x*s-1,n.y*s-1,3,3);}
+  /* v4.83 탐색 · 방어 지점(아직 안 간 곳) */for(const id in S.sq){const sx=S.sq[id],sq=SUBQ[id];if(!sq||sx.st!=='active'||!sx.pts||sq.type!=='reach'&&sq.type!=='wave'||!xqHere(sq))continue;sx.pts.forEach((p,i)=>{if(sq.type==='reach'&&(sx.v|0)&1<<i)return;g.fillStyle='#10202a';g.fillRect(p[0]*s-3,p[1]*s-3,6,6);g.fillStyle=sq.type==='wave'?'#ffd27a':'#8fe8ff';g.fillRect(p[0]*s-2,p[1]*s-2,4,4);});}
   if(graveHere()){const G=S.grave,x=G.x*s,y=G.y*s;g.strokeStyle='#1a1020';g.lineWidth=3;g.beginPath();g.moveTo(x,y-4);g.lineTo(x,y+4);g.moveTo(x-3,y-1.5);g.lineTo(x+3,y-1.5);g.stroke();g.strokeStyle='#e0c4ff';g.lineWidth=1.5;g.stroke();}
   const qp=questPoint();if(qp){g.strokeStyle='#ffe04a';g.lineWidth=2;g.beginPath();g.arc(qp.x*s,qp.y*s,5+Math.sin(t*5)*1.5,0,6.283);g.stroke();}
   const path=nav?nav.path:null;if(path&&path.length){g.strokeStyle='rgba(255,230,150,.8)';g.lineWidth=1.5;g.setLineDash([3,3]);g.beginPath();g.moveTo(player.x*s,player.y*s);for(const p of path)g.lineTo(p.x*s,p.y*s);g.stroke();g.setLineDash([]);}
@@ -4507,7 +4578,7 @@ function offlineSettle(){if(!S.lastSeen||!S.aiZone||!ZALL[S.aiZone])return;const
 /* ================= 루프 ================= */
 let last=0;
 function loop(ts){requestAnimationFrame(loop);const now=ts/1000,dt=Math.min(.05,Math.max(0,now-(last||now)));last=now;if(started)update(dt);render();if(started&&!traveling)updateHud(dt);}
-window.__g={aqIdle:()=>aqIdle,skBatch,skBatchN,bpHit,gfxMp,gfxFlame,gfxSkR,gfxCd,gfxXhit,gfxHurtK,gfxSave,BP_ZONE,unequip,itemTip,collRegister,COLL,bumpGear,GFX,gearFx,gfx,gfxSum,gfxBasic,gfxAfterBasic,gburnTick,gfxLowAtk,snapCam:()=>snapCam(),AUTOH,gdNow,gdSwap,gdSave,autoRanged,BOSS_GEN,spBusy,mobInfo0,bpFire,bpName,BPAT,BOSS_PAT,bossPat,bossInfo,bpStart,spawnElite,STK_ORDER,stkTip,CURE_K,curePrice,cureImm,cureNeed,useCure,buyCure,cureTick,BUFP,BUF_K,BUF_IDS,useBuf,buyBuf,bufOn,bufTick,bufPrice,inFight,fxHud,openShop,shopId,GRAVE_K,gravePrice,graveHere,graveTake,graveTick,get graveMesh2(){return graveMesh2;},drawMini:()=>drawMini(),mobInfo,mobState,tgtInfo,BDEF,FXBY,pSPD,SPD,basicAttack,castSkill,MOB_BZ,BURST,GUARD,guardOn,playerHit,get npcList(){return npcList;},get anchor(){return anchor;},CHARGE,DODGE,reachOk:(x,y)=>{if(x<8||y<8||x>=WW-8||y>=WH-8)return false;const c=ci(x,y);return !blk[c]&&!!reach[c];},EVADE,mobEvade,apWatch,get apProg(){return apProg;},get target(){return target;},blockedAt:(x,y)=>blockedAt(x,y),los:(a,b,c,d)=>los(a,b,c,d),resetAuto(){dodgeT=0;dodgeOff=0;anchor=null;apPath=null;apFor=null;target=null;apProg=null;},get PLAZA(){return PLAZA;},RANGED,shots,mobShoot,shotTick,usePot,gainXp,mobStats,setAuto(v){auto=!!v;},MOB_B,FXDEF,FX_P,BEHAV,mobB,mobBeh,fxDur,fxP,mobFx,addFx,fxOn,clearStatus,tele,teleAdd,dangerAt,dangerList,TELE_POOL,STAT,enchAid,enchRate,riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftKey,riftKeyIdx,riftLockMsg,riftUnlocked,QORDER_445,die,growthGoal,cancelNav,riftPrepGo,riftResupply,riftSpawn,riftLeave,riftName,riftOf,get riftRet(){return riftRet;},get riftCarry(){return riftCarry;},get graceT(){return graceT;},get MAPID(){return MAPID;},get traveling(){return traveling;},riftHud,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftUp,riftCd,riftStay,riftPend,riftLv,riftFa,riftBaseMap,riftClear,riftExpire,riftAppear,riftChip,riftResp,portalFx,riftAsk,riftNote,riftNeed,riftNeedOf,riftMapNow,riftLeft,closeModal,pScale,get cineT(){return cineT;},get pCine(){return pCine;},winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,getSprite:(...a)=>getSprite(...a),MONSPR,MONSPRL,MONART,CHARART,CHARATK,CHARMETA,charAtk:(...a)=>charAtk(...a),charFace:(...a)=>charFace(...a),get pimg(){return pMesh.userData.img;},get wvis(){return wMesh.visible;},MON_MOVE,monLegged,setVolume,get ART_VOL(){return ART_VOL;}},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
+window.__g={aqIdle:()=>aqIdle,XQ,XQ_OLD,xqPts,xqTick,xqRw,xqWaveMobs,subSt,mobsAll:()=>mobs,NALL,skBatch,skBatchN,bpHit,gfxMp,gfxFlame,gfxSkR,gfxCd,gfxXhit,gfxHurtK,gfxSave,BP_ZONE,unequip,itemTip,collRegister,COLL,bumpGear,GFX,gearFx,gfx,gfxSum,gfxBasic,gfxAfterBasic,gburnTick,gfxLowAtk,snapCam:()=>snapCam(),AUTOH,gdNow,gdSwap,gdSave,autoRanged,BOSS_GEN,spBusy,mobInfo0,bpFire,bpName,BPAT,BOSS_PAT,bossPat,bossInfo,bpStart,spawnElite,STK_ORDER,stkTip,CURE_K,curePrice,cureImm,cureNeed,useCure,buyCure,cureTick,BUFP,BUF_K,BUF_IDS,useBuf,buyBuf,bufOn,bufTick,bufPrice,inFight,fxHud,openShop,shopId,GRAVE_K,gravePrice,graveHere,graveTake,graveTick,get graveMesh2(){return graveMesh2;},drawMini:()=>drawMini(),mobInfo,mobState,tgtInfo,BDEF,FXBY,pSPD,SPD,basicAttack,castSkill,MOB_BZ,BURST,GUARD,guardOn,playerHit,get npcList(){return npcList;},get anchor(){return anchor;},CHARGE,DODGE,reachOk:(x,y)=>{if(x<8||y<8||x>=WW-8||y>=WH-8)return false;const c=ci(x,y);return !blk[c]&&!!reach[c];},EVADE,mobEvade,apWatch,get apProg(){return apProg;},get target(){return target;},blockedAt:(x,y)=>blockedAt(x,y),los:(a,b,c,d)=>los(a,b,c,d),resetAuto(){dodgeT=0;dodgeOff=0;anchor=null;apPath=null;apFor=null;target=null;apProg=null;},get PLAZA(){return PLAZA;},RANGED,shots,mobShoot,shotTick,usePot,gainXp,mobStats,setAuto(v){auto=!!v;},MOB_B,FXDEF,FX_P,BEHAV,mobB,mobBeh,fxDur,fxP,mobFx,addFx,fxOn,clearStatus,tele,teleAdd,dangerAt,dangerList,TELE_POOL,STAT,enchAid,enchRate,riftBoxTxt,riftBoxGrade,riftBoxSlot,riftBoxBU,fieldBossQs,mainDone,riftPrep,riftKey,riftKeyIdx,riftLockMsg,riftUnlocked,QORDER_445,die,growthGoal,cancelNav,riftPrepGo,riftResupply,riftSpawn,riftLeave,riftName,riftOf,get riftRet(){return riftRet;},get riftCarry(){return riftCarry;},get graceT(){return graceT;},get MAPID(){return MAPID;},get traveling(){return traveling;},riftHud,riftPotCost,riftExp,riftRecOf,riftTable,RIFT_COL,get riftK(){return riftK;},riftFx,riftBtn,openRift,matOfR,RIFT,riftElite,riftEliteOf,riftBox,riftLeft,openWay,get ZONES(){return ZONES;},riftEnter,riftEnd,riftTick,riftOpen,riftZone,riftIn,get rift(){return rift;},riftUp,riftCd,riftStay,riftPend,riftLv,riftFa,riftBaseMap,riftClear,riftExpire,riftAppear,riftChip,riftResp,portalFx,riftAsk,riftNote,riftNeed,riftNeedOf,riftMapNow,riftLeft,closeModal,pScale,get cineT(){return cineT;},get pCine(){return pCine;},winApply,winSet,winReset,winGrp,popFit,WSIZES,kb,kAct,setKey,kbReset,KB_ACTS,openKeyset,get kbCap(){return kbCap;},renderWin,craftMaxN,craftBatch,get cfN(){return cfN;},setCfN(v){cfN=v;},CRAFT_N_MAX,lockSet,unlockAll,autoLockOk,autoLockNew,LOCK_SETS,bulkLockTip,AUTOLOCK_OPT,openLog,acqLog,withAcq,acqMissNew,ACQ_MAX,addItem,dropFrom,applyRw,newItem,bagUi,bagFltOk,bagSortItems,bagEntries,disTarget,encToTarget,encExpect,encTgtOf,openColl,openCraft,killMob,AGGRO,aggroOn,hurtMob,need,xpK,xpGapF,XP_K,XP_GAP,FADE,batchEquip,equipBetterN,QFB,FB_UP,migrateQi,skCan,craftCan,craftCanK,craftCanKT,get qTab(){return qTab;},enchSafe,toggleMenu,craftHint,godHint,openEnchant,enchCheck,enchCost,buyStone,oreKey,dsgKey,stonePrice,collBatchList,collBatch,chooseTrial,faithBreak(){const o={grade:0,ench:0,boss:0,coll:0};for(const sl of SLOTS){const it=S.eq[sl]&&itemById(S.eq[sl]);if(!it)continue;const E=ENCH[it.k];if(it.bu)o.boss+=BU[it.bu].fa;else o.grade+=gradeFaith(it.g,it.t);if(E)o.ench+=it.en;}o.coll=collSum().faith||0;return o;},repGo,acceptRep,claimRep,get qTab(){return qTab;},setQTab(v){qTab=v;lastQKey="";},get trainFor(){return trainFor;},setTarget(m){target=m;},ZALL,isEq,collNeeds,craftTierMax,tierOfLv,CRAFT_EQ,collReg,itemById,collDone,BU,newBU,ZFAITH,faithOut,faithIn,faithR,growthTick,growthProg,isGrowth,fieldBossInfo,ensureFieldBosses,collDoneN,bcollDoneN,SUBQ_G:()=>Object.keys(SUBQ).filter(isGrowth),travelTo,eliteOf,collCand,isBossColl,autoEquipAll,targetSlot,cpScore,betterThanEq,craftMats,ARMOR_K,get win(){return win;},closeWin,get statics(){return statics;},_art:{volumize,rawChar,getSprite0:_getSprite0,getSprite:(...a)=>getSprite(...a),MONSPR,MONSPRL,MONART,CHARART,CHARATK,CHARMETA,charAtk:(...a)=>charAtk(...a),charFace:(...a)=>charFace(...a),get pimg(){return pMesh.userData.img;},get wvis(){return wMesh.visible;},MON_MOVE,monLegged,setVolume,get ART_VOL(){return ART_VOL;}},setVolume,get VOL_ON(){return VOL_ON;},openSettings,get zoom(){return zoom;},get zoomT(){return zoomT;},save,get scene(){return scene;},get G0(){return G0;},MAPS,elevAt,get terrain(){return terrain;},T3,revive,hurtPlayer,INV,goHunt,BAL,STAT,autoBuy,needShop,goTown,get inv(){return inv;},offlineSettle,openGods,openStats,openSkills,setGod(k){S.god=k;},invSpawn,snap(){snapCam();},timers,get t(){return t;},get S(){return S;},player,get mobs(){return mobs;},get nav(){return nav;},get hunt(){return hunt;},get auto(){return auto;},get modal(){return modal;},get map(){return MAPID;},get traveling(){return traveling;},
   get win(){return win;},closeWin,openBag,openCraft,openColl,craftItem,craftCheck,collRegister,collSum,COLL,STK,openSettings,openForge,openShop,addItem,newItem,equipItem,unequip,enchant,disassemble,dropFrom,weightNow,weightMax,wPct,gearSum,itemName,itemStats,cnt,addStk,castSlot,autoOrder,autoSlots,tierOpen,ENH,DROP,GRADES,TIERS,SK,
   questGo,autoNext,openNpc,claimQuest,acceptQuest,claimSub,acceptSub,subGo,doTravel,gateState,cpOf,pStats,autoGrowNow,TB,TB_AT,tbN,tbVal,tbCount,tbNext,hurtPlayer,playerHit,usePot,pSPD,tbSave,tbCast,learnSkill,update,render,step(n,dt){for(let i=0;i<n;i++){update(dt);if(started&&!traveling)updateHud(dt);}},curQ,findPath,QUESTS,SUBQ,gainXp,set autoQ(v){S.autoQ=v;}};
 
@@ -4520,6 +4591,7 @@ async function startGame(fresh){/* v4.35 새 게임이어도 바꾼 단축키는
   if(fresh)setTimeout(()=>toast('왼쪽 퀘스트를 누르면 목적지로 자동 이동한다'),1200);else offlineSettle();
   /* v4.48 균열 v2: 옛 입장 시간 · 지역별 기록 표시는 쓰지 않는다 — 개방된 세이브는 첫 균열이 바로 열린다(riftTick) */
   delete S.riftT;delete S.riftSeen;if(S.riftCd==null&&S.riftOpenT==null){S.riftEK=0;S.riftEP=0;}else if(S.riftEP&&typeof S.riftEP==='object')S.riftEP=0;pCine=null;cineT=0;
+  if(S.routeNote){delete S.routeNote;if(!fresh)setTimeout(()=>toast('퀘스트 순서가 지역 단위로 바뀌었다 · 지나간 재토벌은 끝낸 것으로 하고 보상을 넣었다',true),4200);}
   if(S.riftNote){delete S.riftNote;if(!fresh)setTimeout(()=>toast('원정대는 이미 시간의 균열을 열었다 · 길잡이 표석 · 메뉴 [균열]',true),2400);}
   if(S.migrated48){delete S.migrated48;setTimeout(()=>{banner('v4.8 장비 시스템','강화 단계를 장비로 옮기고 지금 레벨의 장비를 지급했다');toast('가방(I)에서 장비와 마법 주문서를 확인하자',true);},1600);}save();}
 $('btnStart').onclick=()=>startGame(true);$('btnCont').onclick=()=>startGame(false);

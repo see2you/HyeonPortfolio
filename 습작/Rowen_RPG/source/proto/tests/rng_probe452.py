@@ -15,6 +15,8 @@ def page(b,errs,mid='rowen'):
     # v4.80 G2-a: §G1 원형 · 보스 측정은 '구간 보너스 없는 기준 캐릭터'로 잰다(원형 수치를 맞춘 v4.47~4.74의 기준). TBREF=0 이면 구간 포함(실제 게임)으로 잰다 —
     #   구간 포함 값은 처치가 빨라져 근접형 대비 비율이 달라진다(burst461 Lv33 대응 없음 1.96 등 · proto/README v4.80). G2-c에서 수치를 맞춘 뒤 기본을 구간 포함으로 바꾼다.
     if os.environ.get('TBREF','1')=='1':pg.add_init_script('window.__tbRef=1')
+    # (v4.83 메모) 아래 '실제 시간 0.4초' 동안 도는 프레임 수가 CPU 부하에 따라 달라, 같은 씨앗이어도 기준 근처의 값이 흔들린다(다른 테스트와 같이 돌 때만 실패 → 혼자 돌리면 통과).
+    #   시작 전에 프레임을 끊고 고정 프레임만 돌리면 부하와 무관하게 같은 값이 나오지만(확인함), 기준 근처에 맞춰 둔 값들이 함께 움직이고(charge456 bull 0.898) 균열 입장(rift_util)이 멈춰서 되돌렸다 — HANDOFF 0절 '알려진 한계'
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000)
     pg.evaluate("localStorage.clear()");pg.click('#btnStart',timeout=60000);pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     if mid!='rowen':

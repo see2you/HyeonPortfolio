@@ -51,7 +51,8 @@ window.__bot=function(opt){const g=__g,S=g.S;opt=opt||{};const log=[];if(g.win||
   g.autoEquipAll();
   /* 4b) 보스 컬렉션 대기: 다른 맵의 지역 보스가 필요하면 그 맵으로 */
   const needB=Object.keys(S.sq).some(id=>{const q=g.SUBQ[id];return q&&(q.grow==='bcoll'||q.grow==='reg'||q.grow==='coll')&&S.sq[id].st==='active';});
-  if(!opt.lite&&g.trainFor&&needB&&!g.fieldBossInfo().some(m=>!m.dead&&g.pStats().faith>=m.fa*.85&&!g.COLL.find(c=>c.id==='bc'+m.eliteOf.slice(1)&&g.collDone(c)))){
+  /* v4.83 지역 단위 루트: 지난 지역으로 되돌아가는 원정(4b)은 기본으로 하지 않는다 — 성장 서브는 그 지역 안에서 채워져야 한다(지시서 §G10 규칙 4). 옛 동작은 BOTOPT='{travel:1}' */
+  if(opt.travel&&!opt.lite&&g.trainFor&&needB&&!g.fieldBossInfo().some(m=>!m.dead&&g.pStats().faith>=m.fa*.85&&!g.COLL.find(c=>c.id==='bc'+m.eliteOf.slice(1)&&g.collDone(c)))){
     const q=g.QUESTS.find((q,i)=>q.elite&&i<S.qi&&!g.collDone(g.COLL.find(c=>c.id==='bc'+q.id.slice(1)))&&g.MAPS&&q.zone&&g.ZALL[q.zone].map!==g.map);
     if(q&&S.hpPot>=10){const mid=g.ZALL[q.zone].map;g.travelTo(mid,()=>{});log.push('travel '+mid+' for '+q.id);return log;}}
   /* 5) 수련 사냥(성장 대기) 중이면 같은 맵의 지역 보스 토벌 */

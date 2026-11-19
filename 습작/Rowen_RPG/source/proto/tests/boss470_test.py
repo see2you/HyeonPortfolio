@@ -110,7 +110,7 @@ with sync_playwright() as p:
       g.setTarget(m);g.bpStart(m,'ember',60);for(let i=0;i<34;i++){m.atkT=99;m.aoeT=99;P.lastHit=1e12;if(i===26)P.x+=90;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();const e=document.getElementById('tgtI');const r=e.getBoundingClientRect();return {tx:e.textContent,hid:e.hidden,tip:e.title,in:r.top>=0&&r.bottom<=720&&r.right<=1280,lin:g.tele.filter(x=>x.lin).length};})()""")
     print(' tgt',r)
     chk(r['tx']=='','타깃 창 ♛ 칩 · 3갈래 · 불씨 장판 → 화상')
-    chk('남음' in r['tip'] and r['in'] and r['lin']==1,'풀이에 남는 불 · 타깃 창 화면 안 · 남는 불 그림')
+    chk(r['tip']=='' and r['lin']==1,'보스 타깃 창 풀이는 숨김(v4.79) · 남는 불 그림 1개 '+str(r)[:120])
     pg.screenshot(path='shots/v470_불티나무_남는불.png')
     r=pg.evaluate("""(()=>{const g=__g,P=g.player,q=g.QUESTS.find(x=>x.id==='q32'),m=g.spawnElite(q);m.dead=false;m.hp=m.max;m.aggro=true;m.ret=false;m.bp=null;m.x=m.home.x;m.y=m.home.y;P.x=m.x+70;P.y=m.y+10;P.hp=1e8;
       g.setTarget(m);g.bpStart(m,'dash',70);for(let i=0;i<6;i++){m.aoeT=99;m.atkT=99;P.lastHit=1e12;g.step(1,.05);}g.tgtInfo(m);P.hp=g.pStats().hp;g.snapCam();g.render();return {st:g.mobState(m),tx:document.getElementById('tgtI').textContent};})()""")
