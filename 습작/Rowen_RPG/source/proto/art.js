@@ -161,32 +161,50 @@ function buildChar(s,dir,walk,f){
   return finalize(c);}
 const sprites=new Map();
 function flipX(r){const c=mk(r.width,r.height),g=c.getContext('2d');g.translate(c.width,0);g.scale(-1,1);g.drawImage(r,0,0);return hkOf(c,r);}
-/* ================= 캐릭터 새 도트 (v4.76) — 현의 그림에서 그대로 오린 주인공(가죽갑옷 기사 · 네 방향) · NPC =================
-   CHARART[id]={방향:[가로, 세로, hk, 팔레트, 부호(몬스터와 같은 형식), 0, 다리가 시작되는 줄]} — 굽는 도구 tools/charart_bake.py · 원본 art_src/char
-   CHARART에 있는 캐릭터는 getSprite가 이 그림을 돌려준다(없는 캐릭터는 예전 절차 생성). 방향 그림이 없으면: 왼쪽 = 오른쪽 그림을 뒤집음 · 그것도 없으면 앞모습.
-   그림은 방향마다 한 자세 → charFrame()이 서 있기 2장(윗몸이 1칸 내려앉는 숨쉬기) · 걷기 4장을 만든다.
-     앞 · 뒤: 왼발 들기 → 내려앉기 → 오른발 들기 → 내려앉기 / 옆: 다리 벌림(내려앉음) → 모으고 뒷발 들기 → 벌림 → 모으고 앞발 들기
-   발 칸 = 맨 아래 3줄에 닿는 열(장화). 그 바깥(망토 자락 · 손)은 몸과 같이 움직인다. 양감은 몬스터와 같은 volHD(ART_VOL). */
+/* ================= 캐릭터 새 도트 (v4.80) — 현이 준 캐릭터 · NPC 시트 21종(주인공 + NPC 20명) =================
+   CHARART[id]=[가로, 세로, 팔레트(6자리 hex 이어 붙임), 색 번호 바이트열(0 = 투명)을 raw deflate로 줄인 base64] — 굽는 도구 tools/charart_bake.py · 원본 art_src/char/sprites
+   시트 = 칸 48×72 · 5열[대기, 걷기 4] × 4행[아래, 왼쪽, 오른쪽, 위] · 발 중앙(앵커)은 칸의 (24, 68). CHARATK.hero = 공격 시트(칸 80×80 · 4열[준비, 베기, 팔로스루, 복귀] · 앵커 (40, 72))
+   CHARART에 있는 캐릭터는 getSprite가 이 그림을 돌려준다(없으면 예전 절차 생성 — 지금은 21명 전부 있다).
+   · 캔버스 = 칸에서 [0, 앵커 y + 발끝 여유) 줄을 자른 것 → 맨 아랫줄이 땅 · 가로 한가운데가 발 중앙. hk(CHARMETA.hk) = 그림 1칸이 월드 몇 칸.
+   · 서 있기 2장 = 대기 칸 + 그 칸의 윗몸을 1칸 내린 것(숨쉬기 — 시트에는 대기가 한 장뿐이다) · 걷기 4장 = 시트의 걷기 칸 그대로.
+   · 그림에 양감이 이미 그려져 있어 설정의 '도트 양감'(volHD)은 입히지 않는다 — 양감 설정은 몬스터에만 듣는다.
+   · 브라우저에 동기 inflate가 없어 작은 해독기(inflate)를 넣었다. 이미지 태그(data: 주소)로 읽으면 비동기라 첫 화면 · 테스트의 순서가 꼬인다. */
 /*CHARART*/
+function inflate(b64,n){const s=atob(b64),src=new Uint8Array(s.length);for(let i=0;i<s.length;i++)src[i]=s.charCodeAt(i);const out=new Uint8Array(n);let sp=0,bb=0,bc=0,op=0;
+  const bits=k=>{while(bc<k){bb|=src[sp++]<<bc;bc+=8;}const v=bb&((1<<k)-1);bb>>>=k;bc-=k;return v;};
+  const build=L=>{const cnt=new Uint16Array(16),off=new Uint16Array(16),sym=new Uint16Array(L.length);for(let i=0;i<L.length;i++)cnt[L[i]]++;cnt[0]=0;for(let i=1;i<16;i++)off[i]=off[i-1]+cnt[i-1];for(let i=0;i<L.length;i++)if(L[i])sym[off[L[i]]++]=i;return {cnt,sym};};
+  const dec=h=>{let code=0,first=0,idx=0;for(let l=1;l<16;l++){code|=bits(1);const c=h.cnt[l];if(code-c<first)return h.sym[idx+(code-first)];idx+=c;first+=c;first<<=1;code<<=1;}throw new Error('inflate');};
+  const LB=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258],LE=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],
+    DB=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577],DE=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13],ORD=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+  let last;do{last=bits(1);const ty=bits(2);
+    if(ty===0){bb=0;bc=0;const len=src[sp]|src[sp+1]<<8;sp+=4;for(let i=0;i<len;i++)out[op++]=src[sp++];}
+    else{let hl,hd;
+      if(ty===1){const l=new Uint8Array(288);l.fill(8,0,144);l.fill(9,144,256);l.fill(7,256,280);l.fill(8,280,288);hl=build(l);hd=build(new Uint8Array(30).fill(5));}
+      else{const nl=bits(5)+257,nd=bits(5)+1,nc=bits(4)+4,cl=new Uint8Array(19);for(let i=0;i<nc;i++)cl[ORD[i]]=bits(3);const hc=build(cl),ls=new Uint8Array(nl+nd);
+        for(let i=0;i<nl+nd;){const sy=dec(hc);if(sy<16)ls[i++]=sy;else{let v=0,rep;if(sy===16){v=ls[i-1];rep=3+bits(2);}else if(sy===17)rep=3+bits(3);else rep=11+bits(7);while(rep--)ls[i++]=v;}}
+        hl=build(ls.subarray(0,nl));hd=build(ls.subarray(nl));}
+      for(;;){const sy=dec(hl);if(sy<256)out[op++]=sy;else if(sy===256)break;else{const k=sy-257,len=LB[k]+bits(LE[k]),ds=dec(hd),dist=DB[ds]+bits(DE[ds]);for(let i=0;i<len;i++){out[op]=out[op-dist];op++;}}}}
+  }while(!last);return out;}
 const CHARPIX={},CHARSPR=new Map();
-function charFrame(A,legTop,dir,walk,f){
-  const {w,h,px,rgb}=A,PL=3,PT=2,W=w+PL*2,H=h+PT,c=mk(W,H),g=c.getContext('2d'),im=g.createImageData(W,H),d=im.data;
-  let bx0=w,bx1=-1;for(let y=h-3;y<h;y++)for(let x=0;x<w;x++)if(px[y*w+x]){if(x<bx0)bx0=x;if(x>bx1)bx1=x;}
-  const mid=(bx0+bx1+1)/2,side=dir==='left'||dir==='right',fs=dir==='left'?-1:1;let bob=0,lL=0,lR=0,sp=0,lF=0,lB=0;
-  if(!walk)bob=f?1:0;
-  else if(side){if(f%2===0){sp=2;bob=1;}else{sp=-1;if(f===1)lB=1;else lF=1;}}
-  else{if(f===0)lL=2;else if(f===2)lR=2;else bob=1;}
-  for(let Y=0;Y<H;Y++)for(let X=0;X<W;X++){const x=X-PL,y=Y-PT;let xs=x,ys=y-bob,ok=true;
-    if(y>=legTop+bob&&x>=bx0-3&&x<=bx1+3){ok=false;
-      if(side){const s=sp*(y-legTop)/(h-1-legTop),a=Math.round(x-fs*s),b=Math.round(x+fs*s);
-        if((a+.5-mid)*fs>=0&&a>=bx0&&a<=bx1){xs=a;ys=y+lF;ok=true;}else if((b+.5-mid)*fs<0&&b>=bx0&&b<=bx1){xs=b;ys=y+lB;ok=true;}}
-      else if(x>=bx0&&x<=bx1){xs=x;ys=y+(x+.5<mid?lL:lR);ok=true;}}
-    if(!ok||xs<0||ys<0||xs>=w||ys>=h)continue;const i=ys*w+xs;if(!px[i])continue;const o=(Y*W+X)*4;d[o]=rgb[i*3];d[o+1]=rgb[i*3+1];d[o+2]=rgb[i*3+2];d[o+3]=255;}
-  g.putImageData(im,0,0);c.hk=A.hk;c.lh=h*A.hk;c.lw=w*A.hk;return c;}
-function charArt(id,dir,walk,f){const k=ART_VOL+id+dir+(walk?'w':'i')+f;let c=CHARSPR.get(k);if(c)return c;
-  const A0=CHARART[id],flip=dir==='left'&&!A0.left&&!!A0.right,d=A0[dir]?dir:flip?'right':'down',pk=ART_VOL+id+d+(flip?'F':'');let A=CHARPIX[pk];
-  if(!A){A=monPix(A0[d]);if(flip)A=flipPix(A);if(ART_VOL)A=volHD(A,ART_VOL);CHARPIX[pk]=A;}                     /* 뒤집은 뒤에 양감 — 빛은 늘 왼쪽 위 */
-  c=charFrame(A,A0[d][6],A0[dir]||flip?dir:'down',walk,f);CHARSPR.set(k,c);return c;}
+function sheetPix(a){const [w,h,ps,b64]=a,pal=[];for(let i=0;i<ps.length;i+=6)pal.push([parseInt(ps.substr(i,2),16),parseInt(ps.substr(i+2,2),16),parseInt(ps.substr(i+4,2),16)]);return {w,h,pal,px:inflate(b64,w*h)};}
+/* 시트의 한 칸 → 캔버스. sx · sy = 칸 왼쪽 위, cw = 칸 폭, rows = 쓸 줄 수(맨 아랫줄 = 땅), cut = 0보다 크면 그 줄 위쪽(윗몸)을 1칸 내린다(숨쉬기) */
+function sheetCell(P,sx,sy,cw,rows,cut){const c=mk(cw,rows),g=c.getContext('2d'),im=g.createImageData(cw,rows),d=im.data;let top=rows;
+  for(let y=0;y<rows;y++)for(let x=0;x<cw;x++){const yy=cut&&y<cut?y-1:y;if(yy<0)continue;const v=P.px[(sy+yy)*P.w+sx+x];if(!v)continue;const q=P.pal[v-1],o=(y*cw+x)*4;d[o]=q[0];d[o+1]=q[1];d[o+2]=q[2];d[o+3]=255;if(y<top)top=y;}
+  g.putImageData(im,0,0);c.hk=CHARMETA.hk;c.lw=cw*c.hk;c.lh=(rows-top)*c.hk;return c;}
+function charArt(id,dir,walk,f){const k=id+dir+(walk?'w':'i')+f;let c=CHARSPR.get(k);if(c)return c;
+  const P=CHARPIX[id]||(CHARPIX[id]=sheetPix(CHARART[id])),M=CHARMETA,r=Math.max(0,M.rows.indexOf(dir)),rows=M.anchor[1]+M.foot;
+  c=sheetCell(P,(walk?1+f%4:0)*M.cell[0],r*M.cell[1],M.cell[0],rows,!walk&&f%2?rows-12:0);CHARSPR.set(k,c);return c;}
+/* 주인공 공격: e = 공격을 시작한 뒤 지난 시간(초) → 그 순간의 칸. 끝났으면 null */
+const charAtkDur=()=>CHARMETA.atk.dur.reduce((a,b)=>a+b,0);
+function charAtk(id,dir,e){const M=CHARMETA.atk,D=M.dur;let f=0,s=0;for(;f<D.length;f++){s+=D[f];if(e<s)break;}if(f>=D.length)return null;
+  const k=id+dir+'a'+f;let c=CHARSPR.get(k);if(c)return c;const P=CHARPIX[id+'@a']||(CHARPIX[id+'@a']=sheetPix(CHARATK[id]));
+  c=sheetCell(P,f*M.cell[0],Math.max(0,CHARMETA.rows.indexOf(dir))*M.cell[1],M.cell[0],M.anchor[1]+CHARMETA.foot,0);c.atk=f;CHARSPR.set(k,c);return c;}
+/* 초상: head = 머리만(왼쪽 위 얼굴 칸 — 머리가 위쪽 가운데에 오게) · 아니면 몸 전체를 여백 없이 */
+function charFace(id,head){const im=charArt(id,'down',false,0),w=im.width,h=im.height,d=im.getContext('2d').getImageData(0,0,w,h).data;let x0=w,x1=0,y0=h,y1=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]){if(y<y0)y0=y;if(y>y1)y1=y;}
+  const yb=head?Math.min(y1,y0+27):y1;for(let y=y0;y<=yb;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]){if(x<x0)x0=x;if(x>x1)x1=x;}
+  if(!head){const c=mk(x1-x0+5,y1-y0+3);c.getContext('2d').drawImage(im,2-x0,1-y0);return c;}
+  const s=Math.round((x1-x0+1)/.72),c=mk(s,s);c.getContext('2d').drawImage(im,Math.round((s-(x1-x0+1))/2)-x0,Math.round(s*.05)-y0);return c;}
 function getSprite(id,dir,walk,f,noArm){
   if(CHARART[id])return charArt(id,dir,walk,f);                                          /* v4.76 구운 그림이 있는 캐릭터 */
   const k=id+dir+(walk?'w':'i')+f+(noArm?'n':'');let c=sprites.get(k);if(c)return c;

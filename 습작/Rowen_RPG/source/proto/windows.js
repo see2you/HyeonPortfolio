@@ -89,7 +89,7 @@ function renderBag(B,F){const o=win,enc=o.enc;
     if(enc){const ok=it&&canEnch(it.k)&&scrollFor(it.k)===scrollBase(enc)&&it.en<ENH.max;b.classList.toggle('encok',!!ok);b.classList.toggle('encno',!ok);if(ok)b.appendChild(el('span','rt',encLbl(it,enc)));}
     b.onclick=()=>{if(!it)return;if(enc)return doEnchant(it,b);bagSel=it.u;showTip(b,tp=>itemTip(tp,it));};return b;};
   for(const s of L)colL.appendChild(slotCell(s));for(const s of R)colR.appendChild(slotCell(s));
-  const hc=mk(22,34);hc.getContext('2d').drawImage(getSprite('hero','down',false,0),0,0);hc.className='hero';mid.appendChild(hc);
+  const hc=CHARART.hero?charFace('hero',false):mk(22,34);if(!CHARART.hero)hc.getContext('2d').drawImage(getSprite('hero','down',false,0),0,0);hc.className='hero';mid.appendChild(hc);
   const st=pStats(null,true);mid.appendChild(el('div','dcp',null)).append(el('small',null,'전투력'),el('b',null,fmt(cpOf())));
   dg.append(colL,mid,colR);
   const ds=el('div','dstats');for(const [n,v] of [['공격력',st.atk],['방어',st.def],['최대 HP',st.hp],['최대 MP',st.mp],['치명',pct(st.crit)],['공격 속도','+'+((st.aspd-1)*100).toFixed(1)+'%'],['스킬 피해','+'+((st.skm-1)*100).toFixed(1)+'%'],['신앙',st.faith],['무게 한도',fmt(weightMax())]])ds.append(el('span',null,n),el('b',null,String(v)));
@@ -342,7 +342,7 @@ function renderSettings(B,F){const C=S.cfg,g=el('div','setw');B.appendChild(g);
   row(s3,'더 좋은 장비 자동 장착','얻은 장비가 지금보다 전투력이 높으면 바로 장착',onoff,()=>!!C.autoEq,v=>{C.autoEq=v;if(v)autoEquipAll();});
   row(s3,'자동 분해','무게 45% 또는 가방 90%가 넘으면 이 등급 이하를 분해 (장착·잠금·더 좋은 장비 제외 · 자동 잠금은 가방 🔒 ▾)',[[-1,'끔'],[0,'일반'],[1,'고급까지'],[2,'희귀까지']],()=>C.autoDis??-1,v=>C.autoDis=v);
   let s4=sec('화면 · 데이터');
-  row(s4,'도트 양감','캐릭터 · 몬스터 도트에 빛(왼쪽 위)과 그늘을 입힌다 · 끄면 원래 그림',onoff,()=>VOL_ON,v=>{setVolume(v);C.vol=v;portrait('hero',$('face'),true);});
+  row(s4,'도트 양감','몬스터 도트에 빛(왼쪽 위)과 그늘을 입힌다 · 끄면 원래 그림 (캐릭터 그림에는 양감이 이미 그려져 있다)',onoff,()=>VOL_ON,v=>{setVolume(v);C.vol=v;portrait('hero',$('face'),true);});
   row(s4,'양감 세기','약하게 하면 원래 그림에 가까워진다',Object.entries(VOL_LV).map(([n,k])=>[k,n]),()=>VOL_K,v=>{setVolume(true,v);C.volK=v;C.vol=true;portrait('hero',$('face'),true);});
   row(s4,'화면 확대','마우스 휠 80~180% · Z키 100%↔140%',[[1,'100%'],[1.2,'120%'],[1.4,'140%']],()=>Math.round(zoomT*10)/10,v=>{setZoom(v);});
   const r=el('div','srw'),n=el('div','nm');n.append(el('b',null,'데이터 초기화'),el('small',null,'저장을 지우고 처음부터 시작한다 (되돌릴 수 없음)'));let armed=false;const rb=btn('초기화','alt',()=>{if(armed){try{localStorage.removeItem(SAVE_KEY);}catch(e){}location.reload();return;}armed=true;rb.textContent='한 번 더 누르면 삭제';});r.append(n,rb);s4.appendChild(r);

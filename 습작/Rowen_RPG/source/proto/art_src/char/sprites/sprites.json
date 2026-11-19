@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "title": "로웬 원정기 캐릭터 · NPC 리디자인",
+    "cell": {
+      "w": 48,
+      "h": 72
+    },
+    "anchor": {
+      "x": 24,
+      "y": 68
+    },
+    "rows": [
+      "down",
+      "left",
+      "right",
+      "up"
+    ],
+    "cols": [
+      "idle",
+      "walk0",
+      "walk1",
+      "walk2",
+      "walk3"
+    ],
+    "animations": {
+      "idle": {
+        "cols": [
+          0
+        ]
+      },
+      "walk": {
+        "cols": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "fps": 8,
+        "loop": true
+      }
+    },
+    "shadow": "shadow.png"
+  },
+  "characters": [
+    {
+      "id": "hero",
+      "label": "나",
+      "file": "hero.png",
+      "attack": {
+        "file": "hero_attack.png",
+        "file_nofx": "hero_attack_nofx.png",
+        "cell": {
+          "w": 80,
+          "h": 80
+        },
+        "anchor": {
+          "x": 40,
+          "y": 72
+        },
+        "rows": [
+          "down",
+          "left",
+          "right",
+          "up"
+        ],
+        "cols": [
+          "windup",
+          "strike",
+          "follow",
+          "recover"
+        ],
+        "durations_ms": [
+          110,
+          60,
+          90,
+          140
+        ],
+        "hit_frame": 1
+      }
+    },
+    {
+      "id": "hans",
+      "label": "경비병 한스",
+      "file": "hans.png"
+    },
+    {
+      "id": "mira",
+      "label": "상인 미라",
+      "file": "mira.png"
+    },
+    {
+      "id": "orvin",
+      "label": "장로 오르빈",
+      "file": "orvin.png"
+    },
+    {
+      "id": "lia",
+      "label": "리아",
+      "file": "lia.png"
+    },
+    {
+      "id": "teo",
+      "label": "농부 테오",
+      "file": "teo.png"
+    },
+    {
+      "id": "bram",
+      "label": "대장장이 브람",
+      "file": "bram.png"
+    },
+    {
+      "id": "nell",
+      "label": "여관 주인 넬",
+      "file": "nell.png"
+    },
+    {
+      "id": "fin",
+      "label": "소년 핀",
+      "file": "fin.png"
+    },
+    {
+      "id": "karl",
+      "label": "촌장 카를",
+      "file": "karl.png"
+    },
+    {
+      "id": "dor",
+      "label": "광부 도르",
+      "file": "dor.png"
+    },
+    {
+      "id": "sena",
+      "label": "약초상 세나",
+      "file": "sena.png"
+    },
+    {
+      "id": "rian",
+      "label": "경비대장 리안",
+      "file": "rian.png"
+    },
+    {
+      "id": "mora",
+      "label": "여관 주인 모라",
+      "file": "mora.png"
+    },
+    {
+      "id": "aila",
+      "label": "촌장 아일라",
+      "file": "aila.png"
+    },
+    {
+      "id": "taon",
+      "label": "경비대장 타온",
+      "file": "taon.png"
+    },
+    {
+      "id": "rumi",
+      "label": "연금술사 루미",
+      "file": "rumi.png"
+    },
+    {
+      "id": "goro",
+      "label": "대장장이 고로",
+      "file": "goro.png"
+    },
+    {
+      "id": "hana",
+      "label": "여관 주인 하나",
+      "file": "hana.png"
+    },
+    {
+      "id": "kiki",
+      "label": "꼬마 키키",
+      "file": "kiki.png"
+    },
+    {
+      "id": "pip",
+      "label": "꼬마 핍",
+      "file": "pip.png"
+    }
+  ]
+}
