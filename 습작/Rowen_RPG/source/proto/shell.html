@@ -327,9 +327,21 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
 .stw{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:calc(var(--u)*2)}
 .stl{display:flex;flex-direction:column;gap:calc(var(--u)*.7)}
 .srow{display:flex;align-items:center;gap:calc(var(--u)*1);padding:calc(var(--u)*.8) calc(var(--u)*1);border:1px solid rgba(232,184,100,.25);border-radius:calc(var(--u)*.6);background:rgba(20,16,30,.6)}
-.snm{flex:1}.snm b{font-family:var(--disp);font-size:1.1em}.snm small{margin-left:.5em;color:var(--gold);font-size:.72em;letter-spacing:.15em}.snm span{display:block;color:var(--mut);font-size:.82em}
+.snm{flex:1;min-width:0}.snm b{font-family:var(--disp);font-size:1.1em}.snm small{margin-left:.5em;color:var(--gold);font-size:.72em;letter-spacing:.15em}.snm span{display:block;color:var(--mut);font-size:.82em}
 .step{display:flex;align-items:center;gap:.5em}.sbt{width:calc(var(--u)*3.4);height:calc(var(--u)*3.4);font:inherit;font-size:1.2em;font-weight:700;color:var(--txt);background:rgba(40,30,56,.9);border:1px solid rgba(232,184,100,.5);border-radius:calc(var(--u)*.5);cursor:pointer;touch-action:none}.sbt:disabled{opacity:.3;cursor:default}
-.sv{min-width:3.4em;text-align:center;font-family:var(--disp);font-size:1.25em;font-variant-numeric:tabular-nums}.sv em{font-style:normal;color:#ffe08a;font-size:.7em}
+.sv{min-width:3.4em;text-align:center;font-family:var(--disp);font-size:1.25em;font-variant-numeric:tabular-nums}/* v4.80 능력치 구간 보너스 */
+.tbr{display:flex;align-items:center;gap:.15em .3em;margin-top:.25em;flex-wrap:wrap;min-width:0}
+.snm .tbr span{display:inline-block}
+.snm .tbc{min-width:1.9em;text-align:center;padding:0 .25em;border:1px solid rgba(232,184,100,.3);border-radius:.6em;font-size:.72em;color:var(--mut);font-variant-numeric:tabular-nums;flex:none}
+.snm .tbc.on{background:rgba(232,184,100,.85);color:#1a1420;border-color:#ffe08a;font-weight:700}
+.snm .tbc.new{border-color:#ffe08a;color:#ffe08a;box-shadow:0 0 .4em rgba(255,224,138,.6)}
+.snm .tbt{font-size:.74em;color:#b8aed0;margin-left:.3em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%;flex:0 1 auto}
+.snm .tbt.new{color:#ffe08a}
+.tbl{display:flex;flex-wrap:wrap;gap:.2em .5em;margin-top:.3em;padding-top:.3em;border-top:1px dashed rgba(232,184,100,.2);font-size:.78em}
+.tbl .ch{flex-basis:100%;margin-bottom:0;font-size:1em}
+.tbl small{color:var(--mut)}
+.tbi{color:#d8cfe4;white-space:nowrap}.tbi b{color:var(--gold2);font-weight:700}.tbi.new,.tbi.new b{color:#ffe08a}
+.sv em{font-style:normal;color:#ffe08a;font-size:.7em}
 .cmp{display:flex;flex-direction:column;gap:.2em;padding:calc(var(--u)*.8) calc(var(--u)*1.2);border:1px solid rgba(232,184,100,.25);border-radius:calc(var(--u)*.6);background:rgba(20,16,30,.6);font-variant-numeric:tabular-nums}
 .cmp .ch{font-family:var(--disp);font-weight:700;color:var(--gold2);margin-bottom:.3em}
 .cr{display:grid;grid-template-columns:1fr 5em 1.4em 6.4em;align-items:center;padding:.15em 0;border-bottom:1px dashed rgba(232,184,100,.12)}.cr span{color:#d8cfe4}.cr b{font-weight:400;text-align:right}.cr i{text-align:center;font-style:normal;color:var(--mut)}
@@ -485,7 +497,7 @@ body.dead #stage canvas{filter:grayscale(.85) brightness(.7);transition:filter .
   </div></div>
   <div class="title" id="title">
     <div class="tbox">
-      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.79</span>
+      <span class="k">버디 트래블러 리소스 · HD-2D · MMO 라이크 싱글 RPG · 프로토타입 v4.80</span>
       <h1>로웬 원정기<small>가제</small></h1>
       <p>장로 오르빈이 원정대원을 모은다. 로웬의 다섯 사냥터, 협곡 너머 카르도, 불의 땅 에르나까지 — 세 지역의 이변을 잠재워라.</p>
       <p class="how">퀘스트를 누르면 목적지로 자동 이동해 사냥하고, 완료된 퀘스트를 누르면 보상 NPC에게 자동으로 돌아갑니다. 레벨업마다 능력치·스킬을 직접 키우고, 몬스터가 떨어뜨린 장비를 마법 주문서로 강화한다. 관문 퀘스트는 서브 퀘스트와 장비로 성장해야 열린다.</p>

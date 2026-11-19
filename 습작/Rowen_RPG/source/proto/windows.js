@@ -239,14 +239,18 @@ function renderStats(B,F){const cur=S.st,nxt={str:cur.str+draft.str,vit:cur.vit+
     const sp=el('div','step'),mi=el('button','sbt','−'),pl=el('button','sbt','+'),v=el('b','sv',String(nxt[k]));mi.type=pl.type='button';mi.disabled=!draft[k];pl.disabled=left<=0;
     if(draft[k])v.appendChild(el('em',null,' +'+draft[k]));
     hold(mi,()=>{if(draft[k]<=0)return false;draft[k]--;renderWin();return draft[k]>0;});hold(pl,()=>{if(S.sp-draftUsed()<=0)return false;draft[k]++;renderWin();return S.sp-draftUsed()>0;});
-    sp.append(mi,v,pl);r.appendChild(sp);L.appendChild(r);}
+    sp.append(mi,v,pl);r.appendChild(sp);L.appendChild(r);
+    /* v4.80 G2-a 구간 보너스 — 칩 4개(닿음 = 금색 · 이번 배분으로 닿음 = 밝은 테두리) + 다음 구간까지 남은 포인트 · 효과 */
+    {const tr=el('div','tbr'),n0=tbN(k,cur),n1=tbN(k,nxt);TB_AT.forEach((at,i)=>{const c=el('span','tbc'+(i<n0?' on':i<n1?' new':''),String(at));c.title=STATS[k][0]+' '+at+' — '+TB[k][i].d;tr.appendChild(c);});
+      const nx=tbNext(k,nxt);tr.appendChild(el('span','tbt'+(n1>n0?' new':''),n1>n0?'새 효과: '+TB[k][n1-1].d:nx?'다음 '+nx.at+'까지 '+nx.left+' · '+nx.d:'구간 모두 달성'));nm.appendChild(tr);}}
   const a=pStats(cur,true),b=pStats(nxt,true),T=el('div','cmp');g.appendChild(T);T.appendChild(el('div','ch','전투 능력 · 적용 전 → 적용 후'));
   const row=(n,x,y,f)=>{const d=el('div','cr'+(y!==x?' chg':''));d.append(el('span',null,n),el('b',null,f(x)),el('i',null,'→'),el('b','af',f(y)+(y>x?' ▲':'')));T.appendChild(d);};
   const pc=v=>(v*100).toFixed(1)+'%';
   row('공격력',a.atk,b.atk,String);row('방어',a.def,b.def,String);row('최대 HP',a.hp,b.hp,String);row('최대 MP',a.mp,b.mp,String);row('치명 확률',a.crit,b.crit,pc);row('공격 속도',a.aspd-1,b.aspd-1,v=>'+'+pc(v));row('스킬 피해',a.skm-1,b.skm-1,v=>'+'+pc(v));row('신앙',a.faith,b.faith,String);
   const sl=S.slots.map(id=>id&&skIdx(id)).filter(i=>i!=null&&i>=0&&SK[i].mul);for(const i of sl.slice(0,3))row(SK[i].name+' 1타',Math.round(a.atk*skMul(i)*a.skm*(SK[i].hits||1)),Math.round(b.atk*skMul(i)*b.skm*(SK[i].hits||1)),fmt);
-  row('전투력',cpOf(cur),cpOf(nxt),fmt);T.lastChild.classList.add('cpr');
-  F.append(el('p','note2','레벨업마다 3포인트 · 서브 퀘스트 보상 추가 포인트 · 공격 속도는 민첩으로 최대 +40% · 피해는 치명·방어·변동 적용 전 기준 · 창을 닫으면 적용하지 않은 배분은 취소된다'));
+  {const on=[];for(const k in TB)for(let i=0;i<tbN(k,nxt);i++){const d=TB[k][i],sup=TB[k].slice(i+1,tbN(k,nxt)).some(e=>Object.keys(e).some(q=>q!=='d'&&d[q]!=null&&e[q]>=d[q]));if(!sup)on.push([STATS[k][0]+' '+TB_AT[i],d.d,i>=tbN(k,cur)]);}
+    const bx=el('div','tbl');bx.appendChild(el('div','ch','구간 보너스 '+tbCount(nxt)+' / 16 · 전투력 +'+TB_CP*tbCount(nxt)));if(!on.length)bx.appendChild(el('small',null,'능력치 하나를 10 · 20 · 30 · 45까지 올리면 덤 효과가 켜진다'));for(const o of on){const d=el('span','tbi'+(o[2]?' new':''));d.append(el('b',null,o[0]),document.createTextNode(' '+o[1]));bx.appendChild(d);}row('전투력',cpOf(cur),cpOf(nxt),fmt);T.lastChild.classList.add('cpr');T.appendChild(bx);/* 전투력 줄 아래 — 구간이 많아 목록이 길어져도 전투력 줄은 밀려 내려가지 않는다 */}
+  F.append(el('p','note2','레벨업마다 3포인트 · 능력치마다 10 · 20 · 30 · 45에서 구간 보너스 · 공격 속도는 민첩으로 최대 +40% · 창을 닫으면 적용하지 않은 배분은 취소된다'));
   const bt=el('div','btns');
   bt.append(btn('자동 성장 '+(S.autoGrow?'켬':'끔'),S.autoGrow?'tg on':'tg',()=>{S.autoGrow=!S.autoGrow;if(S.autoGrow){draft={str:0,vit:0,dex:0,int:0};autoGrowNow();}save();renderWin();}),
     btn('추천 분배','',()=>{let n=S.sp-draftUsed();const tmp={...nxt};while(n-->0){const k=REC[(tmp.str+tmp.vit+tmp.dex+tmp.int)%REC.length];tmp[k]++;draft[k]++;}renderWin();},left<=0),

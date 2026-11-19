@@ -12,6 +12,9 @@ HPK={lv:(1 if lv<16 else float(os.environ.get('PHPK','1'))) for lv in range(1,41
 SP={'cavemush':('kardo',(18,19)),'mosswisp':('kardo',(19,20)),'mist':('kardo',(26,27)),'flamewisp':('erna',(31,32,38,39)),'embertree':('erna',(32,33)),'fairy':('rowen',(5,6))}
 def page(b,errs,mid='rowen'):
     pg=b.new_page(viewport={'width':1280,'height':720});pg.on('pageerror',lambda e:errs.append(str(e)))
+    # v4.80 G2-a: §G1 원형 · 보스 측정은 '구간 보너스 없는 기준 캐릭터'로 잰다(원형 수치를 맞춘 v4.47~4.74의 기준). TBREF=0 이면 구간 포함(실제 게임)으로 잰다 —
+    #   구간 포함 값은 처치가 빨라져 근접형 대비 비율이 달라진다(burst461 Lv33 대응 없음 1.96 등 · proto/README v4.80). G2-c에서 수치를 맞춘 뒤 기본을 구간 포함으로 바꾼다.
+    if os.environ.get('TBREF','1')=='1':pg.add_init_script('window.__tbRef=1')
     pg.goto('file://'+HTML);pg.wait_for_function('window.__ready===true',timeout=120000)
     pg.evaluate("localStorage.clear()");pg.click('#btnStart',timeout=60000);pg.wait_for_timeout(400);pg.evaluate("window.requestAnimationFrame=()=>0")
     if mid!='rowen':

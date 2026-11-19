@@ -204,7 +204,7 @@ function equipItem(u,silent){const it=itemById(u);if(!it)return false;const prev
 function unequip(slot,silent){const u=S.eq[slot];if(!u)return false;S.eq[slot]=null;bumpGear();const st=pStats();player.hp=Math.min(player.hp,st.hp);player.mp=Math.min(player.mp,st.mp);if(!silent)toast(itemName(itemById(u))+' 해제');save();return true;}
 /* 무게 */
 function weightNow(){let w=0;for(const it of S.items)w+=itemW(it);for(const k in STK)w+=STK[k].w*cnt(k);return w;}
-const weightMax=()=>1500+25*(S.st.str+S.st.vit)+15*S.lv;
+const weightMax=()=>Math.round((1500+25*(S.st.str+S.st.vit)+15*S.lv)*(1+tbVal('wt')));/* v4.80 체력 20: 무게 한도 +10% */
 const wPct=()=>weightNow()/weightMax();
 const bagUsed=()=>S.items.length+STK_ORDER.filter(k=>cnt(k)>0).length;
 /* 획득 */
