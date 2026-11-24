@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모여라 용자들</title>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 배치: 세로형 기계 한 대. 위에서부터 재화 줄, 전광판, 단계 화면(덱 편성 · 던전 · 핀볼 · 결과가 번갈아 쓴다), 큰 버튼, 구슬 통.
+     기록은 넓은 화면에서 옆 칸, 좁은 화면에서 아래 서랍으로 연다. 한 가지 세계(던전 보물방)로 고정한 단일 테마. */
+  --ink: #1b1226;          /* 외곽선, 어두운 바탕 */
+  --moss: #1d6b66;         /* 기계 몸통 */
+  --moss-deep: #124742;
+  --cave: #2b1a40;         /* 판 안쪽 */
+  --cave-2: #3f2660;
+  --stone: #f1d6a3;        /* 아치 돌 */
+  --stone-shade: #cfa468;
+  --torch: #ffc83a;        /* 골드, 불빛 */
+  --ember: #ff5b45;        /* 발사, 피버 */
+  --aqua: #59e3d0;         /* 경험치 */
+  --rose: #ff6fb5;         /* 고리, 물음표 */
+  --cream: #fff3d6;
+  --muted: #a9cdc6;        /* 기록 칸 보조 글자 */
+  --dim: #b9a8cf;          /* 판 위 보조 글자 */
+  --font-display: "Bagel Fat One", "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --fire: clamp(80px, 12.5vh, 104px);
+  --knob: clamp(52px, 8.5vh, 66px);
+  color-scheme: dark;
+}
+/* 기계 높이를 기준으로 버튼 크기를 정한다. */
+@supports (width: 1cqh) {
+  :root { --fire: clamp(80px, 12.5cqh, 104px); --knob: clamp(52px, 8.5cqh, 66px); }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: radial-gradient(120% 70% at 50% 0%, #1a5450 0%, #0c2b2a 70%) #0c2b2a;
+  color: var(--cream);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+button { font: inherit; color: inherit; }
+button:focus-visible { outline: 3px solid var(--cream); outline-offset: 2px; }
+
+.app {
+  container-type: size;
+  height: 100%; min-height: 620px;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr);
+  justify-content: center; gap: 18px;
+  padding: 12px 16px 24px;
+}
+@media (min-width: 900px) { .app { grid-template-columns: auto minmax(300px, 420px); } }
+
+/* 기계 */
+.cabinet {
+  justify-self: center; width: min(100%, 460px);
+  min-height: 0; min-width: 0;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 10px 12px;
+  background: linear-gradient(180deg, #268680, var(--moss) 28%, var(--moss-deep));
+  border: 3px solid var(--ink); border-radius: 28px;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.2), 0 9px 0 #071d1c;
+}
+/* 판은 높이에 맞춰지므로, 기계 폭도 그 비율을 따라 좁혀 옆이 비지 않게 한다. */
+@media (min-width: 900px) { .cabinet { width: 400px; } }
+@supports (width: 1cqh) {
+  .cabinet { width: min(100%, 460px, max(300px, calc((100cqh - 296px) * 0.641 + 56px))); }
+  @media (min-width: 900px) { .cabinet { width: min(460px, max(300px, calc((100cqh - 296px) * 0.641 + 56px))); } }
+}
+.purse { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.chip {
+  display: flex; align-items: center; gap: 4px; min-width: 0;
+  padding: 2px 9px 2px 3px; border-radius: 999px;
+  background: var(--ink); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+.chip output { margin-left: auto; font-family: var(--font-display); font-size: 16px; line-height: 1.5; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ico { width: 24px; height: 24px; flex: none; }
+
+/* 전광판 */
+.sign {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center;
+  margin: 3px; padding: 5px 10px;
+  background: var(--ink); border: 3px solid var(--stone-shade); border-radius: 16px;
+  box-shadow: 0 0 0 3px var(--ink);
+}
+.reels { display: flex; gap: 5px; }
+.reel {
+  width: 32px; height: 36px; display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 23px; line-height: 1;
+  background: #2f2142; border-radius: 8px; color: var(--torch);
+}
+.reel[data-sym="7"] { color: var(--ember); }
+.reel[data-sym="◆"] { color: var(--aqua); }
+.reel[data-sym="▲"] { color: var(--rose); }
+.sign.win .reel { background: var(--torch); color: var(--ink); }
+.sign-side { display: grid; gap: 3px; min-width: 0; }
+.sign-msg { font-size: 14px; line-height: 1.3; color: var(--torch); }
+.sign.fever .sign-msg { color: var(--ember); }
+.pips { display: flex; gap: 5px; align-items: center; font-size: 12px; color: var(--dim); }
+.pip { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--dim); }
+.pip.on { background: var(--rose); border-color: var(--rose); }
+
+/* 판 */
+.boardwrap { flex: 1 1 0; min-height: 0; display: grid; place-items: center; overflow: hidden; }
+#board { display: block; touch-action: manipulation; }
+
+/* 발사부 */
+.deck { display: grid; gap: 6px; justify-items: center; }
+.fire-row { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.knob {
+  justify-self: center; width: var(--knob); height: var(--knob); padding: 0;
+  display: grid; place-content: center; text-align: center; line-height: 1.1;
+  border: 3px solid var(--ink); border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #fffaf0, var(--stone) 55%, var(--stone-shade));
+  color: var(--ink); box-shadow: 0 5px 0 #7a5a2c;
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+}
+.knob small { display: block; font-size: 11px; }
+.knob b { display: block; font-family: var(--font-display); font-weight: 400; font-size: calc(var(--knob) * 0.29); }
+.knob:active { transform: translateY(3px); box-shadow: 0 2px 0 #7a5a2c; }
+.knob-burst { background: radial-gradient(circle at 35% 28%, #fff4c4, var(--torch) 55%, #e39a12); box-shadow: 0 5px 0 #8a5a06; }
+.knob-burst:active { box-shadow: 0 2px 0 #8a5a06; }
+.fire {
+  position: relative; width: var(--fire); height: var(--fire); padding: 0;
+  display: grid; place-content: center; justify-items: center;
+  border: 3px solid var(--ink); border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ffab99, var(--ember) 55%, #c9331f);
+  color: #fff; box-shadow: 0 7px 0 #7c1d10;
+  cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.fire.down, .fire:active { transform: translateY(5px); box-shadow: 0 2px 0 #7c1d10; }
+.fire.empty { filter: grayscale(0.85); }
+.fire-label { font-family: var(--font-display); font-size: calc(var(--fire) * 0.27); line-height: 1.05; text-shadow: 0 2px 0 var(--ink); }
+.fire-sub { font-family: var(--font-display); font-size: calc(var(--fire) * 0.15); line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.hint { margin: 0; font-size: 12.5px; line-height: 1.35; color: var(--cream); opacity: 0.85; text-align: center; }
+@media (max-height: 700px) { .hint { display: none; } }
+.tray { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.mini { justify-self: start; padding: 4px 12px; font-size: 13px; border: 2px solid var(--ink); border-radius: 999px; background: var(--moss-deep); color: var(--cream); cursor: pointer; white-space: nowrap; }
+#benchBtn { justify-self: end; }
+.ballpill { display: flex; align-items: center; gap: 6px; padding: 3px 4px 3px 5px; border-radius: 999px; background: var(--ink); }
+.ballpill output { min-width: 3ch; text-align: right; font-family: var(--font-display); font-size: 19px; line-height: 1.35; font-variant-numeric: tabular-nums; }
+.ballpill button { padding: 2px 10px; font-family: var(--font-display); font-size: 14px; border: 2px solid var(--ink); border-radius: 999px; background: var(--torch); color: var(--ink); cursor: pointer; }
+.ballpill button.need { box-shadow: 0 0 0 3px var(--ember); }
+
+/* 기록 */
+.bench { min-width: 0; display: grid; gap: 12px; align-content: start; }
+.bench-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.bench-head h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 24px; line-height: 1.2; text-wrap: balance; }
+.bench-head p { margin: 2px 0 0; font-size: 13px; color: var(--muted); }
+.card { min-width: 0; padding: 12px 14px; background: #144441; border: 2px solid var(--ink); border-radius: 14px; }
+h2 { margin: 0 0 8px; font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--torch); }
+dl { margin: 0; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; }
+.tile { padding: 7px 10px; border-radius: 10px; background: var(--ink); }
+.tile dt { font-size: 12px; color: var(--muted); }
+.tile dd { margin: 0; font-family: var(--font-display); font-size: 20px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.note { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.dist { display: grid; gap: 6px; }
+.dist-row { display: grid; grid-template-columns: 84px 1fr 86px; gap: 8px; align-items: center; font-size: 13px; }
+.bar { height: 10px; border-radius: 5px; background: var(--ink); overflow: hidden; }
+.bar i { display: block; width: 0%; height: 100%; background: var(--torch); }
+.dist-row.exp .bar i { background: var(--aqua); }
+.dist-row.mys .bar i, .dist-row.ring .bar i { background: var(--rose); }
+.dist-row span:last-child { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { padding: 5px 6px; text-align: right; white-space: nowrap; border-bottom: 1px solid rgba(255, 243, 214, 0.14); }
+th { font-weight: 400; color: var(--muted); }
+td.live { text-align: left; color: var(--muted); white-space: normal; }
+.legend { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; }
+.legend b { font-weight: 400; color: var(--torch); }
+.util { display: flex; flex-wrap: wrap; gap: 8px; }
+.util .mini { justify-self: auto; }
+@media (min-width: 900px) {
+  .bench { overflow: auto; padding-right: 4px; }
+  #benchBtn, #benchClose { display: none; }
+}
+@media (max-width: 899px) {
+  .bench {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 5;
+    max-height: 78%; overflow: auto; padding: 14px 16px 20px;
+    background: #0f3432; border-top: 3px solid var(--ink); border-radius: 20px 20px 0 0;
+    transform: translateY(105%); visibility: hidden;
+    transition: transform 0.22s ease, visibility 0s 0.22s;
+  }
+  .bench.open { transform: none; visibility: visible; transition: transform 0.22s ease; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fire.down, .fire:active, .knob:active { transform: none; }
+  .bench { transition: none; }
+}
+
+/* 단계 화면: 로비, 덱 편성, 캐릭터, 뽑기, 던전, 핀볼, 결과가 같은 자리를 번갈아 쓴다 */
+.stage { position: relative; flex: 1 1 0; min-height: 0; }
+.view { position: absolute; inset: 0; }
+.view.canvas { display: grid; place-items: center; overflow: hidden; }
+.view.canvas canvas { display: block; touch-action: manipulation; }
+.view.scroll { display: grid; gap: 7px; align-content: start; overflow: auto; padding: 2px 3px 6px; }
+.view-title { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 20px; line-height: 1.2; color: var(--cream); text-wrap: balance; }
+.view-sub { margin: 0; font-size: 13px; line-height: 1.4; color: var(--cream); opacity: 0.88; }
+.glyph {
+  flex: none; width: 24px; height: 24px; display: grid; place-items: center;
+  border: 2px solid var(--ink); border-radius: 50%; background: var(--c, var(--stone));
+  color: var(--ink); font-family: var(--font-display); font-size: 14px; line-height: 1;
+}
+.lineup { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.lineup li { min-width: 0; }
+.slotbtn {
+  width: 100%; min-height: 48px; display: grid; justify-items: center; align-content: center; gap: 1px; padding: 3px 2px;
+  border: 2px dashed rgba(255, 243, 214, 0.45); border-radius: 12px; background: rgba(27, 18, 38, 0.35);
+  color: var(--cream); font-size: 12px; line-height: 1.2; cursor: pointer;
+}
+.slotbtn.filled { border: 2px solid var(--ink); background: var(--ink); }
+.slotbtn:disabled { cursor: default; opacity: 0.8; }
+.roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.hero {
+  min-width: 0; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 1px 7px; align-items: center; text-align: left;
+  padding: 4px 7px; border: 2px solid var(--ink); border-radius: 12px; background: var(--moss-deep); color: var(--cream); cursor: pointer;
+}
+.hero[aria-pressed="true"] { background: var(--ink); box-shadow: inset 0 0 0 2px var(--torch); }
+.hero .who { min-width: 0; display: grid; gap: 0; }
+.facebox { width: 38px; height: 42px; display: grid; place-items: center; overflow: hidden; }
+.facebox.low { height: 32px; }
+canvas.face { display: block; image-rendering: pixelated; }
+.hero b { font-family: var(--font-display); font-weight: 400; font-size: 15px; line-height: 1.3; }
+.hero small { font-size: 11.5px; color: var(--muted); }
+.hero .trait, .hero .stat { grid-column: 1 / -1; font-size: 12px; line-height: 1.3; }
+.hero .stat { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 12px; background: var(--ink); font-size: 13px; }
+.flow b { font-family: var(--font-display); font-weight: 400; font-size: 18px; color: var(--cream); font-variant-numeric: tabular-nums; }
+.flow b.last { color: var(--torch); font-size: 22px; }
+.flow i { font-style: normal; color: var(--dim); }
+#viewResult .tile dd { color: var(--torch); }
+#viewResult .note { color: var(--cream); opacity: 0.85; font-size: 13px; margin: 0; }
+
+/* 조작부 보탬 */
+.ghost { visibility: hidden; }
+.fire-label { font-size: calc(var(--fire) * 0.235); }
+.fire.wait { filter: saturate(0.45) brightness(0.9); cursor: default; }
+.tray-left { justify-self: start; display: flex; gap: 6px; }
+.tray-left .mini { padding: 4px 9px; }
+#speedBtn { font-family: var(--font-display); min-width: 3.2ch; }
+.sign.plain .pips, .sign.dun .pips { visibility: hidden; }
+.sign.dun .reel { font-size: 15px; width: 36px; color: var(--torch); }
+.sign.dun .reel[data-sym="slot"] { color: var(--ember); }
+.sign.dun .reel[data-sym="room"] { color: var(--rose); }
+.sign.dun .reel[data-sym="off"] { color: var(--dim); }
+
+/* ───── 판 사이의 화면 (로비, 덱 편성, 캐릭터, 뽑기). 그림은 전부 임시다: UI 키트와 등급 표시 체계가 나오면 바꾼다 ───── */
+.fatal { max-width: 640px; margin: 40px auto; padding: 20px; background: var(--ink); border-radius: 14px; }
+.fatal h1 { margin: 0 0 10px; font-family: var(--font-display); font-weight: 400; font-size: 22px; color: var(--ember); }
+.hero { position: relative; }
+.gcard { border-color: var(--g, var(--ink)); box-shadow: inset 0 0 0 1px var(--ink); }
+.gcard[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--torch); }
+.gtag { font-style: normal; display: inline-block; padding: 0 6px; border-radius: 999px; background: var(--g, var(--stone)); color: var(--ink); font-size: 11px; line-height: 1.5; }
+.enh { font-family: var(--font-display); font-weight: 400; color: var(--torch); font-size: 13px; }
+.hero .stat { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.badge { flex: none; padding: 0 6px; border-radius: 999px; background: var(--ember); color: #fff; font-size: 10.5px; line-height: 1.55; white-space: nowrap; }
+.btn { min-height: 40px; padding: 6px 14px; border: 2px solid var(--ink); border-radius: 12px; background: var(--moss-deep); color: var(--cream); font-family: var(--font-display); font-size: 15px; cursor: pointer; box-shadow: 0 3px 0 #071d1c; }
+.btn.main { background: var(--torch); color: var(--ink); box-shadow: 0 3px 0 #8a5a06; }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #071d1c; }
+.btn:disabled, .mini:disabled, .arrow:disabled { opacity: 0.45; cursor: default; filter: grayscale(0.6); }
+.rowbtns { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rowbtns .mini { justify-self: auto; }
+.rowbtns.big .btn { flex: 1 1 0; min-height: 52px; font-size: 18px; }
+.sortsel { margin-left: auto; font-size: 12.5px; color: var(--muted); }
+.sortsel select { font: inherit; font-size: 13px; padding: 3px 6px; border: 2px solid var(--ink); border-radius: 8px; background: var(--ink); color: var(--cream); }
+.sub-title { margin: 4px 0 0; font-family: var(--font-display); font-weight: 400; font-size: 15px; color: var(--torch); }
+.cpline { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: 12.5px; }
+.cp b { font-family: var(--font-display); font-weight: 400; font-size: 15px; font-variant-numeric: tabular-nums; }
+.band { padding: 0 8px; border-radius: 999px; border: 2px solid var(--ink); font-size: 11.5px; line-height: 1.5; color: var(--ink); background: var(--stone); }
+.band.low { background: var(--ember); color: #fff; }
+.band.similar { background: var(--torch); }
+.band.high { background: #7be0a5; }
+.bar.exp { flex: 1 1 0; background: #3a2a52; }
+.bar.exp i { background: var(--aqua); transition: width 0.55s ease; }
+
+/* 로비 */
+.lobby-head { display: grid; gap: 4px; justify-items: center; padding: 4px 0 2px; }
+.logo { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(26px, 8.4cqw, 34px); line-height: 1.15; color: var(--torch); text-shadow: 0 3px 0 var(--ink), 0 0 0 var(--ink); -webkit-text-stroke: 1px var(--ink); letter-spacing: 0.01em; }
+.acct { width: 100%; display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 999px; background: var(--ink); font-size: 12px; }
+.lvbadge { font-family: var(--font-display); color: var(--aqua); font-size: 14px; white-space: nowrap; }
+.lvbadge b { font-weight: 400; font-size: 17px; }
+.acct-txt { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stagepick { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 6px; padding: 6px; border: 3px solid var(--stone-shade); border-radius: 16px; background: var(--cave); box-shadow: 0 0 0 3px var(--ink); margin: 3px; }
+.arrow { width: 44px; height: 44px; border: 2px solid var(--ink); border-radius: 50%; background: var(--stone); color: var(--ink); font-size: 16px; cursor: pointer; }
+.stageinfo { display: grid; justify-items: center; text-align: center; gap: 0; min-width: 0; }
+.stageinfo b { font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1.1; color: var(--cream); font-variant-numeric: tabular-nums; }
+.stageinfo span { font-size: 12.5px; color: var(--dim); }
+.stageinfo .first { color: var(--torch); min-height: 1.5em; }
+.deckcard { display: grid; gap: 5px; padding: 7px 9px; text-align: left; border: 2px solid var(--ink); border-radius: 14px; background: var(--moss-deep); color: var(--cream); cursor: pointer; }
+.deckcard-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.deckcard-head > b { font-family: var(--font-display); font-weight: 400; font-size: 16px; color: var(--torch); }
+.dslots, .poolfaces { display: flex; gap: 6px; flex-wrap: wrap; }
+.dslot { width: 44px; height: 38px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 10px; background: var(--ink); overflow: hidden; }
+.dslot.empty { border-style: dashed; border-color: rgba(255, 243, 214, 0.45); background: rgba(27, 18, 38, 0.35); }
+.dslot.notyet { opacity: 0.38; filter: grayscale(1); }
+.menu { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.menubtn { min-height: 52px; display: grid; align-content: center; justify-items: center; gap: 0; padding: 4px 2px; border: 2px solid var(--ink); border-radius: 12px; background: var(--ink); color: var(--cream); cursor: pointer; }
+.menubtn b { font-family: var(--font-display); font-weight: 400; font-size: 15px; }
+.menubtn small { min-height: 1.4em; font-size: 11px; color: var(--torch); white-space: nowrap; }
+.menubtn.soon { opacity: 0.6; }
+
+/* 덱 편성 */
+.slotbtn { position: relative; touch-action: none; user-select: none; -webkit-user-select: none; }
+.slotbtn.filled { border-color: var(--g, var(--ink)); }
+.slotbtn.empty { cursor: default; opacity: 0.8; }
+.slotbtn .pos { font-size: 10.5px; color: var(--dim); }
+.slotbtn.dragging { z-index: 2; opacity: 0.85; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35); }
+
+/* 캐릭터 상세 */
+.detail-top { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border: 3px solid var(--g, var(--ink)); border-radius: 16px; background: var(--cave); }
+#detailSpr { width: 96px; height: 144px; image-rendering: pixelated; }
+.detail-id { display: grid; gap: 4px; justify-items: start; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.srow { padding: 5px 9px; border-radius: 10px; background: var(--ink); }
+.srow dt { font-size: 11.5px; color: var(--muted); }
+.srow dd { margin: 0; font-family: var(--font-display); font-size: 17px; line-height: 1.3; font-variant-numeric: tabular-nums; }
+.srow dd i { font-style: normal; font-size: 13px; color: #7be0a5; }
+.enhbox { display: grid; gap: 6px; padding: 8px 10px; border: 2px solid var(--ink); border-radius: 14px; background: var(--moss-deep); }
+.enhline { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13.5px; }
+.cost { display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-display); font-size: 16px; }
+.enhbox .note { margin: 0; color: var(--cream); opacity: 0.85; min-height: 1.5em; }
+.enhbox .btn { flex: 1 1 0; }
+
+/* 뽑기 */
+.gacha-have { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 6px 10px; border-radius: 12px; background: var(--ink); font-size: 13px; }
+.have { display: inline-flex; align-items: center; gap: 4px; }
+.have b { font-family: var(--font-display); font-weight: 400; font-size: 17px; font-variant-numeric: tabular-nums; }
+.gacha-have .mini { margin-left: auto; }
+#viewGacha .note { margin: 0; color: var(--cream); opacity: 0.85; }
+.poolrow { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 8px; padding: 5px 8px; border-left: 4px solid var(--g); border-radius: 10px; background: rgba(27, 18, 38, 0.45); margin-bottom: 5px; }
+.gres-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.gres { display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 0 7px; align-items: center; padding: 2px 7px; border: 2px solid var(--g); border-radius: 12px; background: var(--ink);
+  animation: reveal 0.32s ease-out both; animation-delay: calc(var(--i) * 0.16s); }
+.gres .facebox { grid-row: span 2; }
+.gres .gname { font-size: 13.5px; }
+.gres .gkind { font-size: 11.5px; color: var(--muted); }
+.gres.new { box-shadow: 0 0 0 2px var(--torch); }
+.gres.new .gkind { color: var(--torch); }
+.gres.max .gkind { color: var(--aqua); }
+.gres-list.skip .gres { animation: none; }
+@keyframes reveal { from { opacity: 0; transform: translateY(10px) scale(0.92); } to { opacity: 1; transform: none; } }
+#viewGres .view-title { color: var(--g, var(--cream)); }
+#viewGres .rowbtns .btn { flex: 1 1 0; }
+
+/* 결과 화면의 보탬 */
+#viewResult .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#resFirst { margin: 0; padding: 6px 10px; border-radius: 10px; background: var(--ink); font-size: 13px; color: var(--cream); }
+#resFirst b { font-family: var(--font-display); font-weight: 400; color: var(--torch); margin-right: 4px; }
+
+/* 팝업과 알림 한 줄 */
+.pop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px; background: rgba(12, 8, 20, 0.72); }
+.pop-card { width: min(100%, 400px); max-height: 86%; overflow: auto; display: grid; gap: 8px; padding: 14px; border: 3px solid var(--ink); border-radius: 18px; background: var(--moss-deep); box-shadow: 0 8px 0 #071d1c; }
+.pop-card h2 { margin: 0; }
+.pop-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.popline { margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; }
+.popnote { margin: 0; font-size: 12.5px; color: var(--muted); }
+table.rate th { text-align: left; }
+table.rate tr.grow th, table.rate tr.grow td { padding-top: 9px; font-family: var(--font-display); color: var(--cream); border-bottom-color: var(--g); }
+.dimtxt { color: var(--muted); }
+.toast { position: fixed; left: 50%; bottom: 22%; z-index: 30; transform: translateX(-50%); max-width: min(88vw, 380px); padding: 8px 14px; border: 2px solid var(--ink); border-radius: 12px; background: var(--cream); color: var(--ink); font-size: 13.5px; text-align: center; box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35); }
+@media (prefers-reduced-motion: reduce) { .gres { animation: none; } .bar.exp i { transition: none; } .btn:active { transform: none; } }
+
+/* ── 2026-11-24: Direction/06의 1장 ── */
+.errbox { position: fixed; inset: 12px; z-index: 99; overflow: auto; padding: 16px; border: 3px solid var(--ember); border-radius: 14px; background: #1b1226; color: #fff3d6; font: 14px/1.5 var(--font-body); }
+.errbox b { display: block; font-size: 17px; color: var(--ember); }
+.errbox ul { margin: 8px 0 0; padding-left: 18px; word-break: break-all; }
+.logo { margin: 0; width: min(78%, 250px); line-height: 0; text-shadow: none; -webkit-text-stroke: 0; }
+.logo svg { display: block; width: 100%; height: auto; }
+.lobby-head { gap: 2px; }
+.acct-bonus { margin: 0; font-size: 11.5px; color: var(--muted); }
+.lvbadge { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.deckstage { display: grid; gap: 4px; justify-items: center; padding: 6px 6px 8px; border: 3px solid var(--stone-shade); border-radius: 16px; background: radial-gradient(120% 90% at 50% 20%, #3a2a52, var(--cave)); color: var(--cream); cursor: pointer; font: inherit; }
+.deckstage canvas { display: block; max-width: 100%; }
+.deckstage .deckcard-head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.deckstage:focus-visible { outline: 3px solid var(--torch); outline-offset: 2px; }
+#viewLobby { gap: 5px; }
+#viewLobby .stagepick { padding: 3px 6px; }
+#viewLobby .stageinfo b { font-size: 24px; line-height: 1.1; }
+#viewLobby .stageinfo .first { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; }
+.chip output.tight { font-size: 12.5px; letter-spacing: -0.3px; }
+.menubtn { position: relative; }
+.menubtn small.dot { min-width: 22px; padding: 0 6px; border-radius: 999px; background: #e23b4e; color: #fff; font-weight: 700; }
+.menubtn .tip { position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%); white-space: nowrap; padding: 5px 10px; border: 2px solid var(--ink); border-radius: 12px; background: var(--torch); color: var(--ink); font-size: 12.5px; font-weight: 700; z-index: 3; pointer-events: none; }
+.menubtn .tip::after { content: ""; position: absolute; left: 50%; top: 100%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--torch); }
+.menubtn .tip[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) { .menubtn .tip { animation: tipbob 1.2s ease-in-out infinite; } }
+@keyframes tipbob { 50% { transform: translateX(-50%) translateY(-4px); } }
+
+/* 등급의 표식 A안: 틀 장식과 보석 (Art/UI/표시_체계.md, screens/02_등급표시) */
+.gc { --c: #9aa5b4; position: relative; display: inline-block; width: 96px; height: 128px; flex: none; vertical-align: top; }
+.gc .gface { position: absolute; inset: 4px; border-radius: 10px; overflow: hidden; background: radial-gradient(90% 70% at 50% 35%, color-mix(in srgb, var(--c) 45%, #1c2654), #141b3e); }
+.gc .gface img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gc .gframe { position: absolute; inset: 0; border-radius: 12px; border: 4px solid var(--c); pointer-events: none; box-shadow: inset 0 0 0 1.5px #0b1024, 0 0 0 1.5px #0b1024; }
+.gc.g4 .gframe { box-shadow: inset 0 0 0 1.5px #0b1024, 0 0 0 1.5px #0b1024, 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
+.gc.g5 .gframe, .gc.g6 .gframe { box-shadow: inset 0 0 0 1.5px #0b1024, 0 0 0 1.5px #0b1024, 0 0 0 3px #ffd36a55; }
+.gc .gems { position: absolute; left: 50%; top: -7px; transform: translateX(-50%); display: flex; gap: 1px; padding: 2px 4px; border-radius: 8px; background: #0b1024; border: 1.5px solid var(--c); z-index: 1; }
+.gc .gems i { width: 8px; height: 8px; transform: rotate(45deg); background: var(--c); border: 1px solid #fff8; margin: 1px; }
+.gc .rivet { position: absolute; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: #fff; border: 1px solid #0b1024; }
+.gc .rivet.l { left: 3px; } .gc .rivet.r { right: 3px; }
+.gc .notch { position: absolute; left: 50%; bottom: -4px; transform: translateX(-50%) rotate(45deg); width: 9px; height: 9px; background: var(--c); border: 1.5px solid #0b1024; }
+.gc .orn { position: absolute; width: 18px; height: 18px; pointer-events: none; }
+.gc .orn.tl { left: -5px; top: -5px; } .gc .orn.tr { right: -5px; top: -5px; transform: scaleX(-1); } .gc .orn.bl { left: -5px; bottom: -5px; transform: scaleY(-1); } .gc .orn.br { right: -5px; bottom: -5px; transform: scale(-1); }
+.gc .crest { position: absolute; left: 50%; top: -18px; transform: translateX(-50%); width: 50px; height: 20px; z-index: 0; }
+.gc .shine { position: absolute; inset: 4px; border-radius: 10px; overflow: hidden; pointer-events: none; }
+.gc .shine::after { content: ""; position: absolute; top: -40%; left: -60%; width: 40%; height: 180%; background: linear-gradient(90deg, transparent, #ffffff55, transparent); transform: rotate(20deg); animation: gcshine 3.2s infinite; }
+@keyframes gcshine { 0% { left: -60%; } 55%, 100% { left: 140%; } }
+@media (prefers-reduced-motion: reduce) { .gc .shine::after { animation: none; display: none; } }
+.gc .grole { position: absolute; left: 7px; top: 9px; width: 20px; height: 20px; border-radius: 50%; background: #0b1024cc; border: 1.5px solid #cfd6ff; display: grid; place-items: center; }
+.gc .grole svg { width: 12px; height: 12px; }
+.gc .genh { position: absolute; right: 6px; bottom: 5px; font-family: var(--font-display); font-size: 16px; color: #fff; -webkit-text-stroke: 4px #0b1024; paint-order: stroke; line-height: 1; }
+.gc .genh.max { color: #ffe08a; }
+.gc.s { width: 64px; height: 64px; }
+.gc.s .gface { inset: 3px; border-radius: 8px; }
+.gc.s .gframe { border-width: 3px; border-radius: 10px; }
+.gc.s .genh { font-size: 13px; right: 4px; bottom: 3px; -webkit-text-stroke: 3px #0b1024; }
+.gc.s .gems { top: -6px; padding: 1px 3px; } .gc.s .gems i { width: 5px; height: 5px; margin: 0.5px; }
+.gc.s .orn { width: 12px; height: 12px; }
+.gc.s .crest { width: 34px; height: 13px; top: -13px; }
+.gc.s .grole { width: 16px; height: 16px; left: 4px; top: 6px; } .gc.s .grole svg { width: 9px; height: 9px; }
+.dgems { display: inline-flex; gap: 1px; vertical-align: middle; }
+.dgems i { width: 7px; height: 7px; transform: rotate(45deg); background: var(--c); border: 1px solid #fff8; margin: 1px; }
+.enh.max { color: #ffe08a; }
+.roster { grid-template-columns: minmax(0, 1fr); }
+.hero.gcard { grid-template-columns: 64px minmax(0, 1fr); gap: 2px 12px; padding: 12px 10px 8px; align-items: center; }
+.hero.gcard .gc { grid-row: 1 / span 2; }
+.hero.gcard .who { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 8px; }
+.hero.gcard .trait { grid-column: auto; font-size: 12px; }
+.hero.gcard .stat { grid-column: 2; }
+.lineup .slotbtn { padding-top: 16px; display: grid; justify-items: center; gap: 2px; }
+.lineup .slotbtn .nm { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.lineup .slotbtn .pos { position: absolute; left: 4px; top: 1px; }
+.poolfaces { gap: 12px 8px; padding-top: 8px; }
+.pslot { display: inline-block; } .pslot.notyet { opacity: 0.4; filter: grayscale(1); }
+.gres-list { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 18px 6px; padding: 16px 2px 4px; }
+.gres { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 2px; padding: 0; border: 0; border-radius: 0; background: none; text-align: center; }
+.gres.new { box-shadow: none; }
+.gres .gname { font-family: var(--font-display); font-size: 13px; }
+.gres .gkind { font-size: 11px; color: var(--muted); line-height: 1.3; }
+.gres.new .gkind { color: var(--torch); }
+.btn.huge { min-height: 60px; font-size: 20px; flex: 2 1 0; }
+.skills { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.skills li { padding: 6px 8px; border-radius: 10px; background: rgba(27, 18, 38, 0.5); font-size: 12.5px; }
+.skills li b { color: var(--torch); } .skills li span { display: block; color: var(--muted); } .skills li small { color: var(--muted); }
+.skills:empty { display: none; }
+
+/* 조작부의 작은 버튼, 던전과 핀볼 위의 버튼, 피버 띠 */
+.knobslot { justify-self: end; display: grid; }
+.knob[hidden] { display: none; }
+.knob-side { background: radial-gradient(circle at 35% 28%, #e9f6ff, #8fd6f2 55%, #3f9fc8); box-shadow: 0 5px 0 #1f5f80; }
+.knob-side:active { box-shadow: 0 2px 0 #1f5f80; }
+.knob-side.dim { filter: grayscale(0.9); opacity: 0.55; }
+.knob-side b { font-size: calc(var(--knob) * 0.24); white-space: nowrap; }
+.fire.long .fire-label { font-size: 0.74em; white-space: nowrap; }
+.view.canvas { position: absolute; }
+.overbtn { position: absolute; top: 6px; z-index: 4; min-height: 34px; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 999px; background: rgba(27, 18, 38, 0.88); color: var(--cream); font: 700 13px var(--font-body); cursor: pointer; transition: opacity 0.15s; }
+.overbtn.right { right: 6px; min-width: 38px; }
+.overbtn.off { opacity: 0; pointer-events: none; }
+.overbtn:focus-visible { outline: 3px solid var(--torch); }
+.feverstrip { position: absolute; left: 50%; bottom: 6px; z-index: 4; transform: translateX(-50%); padding: 3px 14px; border: 2px solid var(--ink); border-radius: 999px; background: var(--ember); color: #fff; font: 700 13px var(--font-body); white-space: nowrap; opacity: 0; pointer-events: none; }
+.feverstrip.on { opacity: 1; }
+
+/* 던전 종료의 알림, 정산 */
+.endballs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.endballs > div { display: grid; gap: 2px; justify-items: center; padding: 8px 4px; border-radius: 12px; background: rgba(27, 18, 38, 0.55); }
+.endballs small { font-size: 12px; color: var(--muted); }
+.endballs b { display: flex; align-items: center; gap: 4px; font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--torch); }
+.endballs .ico, .tile .ico { width: 20px; height: 20px; vertical-align: -4px; }
+.firstline, #resFirst { margin: 0; padding: 6px 8px; border-radius: 10px; background: rgba(255, 200, 58, 0.14); font-size: 13px; }
+.tile.wide { grid-column: 1 / -1; }
+.hintline { margin: 0; padding: 8px; border: 2px dashed rgba(255, 243, 214, 0.4); border-radius: 12px; text-align: center; font-size: 13.5px; }
+
+/* 2026-11-24 5차: 다음에 깰 스테이지만 보여 준다, 연속 진행의 토글과 스테이지 사이의 알림, 발사부 오른쪽의 "로비로" */
+.stagepick.solo { display: block; text-align: center; }
+.stagepick.solo .stageinfo { display: grid; justify-items: center; }
+.knobslot.right { justify-self: start; }
+.knob-leave { background: radial-gradient(circle at 35% 28%, #d9fff6, #35c2a8 55%, #128a78); box-shadow: 0 5px 0 #0b5a4e; transition: opacity 0.2s, visibility 0s; }
+.knob-leave:active { box-shadow: 0 2px 0 #0b5a4e; }
+.knob-leave b { font-size: calc(var(--knob) * 0.25); white-space: nowrap; }
+.knob-leave.off { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 0.2s, visibility 0s 0.2s; }
+.knob-auto { background: radial-gradient(circle at 35% 28%, #f2f2f2, #b9b3c4 55%, #7d748c); box-shadow: 0 5px 0 #4a4358; }
+.knob-auto:active { box-shadow: 0 2px 0 #4a4358; }
+.knob-auto small { font-size: 10px; letter-spacing: -0.3px; }
+.knob-auto.on { background: radial-gradient(circle at 35% 28%, #f4fff0, #7ad65a 55%, #3d9a2a); box-shadow: 0 5px 0 #1f5a14, 0 0 0 3px var(--ink), 0 0 0 6px #b6f09a; }
+.knob-auto.on b::before { content: "▶▶ "; font-size: 0.62em; vertical-align: 0.15em; }
+.fire.auto { box-shadow: 0 7px 0 #7c1d10, 0 0 0 4px var(--ink), 0 0 0 7px #b6f09a; }
+.fire.auto.down, .fire.auto:active { box-shadow: 0 2px 0 #7c1d10, 0 0 0 4px var(--ink), 0 0 0 7px #b6f09a; }
+.autonote { position: absolute; left: 50%; top: 44%; z-index: 5; transform: translate(-50%, -50%); min-width: 62%; display: grid; gap: 2px; justify-items: center; padding: 12px 18px;
+  border: 3px solid var(--ink); border-radius: 16px; background: rgba(27, 18, 38, 0.94); color: var(--cream); font: inherit; cursor: pointer; box-shadow: 0 0 0 3px #b6f09a; }
+.autonote[hidden] { display: none; }
+.autonote b { font-family: var(--font-display); font-weight: 400; font-size: 24px; color: var(--torch); }
+.autonote span { font-family: var(--font-display); font-size: 19px; }
+.autonote small { font-size: 11px; color: var(--muted); }
+.chainline { margin: 0; padding: 6px 8px; border-radius: 10px; background: rgba(182, 240, 154, 0.16); font-size: 13.5px; }
+</style>
+</head>
+<body>
+<script>
+/* 스크립트가 실패하면 빈 화면으로 두지 않고 무엇이 틀렸는지 화면에 보인다 (Direction/06 1.1). 다른 스크립트보다 먼저 온다. */
+(function () {
+  var shown = 0;
+  function show(msg) {
+    if (shown++ > 4) return;
+    var box = document.getElementById('errbox');
+    if (!box) { box = document.createElement('div'); box.id = 'errbox'; box.className = 'errbox'; box.setAttribute('role', 'alert');
+      box.innerHTML = '<b>게임을 여는 중에 오류가 났습니다</b><p>아래 내용을 구현 세션에 알려 주세요. 파일을 통째로 옮겼는지(data, js, sprites 폴더)도 확인해 주세요.</p><ul></ul>'; (document.body || document.documentElement).appendChild(box); }
+    var li = document.createElement('li'); li.textContent = msg; box.querySelector('ul').appendChild(li);
+  }
+  window.addEventListener('error', function (e) {
+    if (e && e.target && e.target !== window && e.target.tagName === 'SCRIPT') { show('스크립트를 불러오지 못했습니다: ' + (e.target.getAttribute('src') || '')); return; }
+    if (e && e.message) show(e.message + (e.filename ? ' (' + String(e.filename).split('/').pop() + ':' + e.lineno + ')' : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) { show('처리하지 못한 오류: ' + (e && e.reason && e.reason.message ? e.reason.message : String(e && e.reason))); });
+  window.PD_showError = show;
+})();
+</script>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<filter id="lg_mono"><feColorMatrix type="matrix" values="0 0 0 0 .1  0 0 0 0 .08  0 0 0 0 .2  0 0 0 1 0"/></filter>
+<filter id="lg_monoW"><feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 .95  0 0 0 0 .85  0 0 0 1 0"/></filter>
+<linearGradient id="lg_gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbe0"/><stop offset=".38" stop-color="#ffd45a"/><stop offset=".62" stop-color="#f0a72a"/><stop offset="1" stop-color="#b8650f"/></linearGradient>
+<linearGradient id="lg_steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfe8ff"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#8ea2c6"/></linearGradient>
+<linearGradient id="lg_shieldG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a7ff0"/><stop offset=".6" stop-color="#2a45b0"/><stop offset="1" stop-color="#1a2878"/></linearGradient>
+<linearGradient id="lg_wood" x1="0" x2="1"><stop offset="0" stop-color="#a8703a"/><stop offset="1" stop-color="#6a3e18"/></linearGradient>
+<radialGradient id="lg_ball" cx=".34" cy=".3" r=".8"><stop offset="0" stop-color="#ffffff"/><stop offset=".25" stop-color="#d8fbff"/><stop offset=".7" stop-color="#4fd0f0"/><stop offset="1" stop-color="#14708f"/></radialGradient>
+<radialGradient id="lg_orb" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#ffa6d6"/><stop offset="1" stop-color="#b02a78"/></radialGradient>
+<linearGradient id="lg_ribbon" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b57"/><stop offset="1" stop-color="#a8221a"/></linearGradient>
+
+<!-- 문장 (가운데 (0,0), 폭 약 170) -->
+<g id="lg_emblem">
+ <!-- 검 (왼쪽 아래에서 오른쪽 위로) -->
+ <g transform="rotate(38)">
+  <path d="M-6,-118 L0,-132 L6,-118 L6,30 L-6,30Z" fill="url(#lg_steel)" stroke="#1b1230" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M0,-124 L0,26" stroke="#9fb0d8" stroke-width="1.5"/>
+  <rect x="-22" y="28" width="44" height="9" rx="4" fill="url(#lg_gold)" stroke="#1b1230" stroke-width="4"/>
+  <rect x="-5" y="37" width="10" height="26" rx="3" fill="#4a2a5a" stroke="#1b1230" stroke-width="4"/>
+  <circle cx="0" cy="68" r="7" fill="url(#lg_gold)" stroke="#1b1230" stroke-width="4"/>
+ </g>
+ <!-- 지팡이 -->
+ <g transform="rotate(-38)">
+  <rect x="-5" y="-104" width="10" height="176" rx="5" fill="url(#lg_wood)" stroke="#1b1230" stroke-width="4"/>
+  <path d="M-14,-106 Q0,-126 14,-106 Q8,-118 0,-116 Q-8,-118 -14,-106Z" fill="url(#lg_gold)" stroke="#1b1230" stroke-width="3.5"/>
+  <circle cx="0" cy="-120" r="12" fill="url(#lg_orb)" stroke="#1b1230" stroke-width="4"/>
+  <circle cx="-4" cy="-124" r="3.5" fill="#fff"/>
+ </g>
+ <!-- 방패 -->
+ <path d="M0,-66 C26,-56 44,-56 58,-60 C60,0 40,36 0,62 C-40,36 -60,0 -58,-60 C-44,-56 -26,-56 0,-66Z" fill="url(#lg_shieldG)" stroke="#1b1230" stroke-width="7" stroke-linejoin="round"/>
+ <path d="M0,-55 C22,-47 36,-47 47,-50 C47,-2 31,26 0,48 C-31,26 -47,-2 -47,-50 C-36,-47 -22,-47 0,-55Z" fill="none" stroke="url(#lg_gold)" stroke-width="4"/>
+ <path d="M-40,-44 C-30,-46 -16,-46 -6,-50" stroke="#ffffff66" stroke-width="3" fill="none" stroke-linecap="round"/>
+ <!-- 방패 위 보석 여섯 -->
+ <g transform="translate(0,-74)">
+  <rect x="-40" y="-9" width="80" height="18" rx="9" fill="#1b1230"/>
+  <g fill="#ffd45a" stroke="#fff6c8" stroke-width="1">
+   <rect x="-34" y="-5" width="9" height="9" transform="rotate(45 -29.5 -.5)" fill="#9aa5b4"/>
+   <rect x="-21" y="-5" width="9" height="9" transform="rotate(45 -16.5 -.5)" fill="#5cc36b"/>
+   <rect x="-8" y="-5" width="9" height="9" transform="rotate(45 -3.5 -.5)" fill="#3f8cff"/>
+   <rect x="5" y="-5" width="9" height="9" transform="rotate(45 9.5 -.5)" fill="#a35cff"/>
+   <rect x="18" y="-5" width="9" height="9" transform="rotate(45 22.5 -.5)" fill="#ffb02e"/>
+   <rect x="31" y="-5" width="9" height="9" transform="rotate(45 35.5 -.5)" fill="#ff4f6e"/>
+  </g>
+ </g>
+ <!-- 핀볼 구슬과 궤적 -->
+ <path d="M-30,-30 Q-10,-40 -2,-14" fill="none" stroke="#bff6ff" stroke-width="3" stroke-dasharray="2 6" stroke-linecap="round"/>
+ <circle cx="0" cy="0" r="22" fill="url(#lg_ball)" stroke="#1b1230" stroke-width="5"/>
+ <circle cx="-8" cy="-8" r="6" fill="#fff"/>
+ <circle cx="7" cy="9" r="2.5" fill="#ffffffaa"/>
+</g>
+
+<!-- 글자: 세 겹 (그림자, 진한 외곽, 밝은 외곽, 금) -->
+<g id="lg_t1" font-family="Black Han Sans, Noto Sans CJK KR, sans-serif" text-anchor="middle">
+ <text y="6" stroke="#0b0716" stroke-width="18" stroke-linejoin="round" fill="#0b0716">모여라</text>
+ <text stroke="#2a1530" stroke-width="16" stroke-linejoin="round" fill="#2a1530">모여라</text>
+ <text stroke="#7a3a12" stroke-width="8" stroke-linejoin="round" fill="#7a3a12">모여라</text>
+ <text fill="url(#lg_gold)" stroke="#fff3c9" stroke-width="2">모여라</text>
+</g>
+<g id="lg_t2" font-family="Black Han Sans, Noto Sans CJK KR, sans-serif" text-anchor="middle">
+ <text y="7" stroke="#0b0716" stroke-width="20" stroke-linejoin="round" fill="#0b0716">용자들</text>
+ <text stroke="#2a1530" stroke-width="18" stroke-linejoin="round" fill="#2a1530">용자들</text>
+ <text stroke="#7a3a12" stroke-width="9" stroke-linejoin="round" fill="#7a3a12">용자들</text>
+ <text fill="url(#lg_gold)" stroke="#fff3c9" stroke-width="2">용자들</text>
+</g>
+<g id="lg_tw" font-family="Black Han Sans, Noto Sans CJK KR, sans-serif" text-anchor="start">
+ <text y="5" stroke="#0b0716" stroke-width="16" stroke-linejoin="round" fill="#0b0716">모여라 용자들</text>
+ <text stroke="#2a1530" stroke-width="14" stroke-linejoin="round" fill="#2a1530">모여라 용자들</text>
+ <text stroke="#7a3a12" stroke-width="7" stroke-linejoin="round" fill="#7a3a12">모여라 용자들</text>
+ <text fill="url(#lg_gold)" stroke="#fff3c9" stroke-width="1.6">모여라 용자들</text>
+</g>
+
+<g id="lg_stack">
+ <g transform="translate(210,128) scale(.9)"><use href="#lg_emblem"/></g>
+ <g transform="translate(210,262)" font-size="52"><use href="#lg_t1"/></g>
+ <g transform="translate(210,342)" font-size="74"><use href="#lg_t2"/></g>
+</g>
+<g id="lg_wide">
+ <g transform="translate(70,72) scale(.46)"><use href="#lg_emblem"/></g>
+ <g transform="translate(138,88)" font-size="58"><use href="#lg_tw"/></g>
+</g>
+<g id="lg_icon">
+ <defs><clipPath id="lg_ic"><rect width="120" height="120" rx="27"/></clipPath></defs>
+ <g clip-path="url(#lg_ic)">
+  <rect width="120" height="120" fill="#16204e"/>
+  <circle cx="60" cy="52" r="58" fill="#2e45a0" opacity=".7"/>
+  <path d="M0 120 L0 92 Q60 70 120 92 L120 120Z" fill="#0b1024"/>
+ </g>
+ <rect x="2" y="2" width="116" height="116" rx="25" fill="none" stroke="url(#lg_gold)" stroke-width="4"/>
+ <g transform="translate(60,68) scale(.5)"><use href="#lg_emblem"/></g>
+</g>
+</defs></svg>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#ff7a9a"/><stop offset=".35" stop-color="#ffd36a"/><stop offset=".7" stop-color="#7ae0ff"/><stop offset="1" stop-color="#c08bff"/></linearGradient></defs></svg>
+<div class="app">
+  <main class="cabinet" aria-label="모여라 용자들">
+    <ul class="purse" aria-label="보유 재화">
+      <li class="chip" id="chipGold" title="골드"><canvas class="ico" data-ico="gold" width="48" height="48" aria-hidden="true"></canvas><span class="vh">골드</span><output id="wGold">0</output></li>
+      <li class="chip" id="chipExp" title="경험치"><canvas class="ico" data-ico="exp" width="48" height="48" aria-hidden="true"></canvas><span class="vh">경험치</span><output id="wExp">0</output></li>
+      <li class="chip" id="chipBox" title="랜덤상자"><canvas class="ico" data-ico="box" width="48" height="48" aria-hidden="true"></canvas><span class="vh">랜덤상자</span><output id="wBox">0</output></li>
+      <li class="chip" id="chipTicket" title="뽑기권"><canvas class="ico" data-ico="ticket" width="48" height="48" aria-hidden="true"></canvas><span class="vh">뽑기권</span><output id="wTicket">0</output></li>
+    </ul>
+
+    <div class="sign plain" id="sign" aria-live="polite">
+      <div class="reels" aria-hidden="true">
+        <span class="reel" id="reel0" data-sym="7">7</span><span class="reel" id="reel1" data-sym="★">★</span><span class="reel" id="reel2" data-sym="G">G</span>
+      </div>
+      <div class="sign-side">
+        <div class="sign-msg" id="signMsg">출격을 준비하세요</div>
+        <div class="pips" aria-label="대기 중인 추첨">
+          <span>대기</span>
+          <span class="pip" id="pip0"></span><span class="pip" id="pip1"></span><span class="pip" id="pip2"></span><span class="pip" id="pip3"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stage" id="stage">
+      <!-- scr_lobby: 첫 화면 -->
+      <section class="view scroll" id="viewLobby" aria-label="로비">
+        <header class="lobby-head">
+          <div class="acct" aria-label="계정 레벨">
+            <span class="lvbadge">Lv.<b id="acctLv">1</b></span>
+            <div class="bar exp"><i id="acctBar"></i></div>
+            <span class="acct-txt" id="acctTxt"></span>
+          </div>
+          <p class="acct-bonus" id="acctBonus"></p>
+          <h1 class="logo"><svg viewBox="0 0 520 130" role="img" aria-label="모여라 용자들"><use href="#lg_wide"/></svg></h1>
+        </header>
+        <button class="deckstage" id="lobbyDeck" type="button" aria-label="덱 설정으로 가기">
+          <canvas id="lobbyStage" width="366" height="132" aria-hidden="true"></canvas>
+          <span class="deckcard-head"><b>덱 설정</b><span class="cpline" id="lobbyCp"></span></span>
+        </button>
+        <div class="stagepick solo" aria-label="다음에 깰 스테이지">
+          <div class="stageinfo"><b id="stageLabel">1-1</b><span id="stageName"></span><span class="first" id="stageFirst"></span></div>
+        </div>
+        <nav class="menu" aria-label="메뉴">
+          <button type="button" class="menubtn" data-go="chars"><b>캐릭터</b><small id="menuCharsBadge"></small></button>
+          <button type="button" class="menubtn" data-go="gacha"><span class="tip" id="gachaTip" hidden></span><b>뽑기</b><small id="menuGachaBadge"></small></button>
+          <button type="button" class="menubtn soon" data-go="soon" data-msg="인벤토리와 장비는 아직 준비 중입니다. 랜덤상자는 그때까지 쌓아 둡니다."><b>인벤토리</b><small id="menuInvBadge"></small></button>
+          <button type="button" class="menubtn soon" data-go="soon" data-msg="도감은 아직 준비 중입니다."><b>도감</b><small></small></button>
+        </nav>
+        <p class="note" id="lobbyNote"></p>
+      </section>
+
+      <!-- scr_deck -->
+      <section class="view scroll" id="viewDeck" aria-label="덱 편성" hidden>
+        <h2 class="view-title">덱 편성</h2>
+        <p class="view-sub" id="deckSub"></p>
+        <div class="cpline" id="deckCp"></div>
+        <ol class="lineup" id="lineup" aria-label="덱의 자리. 1번이 맨 앞입니다"></ol>
+        <div class="rowbtns">
+          <button class="mini" id="deckAuto" type="button">추천 편성</button>
+          <button class="mini" id="deckOrder" type="button">추천 순서</button>
+          <label class="sortsel">정렬 <select id="deckSort"><option value="cp">전투력</option><option value="grade">등급</option><option value="role">역할</option></select></label>
+        </div>
+        <div class="roster" id="roster" aria-label="가진 캐릭터. 누르면 덱에 들어가고, 길게 누르면 상세로 갑니다"></div>
+      </section>
+
+      <!-- scr_char_list -->
+      <section class="view scroll" id="viewChars" aria-label="캐릭터" hidden>
+        <h2 class="view-title">캐릭터</h2>
+        <div class="rowbtns">
+          <span class="view-sub" id="charCount"></span>
+          <label class="sortsel">정렬 <select id="charSort"><option value="cp">전투력</option><option value="grade">등급</option><option value="role">역할</option></select></label>
+        </div>
+        <div class="roster" id="charList" aria-label="가진 캐릭터. 누르면 상세로 갑니다"></div>
+      </section>
+
+      <!-- scr_char_detail -->
+      <section class="view scroll" id="viewDetail" aria-label="캐릭터 상세" hidden>
+        <div class="detail-top">
+          <canvas id="detailSpr" width="144" height="216" aria-hidden="true"></canvas>
+          <div class="detail-id">
+            <h2 class="view-title" id="detailName"></h2>
+            <p class="view-sub" id="detailTags"></p>
+            <button class="mini" id="detailBackBtn" type="button">목록으로</button>
+          </div>
+        </div>
+        <dl class="stats" id="detailStats"></dl>
+        <ul class="skills" id="detailSkills" aria-label="스킬"></ul>
+        <div class="enhbox" aria-label="강화">
+          <div class="enhline"><span id="detailDupe"></span><span class="cost" id="detailCost"></span></div>
+          <p class="note" id="detailMsg"></p>
+          <div class="rowbtns"><button class="btn main" id="enhOne" type="button">강화</button><button class="btn" id="enhAll" type="button">한꺼번에 강화</button></div>
+        </div>
+      </section>
+
+      <!-- scr_gacha -->
+      <section class="view scroll" id="viewGacha" aria-label="뽑기" hidden>
+        <h2 class="view-title">뽑기</h2>
+        <div class="gacha-have">
+          <span class="have"><canvas class="ico" data-ico="ticket" width="48" height="48" aria-hidden="true"></canvas>뽑기권 <b id="gachaTicket">0</b></span>
+          <span class="have"><canvas class="ico" data-ico="xticket" width="48" height="48" aria-hidden="true"></canvas>교환 티켓 <b id="gachaXticket">0</b></span>
+          <button class="mini" id="rateBtn" type="button">확률 보기</button>
+        </div>
+        <div class="rowbtns big"><button class="btn main huge" id="drawMany" type="button">10회 뽑기</button><button class="btn" id="drawOne" type="button">1회</button></div>
+        <p class="note" id="gachaMsg"></p>
+        <h3 class="sub-title">나오는 캐릭터</h3>
+        <div id="gachaPool"></div>
+      </section>
+
+      <!-- scr_gacha_result -->
+      <section class="view scroll" id="viewGres" aria-label="뽑기 결과" hidden>
+        <h2 class="view-title" id="gresTitle">뽑기 결과</h2>
+        <ul class="gres-list" id="gresCards" aria-label="뽑은 순서대로. 누르면 연출을 건너뜁니다"></ul>
+        <div class="rowbtns"><button class="btn main" id="gresAgain" type="button">한 번 더</button><button class="btn" id="gresDeck" type="button">덱 편성</button><button class="btn" id="gresEnh" type="button">강화하러 가기</button></div>
+      </section>
+
+      <section class="view canvas" id="viewDungeon" aria-label="던전" hidden>
+        <button class="overbtn right" id="pauseBtn" type="button" aria-label="일시 정지">Ⅱ</button>
+        <button class="autonote" id="autoNote" type="button" hidden><b id="autoNoteA"></b><span id="autoNoteB"></span><small>누르면 바로 넘어갑니다</small></button>
+        <canvas id="dun" width="432" height="674" role="img" aria-label="던전 화면. 위에 방 진행과 구슬 수, 배수, 슬롯 게이지가 있고 가운데에서 덱이 자동으로 싸웁니다"></canvas>
+      </section>
+
+      <section class="view canvas" id="viewBoard" aria-label="핀볼" hidden>
+        <div class="feverstrip" id="feverStrip" aria-live="polite"></div>
+        <canvas id="board" width="432" height="674" role="img" aria-label="돌 아치 안에 입구 아래 흔들 날개, 핀, 상자 표적 두 개, 가운데 지붕과 그릇과 고리, 바닥 칸 다섯 개가 있는 파칭코 판"></canvas>
+      </section>
+
+      <section class="view scroll" id="viewResult" aria-label="정산" hidden>
+        <h2 class="view-title">정산</h2>
+        <p class="view-sub" id="resLine"></p>
+        <dl class="tiles" id="resTiles"></dl>
+        <p id="resFirst" hidden></p>
+        <div class="acct" aria-label="계정 레벨">
+          <span class="lvbadge">Lv.<b id="resLv">1</b></span>
+          <div class="bar exp"><i id="resLvBar"></i></div>
+          <span class="acct-txt" id="resLvMsg"></span>
+        </div>
+        <p class="hintline" id="resHint" hidden>동료를 늘리면 더 깊이 갈 수 있어요</p>
+        <div class="rowbtns"><button class="btn main" id="resGacha" type="button" data-go="gacha" hidden>뽑기</button></div>
+      </section>
+    </div>
+
+    <div class="deck">
+      <div class="fire-row">
+        <span class="knobslot">
+          <button class="knob knob-burst" id="burstBtn" type="button" hidden><small>연발</small><b id="burstTxt">×10</b></button>
+          <button class="knob knob-side" id="sideBtn" type="button" hidden><small id="sideSmall">핀볼</small><b id="sideTxt">0</b></button>
+        </span>
+        <button class="fire" id="fire" type="button" aria-describedby="hint">
+          <span class="fire-label" id="fireLabel">출격</span>
+          <span class="fire-sub" id="fireSub">1-1</span>
+        </button>
+        <span class="knobslot right">
+          <button class="knob knob-leave off" id="leaveBtn" type="button" hidden><b>로비로</b></button>
+          <button class="knob knob-auto" id="autoBtn" type="button" aria-pressed="false" hidden><small>연속 진행</small><b id="autoTxt">끔</b></button>
+        </span>
+      </div>
+      <p class="hint" id="hint"></p>
+      <div class="tray">
+        <div class="tray-left">
+          <button class="mini" id="soundBtn" type="button" aria-pressed="true">소리</button>
+          <button class="mini" id="speedBtn" type="button" aria-label="배속 1배. 눌러서 바꾸기">×1</button>
+        </div>
+        <div class="ballpill" id="ballPill" title="구슬">
+          <canvas class="ico" data-ico="ball" width="48" height="48" aria-hidden="true"></canvas><span class="vh">구슬</span>
+          <output id="wBalls">0</output>
+        </div>
+        <button class="mini" id="benchBtn" type="button" aria-expanded="false" aria-controls="bench">기록</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="bench" id="bench" aria-label="기록">
+    <div class="bench-head">
+      <div>
+        <h1>모여라 용자들</h1>
+        <p>개발 중인 판입니다. 수치는 임시값과 가정값이고, 그림은 임시 그림입니다.</p>
+      </div>
+      <button class="mini" id="benchClose" type="button">닫기</button>
+    </div>
+
+    <section class="card" aria-label="판 기록">
+      <h2>판 기록</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th scope="col">스테이지와 덱</th><th scope="col">방</th><th scope="col">구슬</th><th scope="col">골드</th><th scope="col">경험치</th><th scope="col">상자</th><th scope="col">뽑기권</th></tr></thead>
+          <tbody id="histBody"><tr><td colspan="7" class="live">한 판을 끝내면 여기에 쌓입니다.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" aria-label="구슬 1개당 실측 보상">
+      <h2>구슬 1개당 실측 보상</h2>
+      <dl class="tiles">
+        <div class="tile"><dt>골드</dt><dd id="avgGold">0</dd></div>
+        <div class="tile"><dt>경험치</dt><dd id="avgExp">0</dd></div>
+        <div class="tile"><dt>상자 / 100발</dt><dd id="avgBox">0</dd></div>
+        <div class="tile"><dt>뽑기권 / 100발</dt><dd id="avgTicket">0</dd></div>
+      </dl>
+      <p class="note" id="avgNote">아직 도착한 구슬이 없습니다. 골드에는 표적과 전광판 보상이 포함됩니다.</p>
+    </section>
+
+    <section class="card" aria-label="도착 분포">
+      <h2>도착 분포</h2>
+      <div class="dist" id="dist"></div>
+    </section>
+
+    <section class="card" aria-label="규칙">
+      <h2>규칙</h2>
+      <ul class="legend">
+        <li><b>덱</b>: 가진 캐릭터 가운데 1명에서 4명까지. 1번 자리가 맨 앞에서 먼저 맞습니다. 캐릭터는 뽑기로 얻고 같은 캐릭터로 강화합니다.</li>
+        <li><b>던전</b>: 스테이지마다 방 8개를 자동으로 싸우며 지나갑니다. 적을 처치할 때마다 구슬을 얻습니다. 마지막 방까지 깨면 다음 스테이지가 열립니다. 깬 스테이지에는 다시 들어갈 수 없습니다.</li>
+        <li><b>슬롯</b>: 게이지가 다 차면 슬롯이 돌고, 나온 배수가 8초 동안 붙습니다.</li>
+        <li><b>배수 방</b>: × 표시가 있는 방에 들어가면 그 방에서만 배수가 붙습니다.</li>
+        <li><b>합연산</b>: 슬롯과 배수 방이 겹치면 두 배수를 더합니다. 슬롯 3에 방 2면 5배입니다.</li>
+        <li><b>클리어 룰렛</b>: 보스까지 잡으면 룰렛이 돌아 모은 구슬 전체에 곱합니다.</li>
+        <li><b>연속 진행</b>: 켜 두면 스테이지를 깼을 때 핀볼로 가지 않고 다음 스테이지로 이어 갑니다. 구슬은 쌓입니다. 전멸하거나 연속 진행을 끄면 멈춥니다.</li>
+        <li><b>핀볼</b>: 던전에서 번 구슬을 쏩니다. 쓰지 않은 구슬은 남습니다. 날개가 기운 쪽으로 구슬이 흐르고, 그릇에 들어간 구슬은 고리로 굴러가 전광판을 돌립니다. 777은 뽑기권, ★★★은 구슬 15발 동안 바닥 칸 3배 (피버), GGG는 골드입니다. 스테이지가 높을수록 골드의 값이 커집니다.</li>
+      </ul>
+    </section>
+
+    <div class="util">
+      <button class="mini" type="button" id="reset">저장 지우고 처음부터</button>
+      <button class="mini" type="button" id="addBalls" hidden>구슬 100개 더 받기 (시험용)</button>
+    </div>
+  </aside>
+</div>
+
+<div class="pop" id="pop" hidden>
+  <div class="pop-card" role="dialog" aria-modal="true" aria-labelledby="popTitle">
+    <h2 id="popTitle"></h2>
+    <div id="popBody"></div>
+    <div class="pop-btns" id="popBtns"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="data/data.js"></script>
+<script src="js/rules.js"></script>
+<script src="js/sim_core.js"></script>
+<script src="js/dungeon_core.js"></script>
+<!-- 캐릭터 그림: 캐릭터 아트의 그리는 코드 (사본. 이 순서로 불러온다) -->
+<script src="js/art/rig.js"></script>
+<script src="js/art/body.js"></script>
+<script src="js/art/gear.js"></script>
+<script src="js/art/kit.js"></script>
+<script src="js/art/orvin.js"></script>
+<script src="js/art/cast_a.js"></script>
+<script src="js/art/cast_b.js"></script>
+<script src="js/art/cast_c.js"></script>
+<script src="js/art/cast_d.js"></script>
+<script src="js/art/cast_e.js"></script>
+<script src="js/art.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/game.js"></script>
+<script>
+/* 필요한 파일이 빠졌으면 알린다. */
+(function () {
+  var need = [['PD_DATA', 'data/data.js'], ['PD_Rules', 'js/rules.js'], ['PD_Sim', 'js/sim_core.js'], ['PD_Dungeon', 'js/dungeon_core.js'], ['PD_Art', 'js/art.js'], ['PD_Fx', 'js/fx.js']];
+  for (var i = 0; i < need.length; i++) if (!window[need[i][0]]) window.PD_showError(need[i][1] + ' 파일을 읽지 못했습니다.');
+})();
+</script>
+</body>
+</html>
