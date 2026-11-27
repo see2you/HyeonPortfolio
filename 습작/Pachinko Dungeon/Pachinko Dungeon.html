@@ -361,6 +361,12 @@ canvas.face { display: block; image-rendering: pixelated; }
 .pop-card { width: min(100%, 400px); max-height: 86%; overflow: auto; display: grid; gap: 8px; padding: 14px; border: 3px solid var(--ink); border-radius: 18px; background: var(--moss-deep); box-shadow: 0 8px 0 #071d1c; }
 .pop-card h2 { margin: 0; }
 .pop-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.pop.claim-list .pop-card {
+  height: min(86%, 460px); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden;
+}
+.pop.claim-list #popBody { overflow: auto; padding: 4px 4px 0; }
+.pop.claim-list .mslist { max-height: none; overflow: visible; }
+
 .popline { margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 15px; }
 .popnote { margin: 0; font-size: 12.5px; color: var(--muted); }
 table.rate th { text-align: left; }
@@ -960,10 +966,7 @@ body.ui-polished .cabinet:has(#viewLobby:not([hidden])) #fire {
 .cabinet:has(#viewLobby:not([hidden])) #fire.long #fireLabel { font-size: clamp(19px, 6cqw, 25px); }
 .cabinet:has(#viewLobby:not([hidden])) #fireSub { grid-row: 1; font-size: 13px; }
 body.ui-polished .cabinet:has(#viewLobby:not([hidden])) #fire.auto {
-  box-shadow: var(--button-bevel), 0 0 0 2px #5fe3ff;
-}
-body.ui-polished .cabinet:has(#viewLobby:not([hidden])) #fire.auto:active {
-  box-shadow: var(--button-pressed), 0 0 0 2px #5fe3ff;
+  border-color: #5fe3ff;
 }
 .cabinet:has(#viewLobby:not([hidden])) #hint:empty { display: none; }
 
@@ -1339,13 +1342,6 @@ body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color
         <div class="rowbtns rdbtns"><button class="btn" id="rdSweep" type="button">소탕</button><button class="btn main" id="rdGo" type="button">출격</button></div>
         <div class="rowbtns"><button class="mini" id="rdSweepAll" type="button">모두 소탕</button></div>
         <p class="note" id="rdNote"></p>
-      </section>
-
-      <!-- scr_codex (System/10 AC-3): 도감과 업적 두 탭. 업적 탭 위에 갈래 넷 -->
-      <section class="view scroll" id="viewCodex" aria-label="도감" hidden>
-        <h2 class="view-title">도감</h2>
-        <div class="mstabs" role="tablist"><button type="button" data-ctab="codex">도감</button><button type="button" data-ctab="ach" class="on">업적<i class="dot" hidden id="achTabDot"></i></button></div>
-        <div id="codexBody"></div>
       </section>
 
       <!-- scr_tower (System/10 6.1): 다음 층, 권장과 내 덱, 첫 클리어 보상, 도전 -->
@@ -10232,9 +10228,9 @@ FX.petalbell = function (o) {
   }
 
   /* 단계 넘기기 (System/09_한_판과_구슬.md 2.1): 로비 → 던전 → 던전 종료의 알림 → 핀볼(또는 로비) → 정산 → 다음 출격 */
-  const VIEWS = { lobby: 'viewLobby', deck: 'viewDeck', chars: 'viewChars', detail: 'viewDetail', gacha: 'viewGacha', gres: 'viewGres', inv: 'viewInv', dungeon: 'viewDungeon', pinball: 'viewBoard', result: 'viewResult', challenge: 'viewChallenge', rd: 'viewRd', codex: 'viewCodex', tower: 'viewTower' };
-  const RENDER = { lobby: renderLobby, deck: renderDeck, chars: renderChars, detail: renderDetail, gacha: renderGacha, gres: renderGres, inv: renderInv, challenge: renderChallenge, rd: renderRd, codex: renderCodex, tower: renderTower };
-  const SIGN_MSG = { lobby: '출격을 준비하세요', deck: '덱을 꾸리세요', chars: '캐릭터를 고르세요', detail: '캐릭터', gacha: '뽑기', gres: '뽑기 결과', inv: '인벤토리', result: '정산', challenge: '도전', rd: '반복 던전', codex: '도감', tower: '끝없는 탑' };
+  const VIEWS = { lobby: 'viewLobby', deck: 'viewDeck', chars: 'viewChars', detail: 'viewDetail', gacha: 'viewGacha', gres: 'viewGres', inv: 'viewInv', dungeon: 'viewDungeon', pinball: 'viewBoard', result: 'viewResult', challenge: 'viewChallenge', rd: 'viewRd', tower: 'viewTower' };
+  const RENDER = { lobby: renderLobby, deck: renderDeck, chars: renderChars, detail: renderDetail, gacha: renderGacha, gres: renderGres, inv: renderInv, challenge: renderChallenge, rd: renderRd, tower: renderTower };
+  const SIGN_MSG = { lobby: '출격을 준비하세요', deck: '덱을 꾸리세요', chars: '캐릭터를 고르세요', detail: '캐릭터', gacha: '뽑기', gres: '뽑기 결과', inv: '인벤토리', result: '정산', challenge: '도전', rd: '반복 던전', tower: '끝없는 탑' };
   function setPhase(p) {
     if (phase === 'inv' && p !== 'inv') leaveEquipTab();          // 장비 칸을 보고 나가면 "새" 표시가 사라진다 (05 S-4)
     phase = p;
@@ -10576,17 +10572,19 @@ FX.petalbell = function (o) {
 
   /* 팝업 */
   let popOpen = false, popSticky = false;
-  function openPop(title, bodyHtml, buttons, sticky) {
+  function openPop(title, bodyHtml, buttons, sticky, claimList) {
+    $('pop').classList.toggle('claim-list', !!claimList);
     $('popTitle').textContent = title; $('popBody').innerHTML = bodyHtml;
     const box = $('popBtns'); box.innerHTML = '';
     buttons.forEach(function (b) {
       const el = document.createElement('button');
-      el.type = 'button'; el.className = 'btn' + (b.main ? ' main' : ''); el.textContent = b.label;
+      el.type = 'button'; el.className = 'btn' + (b.main ? ' main' : ''); el.textContent = b.label; el.disabled = !!b.disabled;
       el.addEventListener('click', function () { closePop(); if (b.fn) b.fn(); });
       box.appendChild(el);
     });
+    $('popBody').scrollTop = 0;
     $('pop').hidden = false; popOpen = true; popSticky = !!sticky; paintIcons();
-    const first = box.querySelector('button.main') || box.querySelector('button'); if (first) first.focus();
+    const first = box.querySelector('button.main:not(:disabled)') || box.querySelector('button:not(:disabled)'); if (first) first.focus();
   }
   function closePop() { $('pop').hidden = true; popOpen = false; popSticky = false; }
 
@@ -11351,7 +11349,7 @@ FX.petalbell = function (o) {
     document.querySelectorAll('[data-go]').forEach(function (b) {
       b.addEventListener('click', function () {
         if (b.dataset.go === 'soon') { toast(b.dataset.msg); return; }
-        tap(); setPhase(b.dataset.go);
+        tap(); if (b.dataset.go === 'codex') openCodex(); else setPhase(b.dataset.go);
       });
     });
     $('charSort').addEventListener('change', function (e) { charSort = e.target.value; renderChars(); });
@@ -11437,7 +11435,7 @@ FX.petalbell = function (o) {
 
   /* ═════ 지속 콘텐츠의 화면 (System/10_지속_콘텐츠.md, Art/UI/screens/09_지속, Direction/06 15차 0.11) ═════
      규칙은 js/content.js가 맡는다. 이번 빌드: 방치 보상, 미션과 출석, 반복 던전. 탑, 업적, 잭팟 타임은 07 5장의 차례로 뒤로 미뤘다 (구현_기록 8차) */
-  const NOBATTLE = { lobby: 1, deck: 1, chars: 1, detail: 1, gacha: 1, gres: 1, inv: 1, challenge: 1, rd: 1, codex: 1, tower: 1, result: 0 };   // 시간이 쌓이는 화면 (IR-1. 정산은 핀볼의 끝이라 넣지 않았다: 구현의 해석)
+  const NOBATTLE = { lobby: 1, deck: 1, chars: 1, detail: 1, gacha: 1, gres: 1, inv: 1, challenge: 1, rd: 1, tower: 1, result: 0 };   // 시간이 쌓이는 화면 (IR-1. 정산은 핀볼의 끝이라 넣지 않았다: 구현의 해석)
   const nowTs = function () { return Date.now(); };
   const hms = function (sec) { sec = Math.floor(sec); const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60); return h + ':' + (m < 10 ? '0' : '') + m; };
   const CUR_NAME = { gold: '골드', exp: '경험치', ball: '구슬', ticket: '뽑기권' };
@@ -11486,6 +11484,12 @@ FX.petalbell = function (o) {
     if (inf.fastLeft < 1 || !inf.hasStage) bs[0].disabled = true;
     if (!inf.canClaim) bs[1].disabled = true;
   }
+  function openClaimPop(title, body, claimAll, canClaim) {   // canClaim: 지금 받을 보상이 하나라도 있는가. 없으면 "모두 받기"를 끈다
+    openPop(title, body, [
+      { label: '닫기' },
+      { label: '모두 받기', main: true, fn: claimAll, disabled: !claimAll || !canClaim }
+    ], false, true);
+  }
   /* 미션 (pop_mission, MS-6 ~ MS-9) */
   let msTab = 'daily';
   const MS_GO = { dungeon_run: 'lobby', ball_shot: 'pinball', enh: 'chars', rd_run: 'challenge', tower_floor: 'tower', gacha: 'gacha', box_open: 'inv' };
@@ -11499,10 +11503,10 @@ FX.petalbell = function (o) {
       return '<li><span>' + esc(x.name) + '<small>' + fmtS(x.prog) + ' / ' + fmtS(x.n) + ' · ' + x.point + '점</small></span>' + btn + '</li>'; }).join('');
     const body = '<div class="mstabs"><button type="button" data-tab="daily" class="' + (daily ? 'on' : '') + '">일일' + (v.dotD ? '<i class="dot"></i>' : '') + '</button><button type="button" data-tab="weekly" class="' + (!daily ? 'on' : '') + '">주간' + (v.dotW ? '<i class="dot"></i>' : '') + '</button></div>' +
       '<p class="popnote">활동 포인트 ' + pt + ' / ' + v.maxPt + ' · ' + (daily ? '내일 ' : '') + '오전 5시에 바뀝니다</p>' + tierHtml + '<ul class="mslist">' + rows + '</ul>';
-    openPop('미션', body, [{ label: '닫기' }, { label: '모두 받기', main: true, fn: function () {
+    openClaimPop('미션', body, function () {
       const r = Content.missionClaimAll(DB, save, msTab); flushSave();
       if (Object.keys(r.got).length) popReward('미션 보상', r.got, openMission); else { if (!r.points) toast('받을 것이 없습니다.'); openMission(); }
-    } }]);
+    }, list.some(function (x) { return x.done && !x.claimed; }) || tiers.some(function (t) { return t.open && !t.claimed; }));
     const body2 = $('popBody');
     body2.querySelectorAll('[data-tab]').forEach(function (b) { b.addEventListener('click', function () { msTab = b.dataset.tab; tap(); openMission(); }); });
     body2.querySelectorAll('[data-claim]').forEach(function (b) { b.addEventListener('click', function () { Content.missionClaim(DB, save, b.dataset.claim); flushSave(); tap(); openMission(); }); });
@@ -11669,11 +11673,16 @@ FX.petalbell = function (o) {
   /* ── 도감과 업적 (scr_codex, AC-3 ~ AC-9) ── */
   let codexTab = 'ach', achGroup = 'prog';
   const ACH_GROUPS = [['prog', '진행'], ['collect', '수집'], ['grow', '성장'], ['pinball', '핀볼']];
-  function renderCodex() {
-    document.querySelectorAll('#viewCodex [data-ctab]').forEach(function (b) { b.classList.toggle('on', b.dataset.ctab === codexTab); });
+  function openCodex() {
     const all = Content.achView(DB, save);
-    $('achTabDot').hidden = !all.some(function (a) { return a.can; });
-    if (codexTab === 'codex') { $('codexBody').innerHTML = '<p class="note">도감은 명세(시스템·콘텐츠 12/1)가 오면 들어갑니다.</p>'; return; }
+    const isCodex = codexTab === 'codex';
+    const nav = '<div class="mstabs"><button type="button" data-ctab="codex" class="' + (isCodex ? 'on' : '') + '">도감</button>' +
+      '<button type="button" data-ctab="ach" class="' + (isCodex ? '' : 'on') + '">업적' +
+      (all.some(function (a) { return a.can; }) ? '<i class="dot"></i>' : '') + '</button></div>';
+    if (isCodex) {
+      openClaimPop('도감', nav + '<p class="note">도감은 명세(시스템·콘텐츠 12/1)가 오면 들어갑니다.</p>');
+      return;
+    }
     const list = all.filter(function (a) { return a.group === achGroup; });
     const tabs = '<div class="achgroups">' + ACH_GROUPS.map(function (g) { const dot = all.some(function (a) { return a.group === g[0] && a.can; }); return '<button type="button" data-ag="' + g[0] + '" class="' + (g[0] === achGroup ? 'on' : '') + '">' + g[1] + (dot ? '<i class="dot"></i>' : '') + '</button>'; }).join('') + '</div>';
     const rows = list.map(function (a) {
@@ -11681,14 +11690,21 @@ FX.petalbell = function (o) {
       const btn = a.done ? '<button type="button" class="mini" disabled>완료</button>' : a.can ? '<button type="button" class="mini done" data-ach="' + a.id + '">받기</button>' : '<span class="mini" aria-hidden="true" style="opacity:.5">' + a.next + '단계</span>';
       return '<li><span><b>' + esc(a.name) + '</b><small>' + (a.done ? '모두 받음' : a.next + '단계' + (a.endless && a.next > a.total ? ' (끝없음)' : '') + ' · ' + fmtS(Math.min(a.value, a.goal)) + ' / ' + fmtS(a.goal) + ' · ' + rewardRows(a.reward)) + '</small><span class="bar"><i style="width:' + pct + '%"></i></span></span>' + btn + '</li>';
     }).join('');
-    $('codexBody').innerHTML = tabs + '<div class="rowbtns"><button type="button" class="mini" id="achAll">모두 받기</button></div><ul class="achlist">' + rows + '</ul>';
+    openClaimPop('업적', nav + tabs + '<ul class="achlist">' + rows + '</ul>', function () {
+      const got = Content.achClaimGroup(DB, save, achGroup);
+      if (got) popReward('업적 보상', got, openCodex);
+      else { toast('받을 것이 없습니다.'); openCodex(); }
+    }, list.some(function (a) { return a.can; }));
   }
   function bindCodex() {
-    $('viewCodex').addEventListener('click', function (e) {
-      const t = e.target.closest('[data-ctab]'); if (t) { codexTab = t.dataset.ctab; tap(); renderCodex(); return; }
-      const g = e.target.closest('[data-ag]'); if (g) { achGroup = g.dataset.ag; tap(); renderCodex(); return; }
-      const a = e.target.closest('[data-ach]'); if (a) { const got = Content.achClaim(DB, save, a.dataset.ach, false); if (got) popReward('업적 보상', got, renderCodex); return; }
-      if (e.target.closest('#achAll')) { const got = Content.achClaimGroup(DB, save, achGroup); if (got) popReward('업적 보상', got, renderCodex); else toast('받을 것이 없습니다.'); }
+    $('popBody').addEventListener('click', function (e) {
+      const t = e.target.closest('[data-ctab]'); if (t) { codexTab = t.dataset.ctab; tap(); openCodex(); return; }
+      const g = e.target.closest('[data-ag]'); if (g) { achGroup = g.dataset.ag; tap(); openCodex(); return; }
+      const a = e.target.closest('[data-ach]');
+      if (a) {
+        const got = Content.achClaim(DB, save, a.dataset.ach, false);
+        if (got) popReward('업적 보상', got, openCodex);
+      }
     });
   }
 
