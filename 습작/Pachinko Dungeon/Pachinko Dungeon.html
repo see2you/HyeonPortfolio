@@ -63,7 +63,8 @@ button:focus-visible { outline: 3px solid var(--cream); outline-offset: 2px; }
   justify-self: center; width: min(100%, 460px);
   min-height: 0; min-width: 0;
   display: flex; flex-direction: column; gap: 8px;
-  padding: 10px 10px 12px;
+  --cabinet-inline-padding: 10px;
+  padding: 10px var(--cabinet-inline-padding) 12px;
   background: linear-gradient(180deg, #268680, var(--moss) 28%, var(--moss-deep));
   border: 3px solid var(--ink); border-radius: 28px;
   box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.2), 0 9px 0 #071d1c;
@@ -792,6 +793,32 @@ body.ui-polished :is(.deckstage, .dunwrap) { box-shadow: inset 0 0 0 1px #0b1024
 .atgrid > div.got::after { content: "받음"; position: absolute; inset: 0; display: grid; place-items: center; border-radius: 8px; background: rgba(11, 16, 36, 0.6); color: var(--ember); font: 700 15px var(--font-body); transform: rotate(-12deg); }
 .atgrid b { font-size: 12px; }
 
+/* 던전은 기계의 안쪽 폭을 모두 사용한다. */
+#viewDungeon {
+  inset: -4px calc(-1 * var(--cabinet-inline-padding));
+}
+/* 던전 조작부를 구슬과 배수 사이에 배치한다. */
+#viewDungeon .dungeon-controls {
+  position: absolute; z-index: 2; left: 50%; top: 16.82%;
+  transform: translate(-50%, -50%); display: flex; align-items: center; gap: 4px;
+}
+#dungeonControls .cont {
+  min-height: 32px; padding-inline: 7px 4px; gap: 4px;
+  font-size: 11px; border-color: #526394;
+}
+#dungeonControls .cont.on { border-color: #5fe3ff; }
+#dungeonControls .cont .sw { width: 32px; }
+#viewDungeon #pauseBtn {
+  top: 9.41%; right: 4%; transform: translateY(-50%);
+  width: 34px; min-width: 34px; min-height: 30px; padding: 2px;
+  display: grid; place-items: center;
+}
+
+#viewDungeon.is-done #pauseBtn,
+#viewDungeon.is-done:not(:has(#autoNote:not([hidden]))) .dungeon-controls {
+  visibility: hidden;
+}
+
 /* 로비: 무대 → 메뉴 → 출격 조작부 */
 #viewLobby { bottom: 56px; gap: 5px; padding: 2px 2px 5px; }
 #viewLobby .lobby-head {
@@ -1344,6 +1371,7 @@ body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color
 
       <section class="view canvas" id="viewDungeon" aria-label="던전" hidden>
         <button class="overbtn right" id="pauseBtn" type="button" aria-label="일시 정지">Ⅱ</button>
+        <div class="dungeon-controls" id="dungeonControls"></div>
         <button class="autonote" id="autoNote" type="button" hidden><b id="autoNoteA"></b><span id="autoNoteB"></span><small>누르면 바로 넘어갑니다</small></button>
         <canvas id="dun" width="432" height="674" role="img" aria-label="던전 화면. 위에 방 진행과 구슬 수, 배수, 슬롯 게이지가 있고 가운데에서 덱이 자동으로 싸웁니다"></canvas>
       </section>
@@ -1373,7 +1401,7 @@ body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color
     </div>
 
     <div class="deck">
-      <!-- 연속 진행의 토글 (화면_지도 4.2, UI 초안): 알약 하나에 글자와 스위치. 로비와 던전에서 큰 버튼 바로 위 가운데 -->
+      <!-- 연속 진행의 토글 (화면_지도 4.2, UI 초안): 알약 하나에 글자와 스위치. 로비에서는 출격 위, 던전에서는 상단 -->
       <button class="cont" id="autoBtn" type="button" role="switch" aria-checked="false" hidden><span id="autoTxt">연속 진행</span><span class="sw" aria-hidden="true"><i id="autoMark">○</i></span></button>
       <!-- 뽑기 화면의 맨 아래: 1회(왼쪽, 남색) · 10회(오른쪽, 금색, 폭 1.45배). 화면_지도 10장 (현 확정 21:11) -->
       <div class="gachabar" id="gachaBar" hidden>
@@ -9428,7 +9456,7 @@ FX.petalbell = function (o) {
   /* ═════ 여기부터 전체 루프: 덱 편성 → 던전 → 핀볼 → 결과 ═════ */
   const dcanvas = $('dun'), dctx = dcanvas.getContext('2d');
   const DW = VW, DH = VH;                              // 던전 화면도 판과 같은 크기의 캔버스를 쓴다
-  const FLOOR = 468, COUNTER = { x: 60, y: 122 }, BADGE = { x: 334, y: 122 };
+  const FLOOR = 468, COUNTER = { x: 49, y: 122 }, BADGE = { x: 357, y: 122 };
   const HEROES = {}; DB.chars.forEach(function (c) { HEROES[c.id] = { id: c.id, name: c.name, glyph: c.name.charAt(0) }; });
   const heroCol = function (id) { return (DB.charOf[id] && DB.charOf[id].color) || COL.stone; };
   const SPEEDS = DCFG.speeds;
@@ -9793,7 +9821,7 @@ FX.petalbell = function (o) {
   function dot(x, y, r, fill) { dctx.beginPath(); dctx.arc(x, y, r, 0, TAU); dctx.fillStyle = fill; dctx.fill(); }
 
   function drawRoomStrip() {
-    const c = dctx, n = run.rooms.length, x0 = 40, x1 = DW - 78, y = 42, cur = Math.max(0, run.room);   // 오른쪽 위는 일시 정지 버튼의 자리다
+    const c = dctx, n = run.rooms.length, x0 = 40, x1 = DW - 40, y = 42, cur = Math.max(0, run.room);
     c.lineWidth = 4; c.strokeStyle = 'rgba(255,243,214,.2)'; c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke();
     for (let i = 0; i < n; i++) {
       const x = x0 + ((x1 - x0) * i) / (n - 1), kind = run.rooms[i].kind, done = i < run.cleared, here = i === cur && run.phase !== 'done';
@@ -9809,15 +9837,18 @@ FX.petalbell = function (o) {
 
   function drawBallPanel(t) {
     const c = dctx, age = t - fxD.bumpAt, bump = age < 0.15 && !reduceMotion ? 1 + 0.14 * (1 - age / 0.15) : 1;
-    c.save(); c.translate(COUNTER.x, COUNTER.y); c.scale(bump, bump); drawIcon(c, 'ball', 0, 0, 46); c.restore();
-    dText(fmt(fxD.shown), COUNTER.x + 34, COUNTER.y + 17, 46, COL.cream, 7, FONT_D, 'left');
+    c.save(); c.translate(COUNTER.x, COUNTER.y); c.scale(bump, bump); drawIcon(c, 'ball', 0, 0, 32); c.restore();
+    const count = fmt(fxD.shown);
+    c.font = '30px ' + FONT_D;
+    const countSize = Math.min(30, 30 * 86 / Math.max(1, c.measureText(count).width));
+    dText(count, COUNTER.x + 23, COUNTER.y + 12, countSize, COL.cream, 5, FONT_D, 'left');
     const m = run.mult(), sl = run.slot, both = sl.on && run.roomMult > 0, has = sl.on || run.roomMult > 0;
-    rr(c, BADGE.x - 70, BADGE.y - 36, 140, 72, 14); c.fillStyle = 'rgba(27,18,38,.6)'; c.fill();
+    rr(c, BADGE.x - 55, BADGE.y - 28, 110, 56, 11); c.fillStyle = 'rgba(27,18,38,.6)'; c.fill();
     if (has) { c.lineWidth = 2.5; c.strokeStyle = both ? COL.torch : sl.on ? COL.ember : COL.rose; c.stroke(); }
-    dText('×' + mtxt(m), BADGE.x, BADGE.y + 8, 36, has ? COL.torch : COL.dim, has ? 6 : 0);
+    dText('×' + mtxt(m), BADGE.x, BADGE.y + 4, 27, has ? COL.torch : COL.dim, has ? 5 : 0);
     const capped = run.multRaw && run.multRaw() > m;      // 더한 값이 상한을 넘으면 "최대 3배" (09 B-8)
     const parts = capped ? '최대 ' + mtxt(m) + '배' : both ? '슬롯 ' + mtxt(sl.mult) + ' + 방 ' + mtxt(run.roomMult) : sl.on ? '슬롯' : run.roomMult > 0 ? '배수 방' : '배수 없음';
-    dText(parts, BADGE.x, BADGE.y + 28, 12.5, has ? COL.cream : COL.dim, 0, FONT);
+    dText(parts, BADGE.x, BADGE.y + 21, 11.5, has ? COL.cream : COL.dim, 0, FONT);
   }
 
   /* 반복 던전: 구슬 수와 슬롯 게이지를 감추고 던전 이름과 단계를 둔다 (10 RD-8, 10장) */
@@ -10075,7 +10106,7 @@ FX.petalbell = function (o) {
     const spinning = run.phase === 'roulette', p = spinning ? Math.min(1, 1 - run.phaseT / rl.spinSec) : 1, e = 1 - Math.pow(1 - p, 3);
     const final = -Math.PI / 2 - (run.roulette.idx + 0.5) * a, ang = reduceMotion ? final : final - (1 - e) * TAU * 4;
     veil(0.84);
-    dText(spinning ? '클리어 룰렛' : autoNote ? '클리어' : '던전 종료', cx, 152, 36, COL.cream, 8);   // 연속 진행으로 이어 갈 때는 끝이 아니다
+    if (!autoNote) dText(spinning ? '클리어 룰렛' : '던전 종료', cx, 191, 32, COL.cream, 7);
     for (let i = 0; i < n; i++) {
       const hit = !spinning && i === run.roulette.idx;
       c.beginPath(); c.moveTo(cx, cy); c.arc(cx, cy, rad, ang + i * a, ang + (i + 1) * a); c.closePath();
@@ -10098,6 +10129,7 @@ FX.petalbell = function (o) {
   }
 
   function drawOverlays(t) {
+    if (run.phase === 'done' && popOpen) return;   // 종료 팝업에 제목과 결과가 있다.
     const c = dctx;
     // 방과 슬롯 알림
     if (fxD.banner && t - fxD.banner.t0 < 1.1 && run.phase !== 'done' && run.phase !== 'roulette') {
@@ -10144,15 +10176,15 @@ FX.petalbell = function (o) {
   }
 
   function drawDungeon() {
-    const s = dcanvas.width / DW, t = dnow(), c = dctx;
+    const edge = 13, t = dnow(), c = dctx;
+    const sx = dcanvas.width / (DW - edge * 2), sy = dcanvas.height / (DH - edge * 2);
     if (fxD.shown !== run.balls) { const gap = run.balls - fxD.shown; fxD.shown += reduceMotion || Math.abs(gap) < 3 ? gap : Math.sign(gap) * Math.ceil(Math.abs(gap) * 0.14); }
-    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, dcanvas.width, dcanvas.height);
-    c.setTransform(s, 0, 0, s, 0, 0); c.lineJoin = 'round'; c.lineCap = 'round'; c.textAlign = 'center';
-    rr(c, 2.5, 2.5, DW - 5, DH - 5, 26); c.fillStyle = COL.stone; c.fill(); c.lineWidth = 3; c.strokeStyle = COL.ink; c.stroke();
-    rr(c, 13, 13, DW - 26, DH - 26, 17);
-    const g = c.createLinearGradient(0, 0, 0, DH); g.addColorStop(0, COL.cave2); g.addColorStop(1, COL.cave);
-    c.fillStyle = g; c.fill(); c.stroke();
-    c.save(); rr(c, 13, 13, DW - 26, DH - 26, 17); c.clip();
+    c.setTransform(sx, 0, 0, sy, -edge * sx, -edge * sy);
+    c.lineJoin = 'round'; c.lineCap = 'round'; c.textAlign = 'center';
+    const g = c.createLinearGradient(0, edge, 0, DH - edge);
+    g.addColorStop(0, COL.cave2); g.addColorStop(1, COL.cave);
+    c.fillStyle = g; c.fillRect(edge, edge, DW - edge * 2, DH - edge * 2);
+    c.save();
     drawRoomStrip(); if (stageNow.noBalls) drawContentHead(); else { drawBallPanel(t); drawGauge(t); } drawScene(t); drawParty(); drawFlies(t);
     Fx.drawCutin(c);                                   // 컷인은 장면 위, 위쪽 정보(y 0 ~ 200) 아래다. 띠는 y 217 ~ 427을 지난다
     drawOverlays(t);
@@ -10190,12 +10222,16 @@ FX.petalbell = function (o) {
   function setPhase(p) {
     if (phase === 'inv' && p !== 'inv') leaveEquipTab();          // 장비 칸을 보고 나가면 "새" 표시가 사라진다 (05 S-4)
     phase = p;
+    $('viewDungeon').classList.remove('is-done');
     for (const k in VIEWS) $(VIEWS[k]).hidden = k !== p;
     $('burstBtn').hidden = p !== 'pinball'; $('shotBar').hidden = p !== 'pinball';
     $('sideBtn').hidden = p !== 'lobby' && p !== 'result';
     $('leaveBtn').hidden = p !== 'pinball'; leaveShown = null;      // 핀볼의 발사부는 세 칸이다: 왼쪽 연발, 가운데 발사, 오른쪽 "로비로"
-    $('fireRow').hidden = p === 'gacha'; $('gachaBar').hidden = p !== 'gacha'; $('hint').hidden = p === 'gacha';   // 뽑기 화면은 큰 버튼 자리를 뽑기 버튼 둘이 쓴다
-    $('autoBtn').hidden = p !== 'lobby' && p !== 'dungeon';          // 연속 진행의 토글은 로비와 던전 화면에 있다 (09 C-8). 로비가 조금 크다 (화면_지도 4.2)
+    $('fireRow').hidden = p === 'gacha' || p === 'dungeon'; $('gachaBar').hidden = p !== 'gacha'; $('hint').hidden = p === 'gacha' || p === 'dungeon';   // 뽑기 화면은 큰 버튼 자리를 뽑기 버튼 둘이 쓴다
+    const autoBtn = $('autoBtn'), deck = $('fireRow').parentElement;
+    const autoParent = p === 'dungeon' ? $('dungeonControls') : deck;
+    if (autoBtn.parentElement !== autoParent) autoParent.prepend(autoBtn);
+    autoBtn.hidden = p !== 'lobby' && p !== 'dungeon';          // 연속 진행의 토글은 로비와 던전 화면에 있다 (09 C-8). 로비가 조금 크다 (화면_지도 4.2)
     $('autoBtn').classList.toggle('big', p === 'lobby');
     if (p !== 'dungeon' && autoNote) { autoNote = null; $('autoNote').hidden = true; }
     $('addBalls').hidden = !(TEST && p === 'pinball');
@@ -10390,9 +10426,8 @@ FX.petalbell = function (o) {
 
   function mainAction() {
     wakeAudio();
-    if (popOpen) return;
+    if (popOpen || phase === 'dungeon') return;
     if (phase === 'lobby' || phase === 'result') sortie();
-    else if (phase === 'dungeon') { if (autoNote) autoNote.left = 0; else if (run.phase === 'done') openDungeonEnd(); }
     else if (phase === 'pinball') fire();
     else if (phase === 'detail') setPhase(detailBack);
     else if (phase === 'gres') setPhase('gacha');
@@ -10401,16 +10436,12 @@ FX.petalbell = function (o) {
   }
   let mainShown = '', sideShown = '';
   function renderMain() {
+    if (phase === 'dungeon') return;
     let label, sub, cls = '';
     // 연속 진행이 켜져 있으면 출격 버튼만 보아도 알 수 있게 한다: 스테이지 번호 옆의 ▶▶와 버튼의 겹테 (가정)
     const auto = !!save.set.auto_advance, done = Rules.allCleared(DB, save), nextLabel = Rules.stageLabel(DB, Rules.nextStageId(DB, save));
     if (phase === 'lobby') { label = auto && !done ? '연속 출격' : '출격'; sub = done ? '모두 깸' : nextLabel + (auto ? ' ▶▶' : ''); if (done) cls = 'wait'; else if (auto) cls = 'auto'; }   // 켜지면 "1-7 ▶▶ / 연속 출격" (화면_지도 4.2)
-    else if (phase === 'dungeon') {
-      if (autoNote) { label = '다음으로'; sub = Rules.stageLabel(DB, autoNote.next) + ' ▶▶'; cls = 'auto'; }
-      else if (run.phase === 'done') { label = '던전 종료'; sub = stageNow.noBalls ? (lastRun && lastRun.ended === 'clear' ? '클리어' : stageNow.label) : '구슬 ' + fmtS(run.balls); }
-      else if (run.phase === 'roulette') { label = '룰렛'; sub = '도는 중'; cls = 'wait'; }
-      else { label = '전투 중'; sub = (Math.max(0, run.room) + 1) + '번 방'; cls = 'wait'; }
-    } else if (phase === 'pinball') {
+    else if (phase === 'pinball') {
       if (fireLocked()) { label = '결과를'; sub = '기다려요'; cls = 'wait lock'; }   // 가진 구슬을 다 쏜 묶음도 결과를 기다린다
       else if (state.wallet.balls <= 0) { label = '발사'; sub = '구슬 없음'; cls = 'wait'; }   // 잠긴 동안 색이 빠지고 "결과를 기다려요". 남은 몫은 둘레 고리 (화면_지도 4.3)
       else { const pl = shotPlan(); label = '발사'; sub = pl.n + '발 · 구슬 ' + fmtS(pl.cost) + '개'; cls = 'shot'; }   // 두 줄: "발사 / 20발 · 구슬 200개" (W-8)
@@ -11322,7 +11353,7 @@ FX.petalbell = function (o) {
     const isMainKey = function (e) { return e.code === 'Space' || (e.code === 'Enter' && e.target === fireBtn); };
     document.addEventListener('keydown', function (e) {
       if (e.code === 'Escape') { if (popOpen && !popSticky) closePop(); setBench(false); return; }
-      if (!isMainKey(e) || popOpen) return;
+      if (!isMainKey(e) || popOpen || phase === 'dungeon') return;
       const tag = e.target && e.target.tagName;
       if (e.code === 'Space' && (tag === 'INPUT' || (tag === 'BUTTON' && e.target !== fireBtn))) return;
       e.preventDefault();
@@ -11356,8 +11387,11 @@ FX.petalbell = function (o) {
   function resize() {
     const st = $('stage');
     const sc = Math.max(0.35, Math.min(st.clientWidth / VW, st.clientHeight / VH));
-    const wCss = Math.floor(VW * sc), hCss = Math.floor(VH * sc), dpr = Math.min((window.devicePixelRatio || 1) * ((window.PD_FIT && window.PD_FIT.s) || 1), 3);   // 모바일 틀이 키운 만큼 선명하게
-    const perUnit = (wCss * dpr) / VW;                 // 판 좌표 1이 차지하는 기기 픽셀
+    const dungeonVisible = phase === 'dungeon', dungeonView = $('viewDungeon');
+    const wCss = dungeonVisible ? dungeonView.clientWidth : Math.floor(VW * sc);
+    const hCss = dungeonVisible ? dungeonView.clientHeight : Math.floor(VH * sc);
+    const dpr = Math.min((window.devicePixelRatio || 1) * ((window.PD_FIT && window.PD_FIT.s) || 1), 3);   // 모바일 틀이 키운 만큼 선명하게
+    const perUnit = (wCss * dpr) / (dungeonVisible ? DW - 26 : VW);                 // 판 좌표 1이 차지하는 기기 픽셀
     const want = SPR_WANT;
     sprKd = Math.max(1, Math.round(perUnit * want)); sprK = sprKd / perUnit; sprUnit = perUnit;
     sprSmooth = sprK < want * 0.82 || sprK > want * 1.2;
@@ -11699,6 +11733,7 @@ FX.petalbell = function (o) {
           else if (!tryAutoNote()) { lastRun.doneSec = (lastRun.doneSec || 0) + el; if (lastRun.doneSec > 1.1) openDungeonEnd(); }
         }
       }
+      $('viewDungeon').classList.toggle('is-done', run.phase === 'done');
       drawDungeon(); renderSignDungeon();
     } else if (phase === 'pinball') {
       if (!popOpen) {                                  // 핀볼 위에 팝업이 뜨면 판 전체가 멈춘다 (09 L-10)
