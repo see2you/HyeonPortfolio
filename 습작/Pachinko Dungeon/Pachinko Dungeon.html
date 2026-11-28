@@ -287,12 +287,7 @@ canvas.face { display: block; image-rendering: pixelated; }
 .lvbadge { font-family: var(--font-display); color: var(--aqua); font-size: 14px; white-space: nowrap; }
 .lvbadge b { font-weight: 400; font-size: 17px; }
 .acct-txt { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.stagepick { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 6px; padding: 6px; border: 3px solid var(--stone-shade); border-radius: 16px; background: var(--cave); box-shadow: 0 0 0 3px var(--ink); margin: 3px; }
 .arrow { width: 44px; height: 44px; border: 2px solid var(--ink); border-radius: 50%; background: var(--stone); color: var(--ink); font-size: 16px; cursor: pointer; }
-.stageinfo { display: grid; justify-items: center; text-align: center; gap: 0; min-width: 0; }
-.stageinfo b { font-family: var(--font-display); font-weight: 400; font-size: 30px; line-height: 1.1; color: var(--cream); font-variant-numeric: tabular-nums; }
-.stageinfo span { font-size: 12.5px; color: var(--dim); }
-.stageinfo .first { color: var(--torch); min-height: 1.5em; }
 .deckcard { display: grid; gap: 5px; padding: 7px 9px; text-align: left; border: 2px solid var(--ink); border-radius: 14px; background: var(--moss-deep); color: var(--cream); cursor: pointer; }
 .deckcard-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .deckcard-head > b { font-family: var(--font-display); font-weight: 400; font-size: 16px; color: var(--torch); }
@@ -312,6 +307,7 @@ canvas.face { display: block; image-rendering: pixelated; }
 .slotbtn.empty { cursor: default; opacity: 0.8; }
 .slotbtn .pos { font-size: 10.5px; color: var(--dim); }
 .slotbtn.dragging { z-index: 2; opacity: 0.85; box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35); }
+.slotbtn.drop-target { outline: 2px solid #5fe3ff; outline-offset: 1px; }
 
 /* 캐릭터 상세 */
 .detail-top { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px; border: 3px solid var(--g, var(--ink)); border-radius: 16px; background: var(--cave); }
@@ -396,9 +392,6 @@ table.rate tr.grow th, table.rate tr.grow td { padding-top: 9px; font-family: va
 .deckstage .deckcard-head .cpline { flex-wrap: nowrap; gap: 6px; }
 .deckstage:focus-visible { outline: 3px solid var(--torch); outline-offset: 2px; }
 #viewLobby { gap: 5px; }
-#viewLobby .stagepick { padding: 3px 6px; }
-#viewLobby .stageinfo b { font-size: 24px; line-height: 1.1; }
-#viewLobby .stageinfo .first { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; }
 .chip output.tight { font-size: 12.5px; letter-spacing: -0.3px; }
 .menubtn { position: relative; }
 .menubtn small.dot { min-width: 22px; padding: 0 6px; border-radius: 999px; background: #e23b4e; color: #fff; font-weight: 700; }
@@ -521,8 +514,6 @@ table.rate tr.grow th, table.rate tr.grow td { padding-top: 9px; font-family: va
 .hintline { margin: 0; padding: 8px; border: 2px dashed rgba(255, 243, 214, 0.4); border-radius: 12px; text-align: center; font-size: 13.5px; }
 
 /* 2026-11-24 5차: 다음에 깰 스테이지만 보여 준다, 연속 진행의 토글과 스테이지 사이의 알림, 발사부 오른쪽의 "로비로" */
-.stagepick.solo { display: block; text-align: center; }
-.stagepick.solo .stageinfo { display: grid; justify-items: center; }
 .knobslot.right { justify-self: start; }
 .knob-leave { background: radial-gradient(circle at 35% 28%, #d9fff6, #35c2a8 55%, #128a78); box-shadow: 0 5px 0 #0b5a4e; transition: opacity 0.2s, visibility 0s; }
 .knob-leave:active { box-shadow: 0 2px 0 #0b5a4e; }
@@ -883,17 +874,6 @@ body.ui-polished #viewLobby .deckstage {
 #viewLobby .deckcard-head .cpline {
   background: linear-gradient(#22306a, #0b1024); padding: 4px 10px; color: #f6ecd6;
 }
-#viewLobby .stagepick {
-  margin: 0; border: 1px solid #b88a3a; padding: 5px 8px;
-  background: linear-gradient(180deg, #22306a, #121a3a);
-  box-shadow: inset 0 1px #e6c27266, inset 0 -3px #0b1024;
-}
-#viewLobby .stagepick .stageinfo {
-  grid-template-columns: auto minmax(0, 1fr); align-items: center;
-  justify-items: start; gap: 0 10px; text-align: left;
-}
-#viewLobby .stageinfo b { grid-row: span 2; color: #f6ecd6; text-shadow: 0 2px #0b1024; line-height: 1.34; padding: 1px 0; }   /* Black Han Sans 는 위아래가 길다. 줄 높이를 주지 않으면 글자가 잘린다 (UI 2026-11-28) */
-#viewLobby .stageinfo span { color: #c5cff3; }
 .lobby-menu {
   position: absolute; z-index: 2; bottom: 0; left: 2px; right: 2px;
   grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px;
@@ -1242,9 +1222,6 @@ body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color
           <canvas id="lobbyStage" width="366" height="132" aria-hidden="true"></canvas>
           <span class="deckcard-head"><b>덱 설정</b><span class="cpline" id="lobbyCp"></span></span>
         </button>
-        <div class="stagepick solo" aria-label="다음에 깰 스테이지">
-          <div class="stageinfo"><b id="stageLabel">1-1</b><span id="stageName"></span><span class="first" id="stageFirst"></span></div>
-        </div>
         <p class="note" id="lobbyNote"></p>
       </section>
       <nav class="menu lobby-menu" aria-label="메뉴">
@@ -1266,7 +1243,7 @@ body { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color
           <button class="mini" id="deckEq" type="button">덱 추천 장착</button>
           <label class="sortsel">정렬 <select id="deckSort"><option value="cp">전투력</option><option value="grade">등급</option><option value="role">역할</option></select></label>
         </div>
-        <div class="roster" id="roster" aria-label="가진 캐릭터. 누르면 덱에 들어가고, 길게 누르면 상세로 갑니다"></div>
+        <div class="roster" id="roster" aria-label="가진 캐릭터. 누르면 덱에 넣거나 빼고, 길게 누르면 상세로 갑니다"></div>
       </section>
 
       <!-- scr_char_list -->
@@ -10626,16 +10603,7 @@ FX.petalbell = function (o) {
     $('acctTxt').textContent = fmtS(lv.cur) + ' / ' + fmtS(lv.need);
     const bonus = (lv.statMult - 1) * 100;                             // 계정 보너스: 모든 캐릭터의 체력과 공격 (07 L-4)
     $('acctBonus').textContent = '계정 보너스: 모든 캐릭터 체력과 공격 +' + (bonus >= 1000 ? fmtS(bonus) : Math.round(bonus * 10) / 10) + '%';
-    const st = selStage(), idx = DB.stageIdx[st.id], cleared = Rules.clearedCount(DB, save), allDone = Rules.allCleared(DB, save);
-    $('stageLabel').textContent = st.label;
-    $('stageName').textContent = allDone ? '모든 스테이지를 깼습니다' : '다음에 깰 곳 · 챕터 ' + st.chapter + ' ' + (st.themeName || st.chapterName) + (st.kind === 'boss' ? ' · 챕터 보스' : '');
-    const f = st.first, parts = [];
-    if (idx >= cleared) {
-      if (f.gold) parts.push('골드 ' + fmtS(f.gold));
-      if (f.box) parts.push('상자 ' + f.box);
-      if (f.ticket) parts.push('뽑기권 ' + f.ticket);
-    }
-    $('stageFirst').textContent = parts.length ? '첫 클리어 보상: ' + parts.join(' · ') : '';
+    const st = selStage();
     $('lobbyCp').innerHTML = cpLine(Rules.deckCp(DB, save), st.recCp);
     const ids = ownedIds('cp');
     const enhN = ids.filter(function (id) { return Rules.canEnh(DB, save, id); }).length, newN = Object.keys(save.new_chars).length;
@@ -10643,7 +10611,7 @@ FX.petalbell = function (o) {
     // 뽑기권이 1장 이상이면 뽑기 메뉴에 수 표시가 늘 붙는다. 처음 한 번은 말풍선도 뜬다 (화면_지도 6장)
     const tk = Math.floor(save.cur.ticket);
     $('menuGachaBadge').textContent = tk > 0 ? fmtS(tk) : ''; $('menuGachaBadge').classList.toggle('dot', tk > 0);
-    // 말풍선은 띄우지 않는다. 메뉴 줄이 화면 아래에 붙박여 있어 말풍선이 그 위 스테이지 줄을 가렸다.
+    // 말풍선은 띄우지 않는다. 메뉴 줄이 화면 아래에 붙박여 있어 말풍선이 위쪽 내용을 가린다.
     // 뽑기 버튼의 빨간 수 표시가 같은 몫을 한다 (현 확정 2026-11-28 02:56).
     $('gachaTip').hidden = true;
     $('gachaTip').textContent = '';
@@ -10680,7 +10648,9 @@ FX.petalbell = function (o) {
   }
   function drawLobbyStage(now) {
     const cv = $('lobbyStage'), box = cv.parentElement, cssW = Math.max(200, Math.min(420, (box.clientWidth || 366) - 12)), dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const L = TILE.lobby, cssH = Math.round(L.stage_h || L.H), k = Math.min(cssW / L.W, cssH / L.H);
+    const L = TILE.lobby;
+    const cssH = Math.round(L.stage_h || L.H) + 54;   // 다음 스테이지 안내가 쓰던 공간을 덱 무대에 더한다.
+    const k = Math.min(cssW / L.W, cssH / L.H);
     const W2 = Math.round(cssW * dpr), H2 = Math.round(cssH * dpr);
     if (cv.width !== W2 || cv.height !== H2) { cv.width = W2; cv.height = H2; cv.style.width = cssW + 'px'; cv.style.height = cssH + 'px'; }
     const c = cv.getContext('2d'), n = Rules.deckMax(DB), t = reduceMotion ? 0.7 : now / 1000;
@@ -10704,6 +10674,7 @@ FX.petalbell = function (o) {
   /* ── 덱 편성 (scr_deck) ── */
   let deckSort = 'cp', drag = null, pressTimer = 0, pressFired = false, detailId = null, detailBack = 'chars';
   function renderDeck() {
+    if (drag) return;
     const n = Rules.deckMax(DB);
     let html = '';
     for (let i = 0; i < n; i++) {
@@ -10730,7 +10701,7 @@ FX.petalbell = function (o) {
     if (r.ok) deckChanged(330); else { if (r.reason === 'last') toast('한 명은 있어야 합니다.'); renderDeck(); }
   }
   function rosterTap(id) {
-    if (save.deck.indexOf(id) >= 0) return;                             // 덱에 있는 캐릭터를 목록에서 눌러도 아무 일도 없다 (02의 규칙)
+    if (save.deck.includes(id)) { slotRemove(id); return; }
     const r = Rules.deckAdd(DB, save, id);
     if (!r.ok) { if (r.reason === 'full') toast('자리가 찼습니다. 먼저 한 명을 빼 주세요.'); return; }
     deckChanged(520);
@@ -10738,33 +10709,48 @@ FX.petalbell = function (o) {
   function bindDeck() {
     $('deckEq').addEventListener('click', function () { tap(); deckEquip(); });
     const lineup = $('lineup');
+    lineup.addEventListener('dragstart', function (e) { e.preventDefault(); });
     lineup.addEventListener('pointerdown', function (e) {
-      const b = e.target.closest('.slotbtn.filled'); if (!b) return;
-      drag = { from: Number(b.dataset.i), id: b.dataset.id, x: e.clientX, moved: false, el: b };
-      if (b.setPointerCapture) { try { b.setPointerCapture(e.pointerId); } catch (err) { /* 잡지 못해도 누르기는 된다 */ } }
+      const b = e.target.closest('.slotbtn.filled');
+      if (!b || drag || e.button !== 0) return;
+      drag = { from: Number(b.dataset.i), id: b.dataset.id, pointer: e.pointerId, x: e.clientX, moved: false, el: b, target: null };
+      b.setPointerCapture(e.pointerId);
     });
+    function deckDropTarget(clientX) {
+      let target = null, nearest = Infinity;
+      for (const slot of lineup.querySelectorAll('.slotbtn.filled')) {
+        const r = slot.parentElement.getBoundingClientRect();
+        const distance = Math.abs(clientX - (r.left + r.right) / 2);
+        if (distance < nearest) { nearest = distance; target = slot; }
+      }
+      return target;
+    }
     lineup.addEventListener('pointermove', function (e) {
-      if (!drag) return;
+      if (!drag || drag.pointer !== e.pointerId) return;
       const dx = e.clientX - drag.x;
       if (Math.abs(dx) > 8) drag.moved = true;
-      if (drag.moved) { drag.el.style.transform = 'translateX(' + dx / ((window.PD_FIT && window.PD_FIT.s) || 1) + 'px)'; drag.el.classList.add('dragging'); }
+      if (!drag.moved) return;
+      drag.el.style.transform = 'translateX(' + dx / ((window.PD_FIT && window.PD_FIT.s) || 1) + 'px)';
+      drag.el.classList.add('dragging');
+      const target = deckDropTarget(e.clientX);
+      if (target === drag.target) return;
+      if (drag.target) drag.target.classList.remove('drop-target');
+      drag.target = target;
+      if (target && target !== drag.el) target.classList.add('drop-target');
     });
     const drop = function (e) {
-      if (!drag) return;
+      if (!drag || drag.pointer !== e.pointerId) return;
       const d = drag; drag = null;
       d.el.style.transform = ''; d.el.classList.remove('dragging');
-      if (e.type === 'pointercancel') return;
+      if (d.target) d.target.classList.remove('drop-target');
+      if (e.type !== 'pointerup') return;
       if (!d.moved) { slotRemove(d.id); return; }
-      const items = lineup.querySelectorAll('li');
-      let to = d.from;
-      for (let i = 0; i < items.length; i++) { const r = items[i].getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right) { to = i; break; } }
-      // 1번(맨 앞)이 가장 오른쪽이다 (06 13차 1.1): 오른쪽 끝 너머는 1번, 왼쪽 끝 너머는 마지막
-      if (e.clientX > items[0].getBoundingClientRect().right) to = 0;
-      if (e.clientX < items[items.length - 1].getBoundingClientRect().left) to = items.length - 1;
-      if (Rules.deckMove(DB, save, d.from, to).ok) deckChanged(600); else renderDeck();
+      const target = deckDropTarget(e.clientX);
+      if (target && Rules.deckMove(DB, save, d.from, Number(target.dataset.i)).ok) deckChanged(600);
     };
     lineup.addEventListener('pointerup', drop);
     lineup.addEventListener('pointercancel', drop);
+    lineup.addEventListener('lostpointercapture', drop);
     lineup.addEventListener('click', function (e) {                    // 키보드로 누른 것만 여기서 받는다
       if (e.detail !== 0) return;
       const b = e.target.closest('.slotbtn.filled'); if (b) slotRemove(b.dataset.id);
@@ -11594,7 +11580,7 @@ FX.petalbell = function (o) {
     if (!save.deck.length) Rules.deckAuto(DB, save);
     chain = null; startRun({ dungeon: rdNow.dungeon, tier: rdNow.tier, part: r.part });
   }
-  /* 반복 던전의 결과 (pop_rd_result, RD-11): 이기면 받은 것과 "다시 하기", 지면 "던전 종료" 뒤 단계 목록 */
+  /* 반복 던전의 결과 (pop_rd_result, RD-11): 이기면 받은 것과 "다음 단계", 지면 "던전 종료" 뒤 단계 목록 */
   function openRdEnd() {
     const q = lastRun.content, win = lastRun.ended === 'clear', r = Content.rdInfo(DB, save, q.dungeon);
     const back = function () { run = null; rdNow = { dungeon: q.dungeon, tier: q.tier }; setPhase('rd'); };
@@ -11603,7 +11589,13 @@ FX.petalbell = function (o) {
       return;
     }
     const btns = [{ label: '닫기', fn: back }];
-    if (r.left > 0) btns.push({ label: '다시 하기 (' + r.left + '/' + r.max + ')', main: true, fn: function () { rdNow = { dungeon: q.dungeon, tier: q.tier }; startRun({ dungeon: q.dungeon, tier: q.tier, part: q.part }); } });
+    const nextTier = q.tier + 1;
+    if (r.left > 0 && nextTier <= r.top) {
+      btns.push({ label: '다음 단계', main: true, fn: function () {
+        rdNow = { dungeon: q.dungeon, tier: nextTier };
+        rdStart();
+      } });
+    }
     else btns[0].main = true;
     openPop(q.tier + '단계 클리어', gotRows(lastRun.rdGot || {}) + '<p class="popnote">남은 횟수 ' + r.left + '/' + r.max + (r.left ? '' : ' · 내일 오전 5시에 다시 찹니다') + '</p>', btns, true);
     chord([659, 880, 1175], 70, 0.05);
